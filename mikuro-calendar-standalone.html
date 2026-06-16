@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ミクロ姉の日めくりカレンダー💖</title>
+
+    <!-- PWA(ホーム画面アプリ)設定 -->
+    <link rel="manifest" href="data:application/manifest+json;base64,eyJuYW1lIjogIuODn+OCr+ODreWnieOBruaXpeOCgeOBj+OCiuOCq+ODrOODs+ODgOODvCIsICJzaG9ydF9uYW1lIjogIuaXpeOCgeOBj+OCivCfkpYiLCAibGFuZyI6ICJqYSIsICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLCAib3JpZW50YXRpb24iOiAicG9ydHJhaXQiLCAiYmFja2dyb3VuZF9jb2xvciI6ICIjZmY5ZGUyIiwgInRoZW1lX2NvbG9yIjogIiNmZjZiYWUiLCAiaWNvbnMiOiBbeyJzcmMiOiAiZGF0YTppbWFnZS9wbmc7YmFzZTY0LGlWQk9SdzBLR2dvQUFBQU5TVWhFVWdBQUFNQUFBQURBQ0FZQUFBQlMzR3dIQUFBSVcwbEVRVlI0bk8zZDJZOFVWUmpHNFZOdHU2L2dJQ0ppak11bEVnTWtndXdqNEFYUnFCRVVGYmRMK1hQMDBnMFZCYU13Qk9NTU1JaXN4dUI2S1dxTWlJZ01tN3U0dEJjenhjelFXMVYzbmZyZXF2TjdrcnJSbnU0enhYdk85NTJxN3VuSWlhbTk4RjNOZWd6d0ozcm1oc2g2REdPWkR1WS93ZzduWE1Wd1V1VCt3disrU09qUjNIbFA1enNaY251eGZ3ZytVcWptTkJHOHY4amZMeDBpK09qWStVOU44NXBSYjA5K2h1QWpReGQ0bWdpWlArbGZMeE44K0hQaGs5bE9oRXlmN005WHZpZjg4TzZpSjY3UExMZVpQTkVmQkI4R0xzNWdJblQ5QkwrdkpmeXdjOG5xN2laQlZ6LzgyOXJEaEIvbUxsMDl0ZU1jZC95RHY3NUsrS0hqc3NjN213UWQvZEF2aEIrQ0x1OWdFcVQrZ1o5ZkkvelFkY1ZqNlNaQnFnZWZmdjBId2c5NVZ6NTZYZUpjSjM3Z0tjS1BBcmtxNFNSSTlLQ1Q2d2cvaW1mQ3F2YVRvTzBEVHF3N1F2aFJXQk5YVFdtWjhXcTdKNmhKZlg0SHlGYkxlQSs5d2VxUDR1dDVwSGtWYVBvL2pyMzVJK0ZIYVV4NitOcUdXVy9hQXRINklBUU5ZMzUwUGFzL3ltZnl5dm9xMExBQ3NQb2pGSFZSUDdMaEtLcy9TbXZLaXNuak1sOVhBVmo5RVpKeGNULzhGcXMveW0vcVE2TlZZRndGcUVVcy93akwyY1FmZXZzblZuOEVZOXFEMTBUT2pha0FwQjhoR3AwQXREOElVT1NjYzkrK2M0d0NnT0RjK01Da3FPb2NsejRScnVFSllEMEt3TWhJQmFBRXBISFR5WlYxLysyYkNldURIVWVSUmM0NTkxWGZFRVVnZ1p0UDFBZnVYRjlQOUI5QWxYRVUzUzMzOVVUVmczMUROZEtmSFpWenFUSU9aUWY3aG1yUmw1dVBjNjRTdVBYNGlzU1BQWGoxaHRLUG95eXFwRDk3S3VkVVpSektxbHdDelo3S09WVVpoN0pxemZhYlVrdEo1WnlxakVNWkZjQURsWE9xTWc1bFRBQVBWTTZweWppVXNRbjJRT1djcW94RFdaVzd3TmxUT2FjcTQxQkdCZkJBNVp5cWpFTlpvZllBdDI5NTMrN0ZaeVovNkczdmVoeW55amphK0dMNUlyUFhUaVA2N0wxVDhndkY5QzA3ckljd2JPYno3Ujl6NE5sd3hwSEE1OHNYV3craHBVb3RHcjVhb0hySWhCOGRtYjVsaDNtR1doM1JKd09hRmVDT3pjTEJiN1FDVzZ5NEt1Tkk2Tk43OWFvQmQ0STdvUkl5bFhFa3BKaTE2TURXMDNJVllFYmZvUFVRNE1uSDkvVmFEMkdjU3MwTlh5NVRPUWgvdWMzb0d6VFAyTmlERzJISW5WTG1wQ3JBckUzYlBmKzZVREJyMDNienJJMnBBTDUvWGFDZVN1NllBRENoa2pzdWc4S0VTdTZvQURDaGtqdmVEUW9US3Juak1paE1xT1NPQ2dBVEtybGpEd0FUS3JtakJZSUpsZHpSQXNHRVN1NW9nV0JDSlhkVUFKaFF5UjE3QUpoUXlSMFZBQ1pVY3NjZUFDWlVja2NMQkJNcXVhTUZnZ21WM05FQ3dZUks3dmc4QUV5bzVJNEtBQk1xdVdNUEFCTXF1YU1Dd0lSSzdyZ01DaE1xdWROcWdaNjdmOGg2Q01oSDdhTXpQZFpqY0k0V0NFWlVjc2RsVUpoUXlSMFZBQ1pVY3FlMUIwQXdWSExIVlNDWVVNa2RMUkJNcU9TT0ZnZ21WSEpIQllBSmxkeHhHUlFtVkhKSEJZQUpsZHl4QjRBSmxkeHhHUlFtVkhKSEN3UVRLcm1qQllJSmxkelJBc0dFU3U2b0FEQ2hranYyQURDaGtydXFFeWxGQ0l4STdxb3l0UWhoRWNsZHhYb0FnS1dxUmlGQ2FGUnlSd3VVaFRVYjYvL0NRZFovNFNLUDE4aVRTTzZvQUoxb0ZNWjJqMGtiMWp4ZXc1Qks3dGdENUNWSm9EdDVMTHBDQzVSV04rR01mN2JaU3QxdDhOZHM3Q2xNRlJESkhTMVFVa1ZabGR0Tk1oRXF1YU1GU2lMcjhEZDZ2anhlQTNVcWtSdWVqUXBIVU1ZR05NQ3dXbWN0UHRnRHRPTXpuTDZEcjd3bkVNa2Rld0NZVU1rZGU0Qld5dENhbE9GMzhJZ1dDRFpFY2tjTEJCTXF1YU1GUXRDb0FEQ2hranYyQUxBaGtqc3FBRXlvNUk0OVFDdXFONUhTS01QdjRCRXRFR3lJNUk3M0FyVlQ1QlZVZU96V1dZc1BXaUFFalFxUWhQQksycFQ0bUsyekZoL3NBV0JESkhkVWdLVEVWOVJ4Q2pCVzY2ekZCM3VBTkFvUXJFS01VVWpGMVp5VE9ZcEFPV0RLWXp1WGRkWkdEdTRFdzRSSzdtaUJPcUc0MGlxT3FRQXFVYzA1bGFOUWxBS25OSmFFckxNV0gxU0FiaWdFVDJFTUJjWmwwRzVaQnJEQTRiZk9XbnhVZmYraVFZaURtTmNIMEFzY2ZEVmNCczFTSHNFc1MvaXRzelp5MEFKbHpXZEF5eEorWjUrMStHQVQ3SU9Qb0pZby9FcTRET3BMbG9FdFlmaXRzeFlmYklKOTZuWnpYTUxncTJFUGtJZE9nbHp5OEZ0bmpUMEE0UGhBVEg2U3RrTWxYL25QRXNrZExWRGVXZ1U4bFBBNys2elJBZ0dPeTZBMkdxMzBBYTMrenRsbkxUNm9BRmJHQmo2dzhDdmhFMkV3b1pJN0tnQ0N4bVZRMkJESkhTMlFwWUI3ZjVYYzBRSWhhTldnTGo5Q2hrcnVxQUFJbXRSYklmcjNPcjdVT1FEOWUxMlBkZGJpZzZ0QXlKOVE1dVJhb1A0OVZJRXlVL3YzbFdxQjRtTkE3Q1FoR3dON2RGcWYrSkNyQUVDZW9vRmROYUdPck43U2VTN1ltMFZsc1hXM2JrV3ZMSnNmUmRhRGFFWDU1S0U5NVgrL1pmT2pxT3JjY0Mra2JOdklTVnhDTlNpTStOOU1QVnZEZnhaRnVna2F0VzJYN21xQ1ltSVRqS0FWb2dVQ2ZLazQ1OXlTQmRvYllTQnJjZWJQL21sRWxYZm5BWGxpRDRDZ2pXdDlCbmRxM3hRRHN0QzdjTFRsSC8vWG9Zay9Bak91QmVwZHhHWVk1WFp1eHV1K0g0QVpnSkRVYllJWFV3VlFVbzJ5M2ZBYllyZ2tpbEEwdkF5NmFERlZBT1hTTE5OTnZ5T01HWUFRdE16NXprSHVDNkQ0RnZZMjcyaGEzZ2x1OVlOQUViVExjTnV2U1dVR29Nd1M1ZnVEN2JSQ0tKNEZkN2Z2WUJJdjhMdVlCQ2lRK1FuQzcxeUtkNE1tZlVMQVdwcXNwZzcxYmlvQmhNMUx1VkIzdEtydjNzWWtnSjU1UzlKM0tSMTlJS2FURndKODZqU1RYUVY1RDVVQUF1WjJzU0IzdlpMdjJjb2tnSjI1Uzd2clJqSnBaZll5Q1dEZ3JpN0Q3MXpHTjNxWkNNaERGc0dQWmI2WjNjY2tnRWR6TWd5L2N4N2Y2ck52Z0ltQTdNeFo1dWZLby9mTG1Vd0VkTU5YOEdPNVhjL2Z6MFJBQ3JNOUJ6K1crdzJ0L2YxTUJEUTMrNTU4YjdLYTN0SDlrTWtBNTl5ZE9ZZCtMTG0zTkRBcHlzMHk3STM4RDRwaGFYSDhzU01XQUFBQUFFbEZUa1N1UW1DQyIsICJzaXplcyI6ICIxOTJ4MTkyIiwgInR5cGUiOiAiaW1hZ2UvcG5nIiwgInB1cnBvc2UiOiAiYW55In0sIHsic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBZ0FBQUFJQUNBWUFBQUQwZU5UNkFBQVZMMGxFUVZSNG5PM2QyOU5rVjFrSDROMURvNGg0SUg0RUJMRXNFMjVGRkE5SVFzNkhDeVJFcllDSWlIaHAvcHg0S1NJaUFxS0JTRlV5U1lnaGs0QWxJU0hlVVNacWNRZ1FKZ2tnQW9yWVhzejBmRDNmc2J1L3ZkZDYxM3FmcDJyZlVHUm03OVhUKy9ldWQ2MjllellRMHVMUHY3aW9mUTRBWTVqOXljL1BhcDhEKy9sUUt2ay9BUTh3RE1Nd25GSWdWR0hRQ3hEMkFKdFJGRXpQQUUvZ2h3SWZZRlF2VUJDTXpvQ09RT0FEbEtVZ09Ea0R1S1Vmdmxmb0EwVHdndmNvQnJaaDBEYnd2MElmSUxTNVltQnRCdW9ZUWgrZ1RZcUJveG1jUXdoK2dENG9CQTVtVUZiODRMMWZFdm9BSFh2aGUxNHQ5ODR6RU1Ndy9PQXZCRDlBSmkvOFk0VkE2Z0g0SDhFUGtOcVBKQzRFVWw2NDRBZGdWY1pDSU5VRkMzNEFqcEtwRUVoeG9mLzlQc0VQd1BwKzlOMzlGd0tuYXAvQTFJUS9BSnZLa0IzZFZqZ1pQandBcHRkck42QzdpL3ErNEFkZ0FpL3FyQkRvNm1LKy83NHZDMzhBSnZPaWQvOWNON25aeFlWODd5OEZQd0RsL05nZnRWOElOTDhKVVBnRFVGb1AyZE4wQWREREJ3QkFtMXJQb0NaYkdOOXRmTkFCNk11TEcxd1NhSzRESVB3QmlLYkZiR3FxWXZudSs5c2JZQUR5ZVBHNzJ1a0VOSEdpL3lYNEFXaklqemRRQ0lSZkFoRCtBTFNtaGV3S1hhRjg1LzFmQ1QrQUFIQ1lsN3pyVldGek51eUpmZWV2aEQ4QTdYdkpIOFlzQWtJdUFRaC9BSG9STmRQQ1ZTWC9HWFNnQU9Ba2ZpSllKeUJVQjBENEE5Q3JhQmtYcGdDSU5qQUFNTFpJV1JlaUhmSHREOFFaRUFDWTJrKytzLzV5UVBVT2dQQUhJSnNJMlZlMUFJZ3dBQUJRUSswTXJOYUMrTllIbmhiK0FLVDNVKzk4WlpVc3J0SUJFUDRBY0U2dFRDeGVkWHp6cjRVL0FPejEwMzlRdGhOUXRBTWcvQUhnWUtVenNsZ0JJUHdCNEdnbHM3Skl1K0Y1NFE4QWEzdHBnZVdBK2RSL3dUQU1RVjQzQkFBc1RiNEU4UHdIemY0QllCTWxzblBTdWZsendoOEF0bmJKTzZaYkNwanNEMzd1ZzE4Vi9nQndRcGU4NDJjbnllcko5Z0JJZndDSWE1S3E0dG0vTWZzSGdMSDh6TytQM3dVWWZST2c4QWVBY1UyUnJhTldGR2VGUHdCTVptZkVUa0RWbndNR0FPb1lyUUF3K3dlQWFZMlp0YU8wRXI3eEllRVBBS1c4N08wblh3b1k2VEZBNy9vRmdKYWNPTG1mK2REWHpQNEJvTEJMMy82S0UyVzRUWUFBa05DSnFvZG5QbXoyRHdDMVhQcTI3YnNBVy8rSFh4ZitBRkRkeTdjc0Fpd0JBRUJDV3hVQVp2OEFFTU8ybWJ6Vlk0RFNId0RhdHZHNndkYytZdllQQU5HODRyYk45Z0pzM0FGWWVPa1BBRFJ2b3owQVgvM0kxODMrQVNDZ1RUUGFVd0FBa05EYS9meW56ZjRCSUx4WDN2Ynl0Yko5L1QwQWx2NEJvQnRyTFFFOC9iZG0vd0RRZ25VemU2ME9nUFFIZ0w3WUJBZ0FDUjI3c3YrVmoyci9BMEJyWHZWN1IyOEdQSFlKd0l0L0FLQS9SeTRCZlBtano1ajlBMENEanN2d0l6c0EwaDhBK21RVElBQWtkT2dDLzVmK1R2c2ZBRnIzNnQrOTlNQ3NQM1FKUVBvRFFMOHNBUUJBUWdjV0FGL1UvZ2VBTGh5VzZRY3VBVWgvQU9qYndYc0FabDcrQXdBOTI1ZjAvL0gzMzlBQUFJRE8vTUx2dk95aXpMY0pFQUFTVWdBQVFFTDc5Z0FzTFA4RFFQY3U2Z0Q4KzUzVy93R2dSM3N6M2hJQUFDUjAwUktBNlQ4QTVLQURBQUFKWGRqeTk5VEh6bW9BQUVEbkxudnJ6bXdZanZnMVFPQnd2L2o4MjQ3OS8vemJTejljNEV4eU1ONHdQaDBBMk1BNlFiU1hZTnFlOFlieExUc0FGd3FBSnhVQWNLakx0Z2lpdlo0U1RHc3ozakNkeTg4WEFEWUJ3akhHQ0tNeC81emVHVzhvWXpZTXcvRGt4ODMrNFNDWFBUZCtpRHgxaVpucFlZdzNsSEg1TFR2bmZ2ZjNYeFVBc00vbEU0VFIwcE5DYVIvakRlVzg1cGFkbVNVQUFFaElBUUFIbUhJMld1TFBiNDN4aHZMbXd6QU1pNW1mQUlUU2ZPL0tNdDV3TVIwQTJPTTF6OTdXMWQ4VG5mR0dPczUxQUdxZkJTVGx1MWVXOFlaZE9nQUFrTkNwTDl6MXJLSVlBQkw1d2wzUEx1WUwrMktnR3QrL3NvdzM3TElFQUFBSktRQUFJS0g1WXRBVGcxcDgvOG95M3JCTEJ3QUFFcklKRUNyeS9TdkxlTU11SFFBQVNFZ0JBQUFKemIwRkNPcngvU3ZMZU1PdXVVMnhVSkh2WDFuR0d5NndCQUFBQ1ZrQ2dJcDgvOG95M3JCcnJpY0dOZm4rbFdXOFlVa0hBQ3J5L1N2TGVNTXVtd0NoSnQrL3NvdzNYR0FUSUFBa1pBa0FLdkw5Szh0NHd5NGRBQUJJU0FFQUFBbjVOVUNveVBldkxPTU51MlpQM1AyOFpiSE8vTkluL3JIMktiVHY5WDgyL2QveDZKOU8vM2Uwd25nMzRWL2VmRTN0VTJCRTg0WG5ZcHIzMms4OFVQc1VnQVQyVGk2ZWVQTzFsYzZFTWN3K2YvYzNkUUFhSmZnbk51V3MxR3gwUCtQZExJVkFtN3dJcURHdi9RZWhEOFN5T2hsNTRyY1ZBNjJZUFg2UERrQXJmbG40bHpmRnJOUnM5SERHdXd1ZlZ3UTBRUUhRQU1GZjJaaWhKSXlPWjd5N29SQ0l6WHNBZ2hQK0FZd1ZJc0pvUGNhN0crNWZzYzBlMHdFSTYzVytQUEZzTXpzVlJOc3ozbDE0WENjZ3BObGpweFVBRWIzdUx1RWYyanJCSklqR1k3eWI5L2hiRkFIUktBQUNFdjVBanhRQnNjdytkL3BiQ29CQWZ1V3VUOVkrQllESlBQYVc2MnFmQXVmWkJCaUk4QWQ2NXo0WHgrelJlM1VBSXZqVmovdFNBSGw4N2hhZGdOcDBBQUlRL2tBMjdudjFLUUFBSUtIWlp5MEJWUFY2VlRDUTJLT1dBcXJSQWFoSStBUFp1US9XNDljQUFhaExEbFV4MS84SG9DWTVWTWZzbisvN3RyR3Y0TmMrZG4vdFV3QUk0N052dmI3MkthU2pBd0JBZGJLb1BKc0FLL2gxczMrQWk3Z3ZsbWNUSUFBeHlLT2lMQUVBRUlJOEtzc1NBQUFrcEFBbzdEZnV0TTRGY0JEM3g3TG1DMnN1QUFRaGs4clJBUUNBaE9ZTDJ5NEJDRUltbGFNREFBQUpLUUFBSUNHYkFBRUlReWFWb3dNQUFBa3BBQUFnSWE4Q0JpQU1tVlNPRGdBQUpEUmZ6T3k0QUNBR21WU09EZ0FBSktRQUFJQ0ViQUlFSUF5WlZNN2NhNWNCQ0VNbUZXTUpBQUFTc2dRQVFCZ3lxUndkQUFCSVNBRUFBQWw1RVJBQVljaWtjblFBQUNBaG13QUJDRU1tbGFNREFBQUpLUUFBSUtINXduNExBSUtRU2VYb0FBQkFRZ29BQUVqSVV3QUFoQ0dUeXBrUFhyb0FRQlF5cVJnZEFBRENrRW5sMkFNQUFBa3BBQUFnSVVzQUFJUWhrOHFaRC9aYkFCREJIYmVlSFI3NTNrN3QwOGpDRWdBQUpHUUpBSUF3WkZJNU9nQUFrTkI4WVJNQUFFSElwSEpzQWdRZ0RwbFVqQ1VBQUVqSUprQUF3cEJKNWVnQUFFQkM5Z0FBRUlkTUtzWVNBQUJoeUtSeUxBRUFRRUlLQUFCSXlJdUFBQWhESnBWakV5QUFjY2lrWW13Q0JDQU1tVlNPUFFBQWtKQUNBQUFTc2dRQVFCZ3lxUnliQUFHSVF5WVZZd2tBQUJLeUJBQkFHREtwbkxsK0N3Qnh5S1JTNWd0akRVQVFNcWtjZXdBQUlLRjU3Uk5JNTQ1Yno5WStCUUN3Q1JDQU1HUlNPWllBQUNBaEx3SUNJQTZaVkl3bEFBRENrRW5sZUE4QUFJSElwRkowQUFBSVF5YVZZeE1nQUNSa0V5QUFjY2lrWWl3QkFCQ0dUQ3JIRWdBQUpLUUFBSUNFL0JvZ0FHSElwSEowQUFBZ29mbkNsa3NBZ3BCSjVlZ0FBRUJDQ2dBQVNNZ21RQURDa0VubDZBQUFRRUlLQUFCSXlLdUFBUWhESnBXakF3QUFDZmsxUUFEaWtFbkZlQkVRQUdISXBISXNBUUJBUWpZQkFoQ0dUQ3JISGdBQTRwQkp4VmdDQUlDRUxBRUFFSVpNS2tjSEFBQVNVZ0FBUUVKK0RSQ0FNR1JTT1hOYkxnR0lReWFWWWhNZ0FHSElwSExzQVFDQWhCUUFBSkNRVFlBQWhDR1R5dEVCQUlDRUZBQUFrSkNuQUFBSVF5YVY0OWNBQVloREpoVXpYeGh0QUlLUVNlWFlBd0FBQ1NrQUFDQWhtd0FCQ0VNbWxXTVRJQUJ4eUtSaUxBRUFRRUtXQUFBSVF5YVZvd01BQUFuTmg1a0ZGd0NDa0VuRnpQVmJBQWhESmhWakNRQUFFbElBQUVCQ0NnQUFTRWdCQUFBSktRQUFJS0c1Qnk0QWlFSW1sYU1EQUFBSktRQUFJQ0V2QWdJZ0RwbFVqQTRBMUhMN25UdTFUNkU2WXdEVnpHdWZBS1J3V05BZDlML2ZjZXZacVUrbkNtTUFvWGdLQU1ZMHhveTJoMEE4NlRnYzl0KzNOZzVzVENhVm93TUFZNWk2bGIzODg2TUhvSEdBWmlnQVlGczExcTlYLzg0b0lXZ2NvRWsyQWNJMklteGVjdzV4emdFYXBBTUFtNGdXTnJWYTRzWUJtcWNEQU91S0ZucXJTcDZiY1lBdW5Kb3Roc0ZSN3FCUkxRUkxpWE0wRGt5czlqMDYwNkVEQU1kcEtWQnV2M05ua3ZPZDZzK2RTa3ZuQ3BVb0FPQXdyWVhlcWpIUHUrVXhhUFhjb1FBRkFCeWtoK0NZNnFWRXJlbmhHbUFDQ2dEWXE2ZkFPTW0xR0Fmb21nSUFlcmROK0FsTTZONnAyVEFNam5JSHdmVWFmSnRjbHpHZ290cjM2RXlIRGdBc0NZaisrWXpoQWdVQURFT09ZRmpuR28wRHBERWZ2SndHZ0Noa1VqRTZBSkJwUm5qVXRSb0hTRVVCQUFBSktRRElMZU5NOEtCck5nNlF6dHlqYVFCRUlaUEswUUVncjh3endOVnJOdzZRa2dJQUFCSlNBSkNUbVI5TC9pMlExTHoyQ1FDVkNENUl6WXVBQUloREpoWGpLUUFBd3BCSjVkZ0RRRDVhMyt6bDN3UUpLUUFBSUNFRkFBQWtwQUFBZ0lRVUFBQ1FrS2NBQUFoREpwV2pBd0FBQ1hrUkVBQnh5S1JpZEFBQUlDRUZBQUFrcEFBQWdJUk96WVp6dXk0ZFpRNEN1T1BXczdWUGdXRDhtd2lqOWowNjA2RURBQUFKS1FBQUlDRUZBQUFrcEFBZ0oydStMUG0zUUZKZUJBUkFIREtwR0IwQUFFaklZNENGRHdMUitzVy9nWEJxMzZNekhUb0FBSkNRQW9EY3pBRHo4dG1UbkFJQUFCSlNBSUNaWUQ0K2MxQUFBRUJHbmdJb2ZCQ1VHV0VlUHV2UWF0K2pNeDA2QUxBa0dQcm5NNFlMdkFrUWdEaGtVakU2QUxES0RMRmZQbHU0aUFJQUFCSlNBTUJlWm9yOThabkNQbk03MHdHSVFpYVZvd01BQnpGajdJZlBFZzZrQUlERENJNzIrUXpoVUFvQU9Jb0FhWmZQRG82a0FJRGpDSkwyK016Z1dLZUd4VEE0Q2g2MFNhQzB3MmZWdHRyMzZFU0gzd0lvZk5Bd3dSS2Z6Nmg1dGUvUm1RNUxBTEFKQVJPWHp3WTJvZ0FBZ0lRVUFMQXBNODE0ZkNhd01RVUFiRVBneE9HemdLMG9BR0JiZ3FjK253RnNiVjc3QktCcHl3QzYvYzZkeW1lU2krQ0hFL01ZWU9HRFRnbWtjb3gxMTJyZm96TWRYZ1JVK3FCZmdtbDZ4cmgvdGUvUmlRNTdBR0JNQW1vNnhoWkdwUUNBc1FtcThSbFRHSjFOZ0RBRm13UEhJZmhoTWpvQU1DVUJ0ajFqQjVQeUZFRGhnNFFFMmVhTVdWcTE3OUdaRGgwQUtFR2dyYzlZUVJFS0FDaEZzQjNQR0VFeENnQW9TY0FkenRoQVVWNEVWUG9BUWJlZk1XR3A5ajA2MGFFREFEVUl2RjNHQXFyd0ZFRGhBeTRRZk1hQWZXcmZvek1kWGdRRU5XVjlZWkRnaCtvc0FVQUVtUUl4MDdWQ1lBb0FpQ0pETUdhNFJtaUVBZ0FpNlRrZ2U3NDJhSkFDQUtMcE1TaDd2Q1pvbktjQUNoK3dscDRDczZkcllYSzE3OUdaRGk4Q0tuM0F1bm9Jemg2dWdiSnEzNk1USFpZQUlMS1dBN1RsYzRjRUZBQVFYWXRCMnVJNVF6SmVCQVF0YU9XRlFZSWZtcUVEQUMySkhMQ1J6dzNZUndFQXJZa1l0QkhQQ1RpU3h3QUxIekNLU0lFYjZWeG9YdTE3ZEtaREJ3QmFGU0Y0STV3RHNCVUZBTFNzWmdBTGYyaWFGd0dWUG1Cc05ZSlkrRE9WMnZmb1JJY09BUFNnWkNBTGYraUNBZ0I2VVNLWWhUOTB3MU1BaFErWTFKUUJMZndwb1BZOU90T2hBd0M5bVNLb2hUOTBSd0VBUFJvenNJVS9kRWtCQUwwYUk3aUZQM1JMQVFBOU8wbUFDMy9vbWdJQWVyZE5rQXQvNk41ODV1VTBBQVFoazhyUkFZQU1OcG5SbS8xRENnb0FBRWhJQVFCWnJET3pOL3VITkJRQUFKQ1FBZ0F5T1dxR2IvWVBxZmd0Z01JSFZIZFEwQXQvZ3FoOWo4NTA2QUFBUUVJS0FNaG9kY1p2OWc4cEtRQUFJS0g1NEsxTEFFUWhrNHJSQVFDQWhCUUFBSkRRM0tOcGtKVE5md1FrazhyUkFRQ0FoQlFBQUpDUUFnQUFFbElBQUVCQ0NnQUFTR2crODlJRkFJS1FTZVhvQUFCQVFncUF3dTUrWk5pcGZRNEFFYmsvbHFVQUFJQ0VGQUFBa0pBQ0FBQVNtdDM5OE1LZXl3cHVmdVBnUGV3QTU5MWovYjg0SFFBQVNFZ0JVSWxxRitBYzk4TTY1b01GQUFCcWtrTlY2QUFBUUVJS2dJcnVlVmpiQzhqTmZiQ2UyVDFuUEFWUTIwMVhlQ0lBeU9lMDhLOUtCd0FBRWxJQUJLQUtCckp4MzZ0UEFSQ0VMd09RaGZ0ZERLZHV2bkkycTMwU25PTkxBZlRPZlM2R202K2N6WFFBZ3ZIbEFIcmwvaGJMZkJnR0wyRUk1dlNaWWVlbUt6MFpBUFRqOUJuaEg4MThHSWJCR2tBODk1NFpkbTVVQkFBZHVQZk1zQ05uNHJFRUVOaTlLbWFnY2U1amNTa0FndlBsQVZybC9oWGJ2UFlKY0x6bGw4aVNBTkFDd2Q4R0hZQ0crRklCMGJsUHRlUEN2b3pURC9sTmdOYm9DQUFSQ1AyMjNQU21jKy8vdWJBRVlJZG1lKzQ3LzZXN1FTRUFWTEM4QjhtUE50a0QwSUg3OWxUZkNnSmdDbnZ2TmJSdHR3Q3dBTkNOK3g3eUpRWGdhRFlCQWtCQ0Z3cUFHNi95bzBBQTBMUFZyTmNCQUlDRUx0b0VxQVVBQURub0FBQkFRaGNWQURmWUJ3QUFYZHFiOFRvQUFKQ1FBZ0FBRXRyL0prQXZCQUtBN2gyNDVuLy9nMzRZQ0FCNmNmM1YrL2Y0V1FJQWdJUVVBQUNRMElFRndFR3RBZ0NnUFlkbHVnNEFBQ1NrQUFDQWhBNHRBQ3dEQUVEYmpzcnkvZThCV0tFQ0FJQStIVmtBZUNrUUFQVHB5RDBBMTExakdRQUFXblJjaHRzRUNBQUpIVnNBNkFJQVFGdld5VzRkQUFCSTZPaE5nT2RwQVFCQVg5YnFBRnhyR1FBQW1yQnVabHNDQUlDRTFpNEFkQUVBSUxaTnNsb0hBQUFTMm5oVy84QURDKzhIQklCZ3JyMTJzMDc5V2s4QnJMSU9BQUR0MjNnSjRKb05Ld3dBWUZyYlpMTTlBQUNRMEZZRmdDNEFBTVN3YlNickFBQkFRbHNYQUxvQUFGRFhTYkw0eENIK29NY0NBYUM0cTA4NEViY0VBQUFKamRMR2YvQ1R1Z0FBVU1yVjE1MThHVjRIQUFBU0dxVUFHS01TQVFDT04xYm1qdFlCVUFRQXdMVEd6RnBMQUFDUTBPaXo5ay9aRUFnQW83dHE1RTc3NkIyQXNVOFFBTEtiSWxzbldRSlFCQURBT0tiS1ZIc0FBQ0NoU1dmcW43cmZmZ0FBMk5aVjEwL1hVWiswQXpEbGlRTkF6NmJPMENJQi9aQk9BQUNzN1UwRkp0RDJBQUJBUWtVS2dCS1ZEQUQwb0ZSbUZ1c0FLQUlBNEdnbHM3TG9Fb0FpQUFBT1Zqb2ppKzhCVUFRQXdNVnFaR08xTUQ3anlRQUFHSzZzTkRHdU9ocy9jNThpQUlDOHJyeWhYbGU4Nm1PQU5TOGNBR3FxbllIVjN3TlFld0FBb0xRSTJWZTlBQmlHR0FNQkFDVkV5YndRQmNBd3hCa1FBSmhLcEt3TGN5SkxEOXNZQ0VDSHJnZ1Uvc01RcUFPd0ZHMkFBT0NrSW1aYnVBSmdHR0lPRkFCc0kycW1oU3dBaGlIdWdBSEF1aUpuV2RnVFczcjRYbnNDQUdqUEZUZkdEZjloQ053QldJbytnQUN3Vnd2WkZmNEVWK2tHQUJCWkM4Ry8xTXlKTGoyaUNBQWdvRGMyRlA3RDBNQVN3RjZ0RFRBQS9Xc3htNW83NFZXNkFRRFUxR0x3THpYWEFWalY4c0FEMExiV002anBBbUFZMnY4QUFHaFBEOW5UL0FXc3NpUUF3SlI2Q1A2bGJpNWs2ZE9uRlFFQWpPKzNidW9uL0llaHd3SmdTU0VBd0JoNkMvNmxMaTlxbFVJQWdHMzBHdnhMelc4Q1BFN3ZIeUFBNDh1UUhkMWY0Q3JkQUFDT2tpSDRsOUpjNkNxRkFBQ3JNZ1gvVXJvTFh2VVpoUUJBYW05SUdQeExhUzk4bFVJQUlKZk13YitVZmdCV0tRUUEraWI0ZHhtSVEzem1Ic1VBUUEvZWNMUFFQNGhCT1laQ0FLQk5ndjlvQm1jRGlnR0EySVQrK2d6VWx2NUpNUUFRd204Sy9hMFl0QkVvQmdES0V2b25ad0Fub0NBQUdKZkFINThCTFVCQkFMQVpnVDg5QTF5Sm9nRGdIR0ZmaDBFUFNvRUE5RUxBeC9UL2krOUlJQkY4alY0QUFBQUFTVVZPUks1Q1lJST0iLCAic2l6ZXMiOiAiNTEyeDUxMiIsICJ0eXBlIjogImltYWdlL3BuZyIsICJwdXJwb3NlIjogImFueSBtYXNrYWJsZSJ9XX0=">
+    <meta name="theme-color" content="#ff6bae">
+
+    <!-- iPhone(Safari)でアプリみたいに全画面で開くための設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="日めくり💖">
+    <link rel="apple-touch-icon" href="data:image/png;base64,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">
+
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'ヒラギノ丸ゴ ProN', sans-serif;
+            background: linear-gradient(135deg, #ff9de2, #ffb3ba, #ffd6a5, #ffffa1, #b5ffb8, #a0d4ff, #c9b8ff);
+            background-size: 400% 400%;
+            animation: rainbowBG 8s ease infinite;
+            overflow-x: hidden;
+            padding: 30px 15px;
+            /* iPhoneのノッチ・ホームバー部分を避ける */
+            padding-top: max(30px, env(safe-area-inset-top));
+            padding-bottom: max(30px, env(safe-area-inset-bottom));
+            padding-left: max(15px, env(safe-area-inset-left));
+            padding-right: max(15px, env(safe-area-inset-right));
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 季節ごとの背景 */
+        body.season-spring {
+            background: linear-gradient(135deg, #ffc2dd, #ffd6e8, #fff0b3, #d6ffd9, #ffc9f0, #ffe3ef);
+            background-size: 400% 400%;
+        }
+        body.season-summer {
+            background: linear-gradient(135deg, #7fd8ff, #a0ffd0, #fffa9e, #ffd6a5, #8fe3ff, #b5ffb8);
+            background-size: 400% 400%;
+        }
+        body.season-autumn {
+            background: linear-gradient(135deg, #ffba6b, #ffd6a5, #ff9e7d, #ffe8a1, #e8a87c, #ffc48c);
+            background-size: 400% 400%;
+        }
+        body.season-winter {
+            background: linear-gradient(135deg, #c9e6ff, #e8f4ff, #d6dcff, #f0f8ff, #b8d8ff, #e0f0ff);
+            background-size: 400% 400%;
+        }
+
+        @keyframes rainbowBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 浮かぶデコレーション */
+        .deco {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* メインカード */
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 50px 60px;
+            text-align: center;
+            box-shadow:
+                0 20px 60px rgba(255, 100, 200, 0.3),
+                0 0 0 4px rgba(255, 255, 255, 0.6);
+            max-width: 480px;
+            width: 90%;
+            position: relative;
+            animation: cardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes cardPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            border-radius: 43px;
+            background: linear-gradient(135deg, #ff9de2, #a0d4ff, #b5ffb8, #ffffa1, #ff9de2);
+            background-size: 300% 300%;
+            animation: rainbowBG 3s ease infinite;
+            z-index: -1;
+        }
+
+        /* タイトル */
+        .title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ff6bae;
+            letter-spacing: 0.15em;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 8px rgba(255, 107, 174, 0.3);
+        }
+
+        /* 月 */
+        .month {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #9b59ff;
+            letter-spacing: 0.2em;
+            margin-bottom: 5px;
+        }
+
+        /* 日付 */
+        .day {
+            font-size: 7rem;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, #ff6bae, #ff9f43, #ffd93d, #6bcb77, #4da6ff, #c77dff);
+            background-size: 300% 300%;
+            animation: rainbowBG 3s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+            text-shadow: none;
+            filter: drop-shadow(0 4px 8px rgba(200, 100, 255, 0.3));
+        }
+
+        /* 曜日 */
+        .weekday {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff8c42;
+            margin-bottom: 30px;
+            letter-spacing: 0.1em;
+        }
+
+        /* 区切り線 */
+        .divider {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ff9de2, #a0d4ff, #b5ffb8, transparent);
+            border-radius: 2px;
+            margin: 0 auto 25px;
+            width: 80%;
+        }
+
+        /* ポエムエリア */
+        .poem-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #aaa;
+            letter-spacing: 0.2em;
+            margin-bottom: 12px;
+        }
+
+        .poem {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #555;
+            line-height: 1.9;
+            background: linear-gradient(135deg, rgba(255, 157, 226, 0.15), rgba(160, 212, 255, 0.15));
+            border-radius: 20px;
+            padding: 20px 25px;
+            border-left: 4px solid transparent;
+            border-image: linear-gradient(to bottom, #ff9de2, #a0d4ff) 1;
+            animation: poemFade 1s ease;
+        }
+
+        @keyframes poemFade {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 誕生日バナー */
+        .birthday-banner {
+            display: none;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, #ff6bae, #ff9f43, #ffd93d, #ff6bae);
+            background-size: 300% 300%;
+            animation: rainbowBG 2s ease infinite, bounce 1s ease infinite;
+            border-radius: 20px;
+            padding: 14px 20px;
+            margin-bottom: 25px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 20px rgba(255, 107, 174, 0.4);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* 日めくりナビ */
+        .nav-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9de2, #a0d4ff);
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(255, 157, 226, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 18px rgba(255, 157, 226, 0.5);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .today-btn {
+            display: none;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ff6bae, #ff9f43);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 900;
+            font-family: inherit;
+            padding: 8px 18px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(255, 107, 174, 0.3);
+        }
+
+        .today-btn:hover {
+            transform: scale(1.08);
+        }
+
+        /* メモエリア */
+        .memo-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #aaa;
+            letter-spacing: 0.2em;
+            margin: 25px 0 12px;
+        }
+
+        .memo-input {
+            width: 100%;
+            min-height: 70px;
+            border: 3px solid rgba(255, 157, 226, 0.5);
+            border-radius: 20px;
+            padding: 15px 20px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #555;
+            background: rgba(255, 255, 255, 0.7);
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .memo-input:focus {
+            border-color: #ff9de2;
+            box-shadow: 0 0 12px rgba(255, 157, 226, 0.4);
+        }
+
+        .memo-status {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #ff6bae;
+            height: 1.2em;
+            margin-top: 6px;
+        }
+
+        /* フッター */
+        .footer {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: #ccc;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="title">✨ ミクロ姉の日めくりカレンダー ✨</div>
+        <div class="month" id="month"></div>
+        <div class="nav-area">
+            <button class="nav-btn" id="prevBtn" title="前の日">◀</button>
+            <div class="day" id="day"></div>
+            <button class="nav-btn" id="nextBtn" title="次の日">▶</button>
+        </div>
+        <div class="weekday" id="weekday"></div>
+        <button class="today-btn" id="todayBtn">📅 今日に戻る</button>
+        <div class="birthday-banner" id="birthdayBanner"></div>
+        <div class="divider"></div>
+        <div class="poem-label">💌 今日のミクロ姉ポエム</div>
+        <div class="poem" id="poem"></div>
+        <div class="memo-label">📝 今日のひとことメモ</div>
+        <textarea class="memo-input" id="memoInput" placeholder="今日の気持ちや出来事を書いてみてね🌸"></textarea>
+        <div class="memo-status" id="memoStatus"></div>
+        <div class="footer">今日も最高の一日を💖</div>
+    </div>
+
+    <script>
+        const poems = [
+            "今日という日はたった一回だけ\nだから全力でかわいくいこ🌈",
+            "朝の光があなたに笑いかけてる\n笑い返してあげてね☀️",
+            "小さなことでいいんだよ\n今日もひとつ、ときめいてみて💫",
+            "あなたがいるだけで\n世界がちょっとあたたかい🌸",
+            "失敗してもだいじょぶ\nミクロ姉がそっと応援してるよ✨",
+            "今日の空の色は何色？\nあなたの心の色と同じかもね🌤️",
+            "ゆっくりでいい、あせらなくていい\nあなたのペースが一番素敵💖",
+            "好きなものを思い浮かべて\nそれだけでもう今日は勝ちだよ🎉",
+            "深呼吸して、さあ行こう\n今日もあなたらしく輝いて🌟",
+            "誰かに一言やさしくしてみて\nきっと自分にも返ってくるよ🦋",
+            "今日も生きてることに\nこっそりありがとうって言ってみて🌺",
+            "ちょっぴりサボっても大丈夫\n人間だもの、休もうよ☁️",
+            "あなたの笑顔はね\nちゃんと誰かの力になってるよ🌻",
+            "今日の自分をほめてあげて\n昨日よりちょっと、成長してるから💪",
+            "空を見上げるだけで\n心がすこし広くなるよ🌙",
+            "好きな音楽をかけて\n今日という日を踊っちゃおう🎵",
+            "難しい顔しなくていいよ\nあなたのそのままが最高だから🌈",
+            "誰かのことを思うとき\nあなたはもうやさしさの使い手だよ💫",
+            "今日のおやつは何にする？\n小さな楽しみが人生を彩るよ🍰",
+            "夢を持つのは自由だよ\nどんな夢でも、笑わないからね✨",
+            "あなたが選んだ今日という日\nそれだけで十分、素晴らしい🌸",
+            "転んでも立ち上がれるのは\nあなたの中に光があるから🌟",
+            "今日も世界はあなたのもの\nちょっとだけ好き勝手していいよ🎊",
+            "やさしい言葉をひとつ\n自分にもプレゼントしてあげて💝",
+            "今日という日に出会えたこと\nそれだけでもうラッキーだよ🍀",
+            "あなたの存在が\n誰かの安心になってるんだよ🌺",
+            "疲れた時は休んでいい\n強さって、休めることでもあるから💤",
+            "今日もあなたの物語が続いてる\nどんなページも大切な一ページ📖",
+            "空の星の数だけ\nあなたを応援してる人がいるよ⭐",
+            "今日もお疲れ様でした\n明日もまたよろしくね🌙",
+            "月の最後の日だよ\n今月のあなた、本当によく頑張ったね🎉"
+        ];
+
+        const weekdays = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+        const weekdayColors = ["#ff6b6b", "#4da6ff", "#4da6ff", "#4da6ff", "#4da6ff", "#4da6ff", "#ff9f43"];
+
+        // お誕生日リスト(公開版では空にしてあるよ。
+        //  使う人が自分で { month: 月, day: 日, name: "名前" } を足してね)
+        const birthdays = [];
+
+        const seasons = {
+            spring: { class: "season-spring", decos: ['🌸', '🌷', '🦋', '💮', '🌼', '✨', '💖'] },
+            summer: { class: "season-summer", decos: ['🌻', '🌊', '🍉', '🎐', '⭐', '🎆', '💙'] },
+            autumn: { class: "season-autumn", decos: ['🍁', '🍂', '🌰', '🍇', '🌾', '✨', '🧡'] },
+            winter: { class: "season-winter", decos: ['❄️', '⛄', '🌨️', '💎', '🤍', '✨', '💙'] }
+        };
+
+        function getSeason(month) {
+            if (month >= 3 && month <= 5) return seasons.spring;
+            if (month >= 6 && month <= 8) return seasons.summer;
+            if (month >= 9 && month <= 11) return seasons.autumn;
+            return seasons.winter;
+        }
+
+        let currentDecos = ['🌸', '⭐', '💖', '✨', '🌈', '🦋', '💫', '🌺', '🎀', '💝'];
+
+        // 日めくりナビ用の表示日付
+        let displayDate = new Date();
+
+        function isToday(date) {
+            const now = new Date();
+            return date.getFullYear() === now.getFullYear() &&
+                   date.getMonth() === now.getMonth() &&
+                   date.getDate() === now.getDate();
+        }
+
+        function updateCalendar() {
+            const month = displayDate.getMonth() + 1;
+            const day = displayDate.getDate();
+            const weekday = displayDate.getDay();
+
+            document.getElementById('month').textContent = `${month}月`;
+            document.getElementById('day').textContent = day;
+            document.getElementById('weekday').textContent = weekdays[weekday];
+            document.getElementById('weekday').style.color = weekdayColors[weekday];
+
+            // 日ごとのポエム
+            const poemIndex = (day - 1) % poems.length;
+            document.getElementById('poem').textContent = poems[poemIndex];
+
+            // 季節の演出
+            const season = getSeason(month);
+            document.body.className = season.class;
+            currentDecos = season.decos;
+
+            // 誕生日の演出
+            const bday = birthdays.find(b => b.month === month && b.day === day);
+            const banner = document.getElementById('birthdayBanner');
+            if (bday) {
+                banner.textContent = `🎂 今日は${bday.name}のお誕生日！🎉`;
+                banner.style.display = 'block';
+                currentDecos = ['🎂', '🎉', '🎈', '🎁', '🥳', '✨', '💖'];
+            } else {
+                banner.style.display = 'none';
+            }
+
+            // 「今日に戻る」ボタンの表示
+            document.getElementById('todayBtn').style.display = isToday(displayDate) ? 'none' : 'inline-block';
+
+            // メモの読み込み
+            loadMemo();
+        }
+
+        // 日めくりナビのイベント
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            displayDate.setDate(displayDate.getDate() - 1);
+            updateCalendar();
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            displayDate.setDate(displayDate.getDate() + 1);
+            updateCalendar();
+        });
+
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            displayDate = new Date();
+            updateCalendar();
+        });
+
+        // メモ機能(表示中の日付に対応)
+        const memoInput = document.getElementById('memoInput');
+        const memoStatus = document.getElementById('memoStatus');
+
+        function memoKey() {
+            return `mikuro-memo-${displayDate.getFullYear()}-${(displayDate.getMonth() + 1)}-${displayDate.getDate()}`;
+        }
+
+        function loadMemo() {
+            memoInput.value = localStorage.getItem(memoKey()) || '';
+        }
+
+        updateCalendar();
+
+        let saveTimer;
+        memoInput.addEventListener('input', () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                localStorage.setItem(memoKey(), memoInput.value);
+                memoStatus.textContent = '保存したよ💾✨';
+                setTimeout(() => { memoStatus.textContent = ''; }, 2000);
+            }, 500);
+        });
+
+        // 浮かぶデコを生成
+        function createDeco() {
+            const deco = document.createElement('div');
+            deco.className = 'deco';
+            deco.textContent = currentDecos[Math.floor(Math.random() * currentDecos.length)];
+            deco.style.left = Math.random() * 90 + 5 + 'vw';
+            deco.style.top = '100vh';
+            deco.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
+            deco.style.opacity = '0.5';
+            document.body.appendChild(deco);
+
+            const duration = 5000 + Math.random() * 4000;
+            const start = performance.now();
+            const startRotate = Math.random() * 360;
+
+            function step(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const y = (1 - progress) * 100;
+                const rotate = startRotate + progress * 360;
+                const opacity = progress < 0.8 ? 0.5 : 0.5 * (1 - (progress - 0.8) / 0.2);
+                deco.style.top = y + 'vh';
+                deco.style.transform = 'rotate(' + rotate + 'deg)';
+                deco.style.opacity = opacity;
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    deco.remove();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        setInterval(createDeco, 700);
+
+    </script>
+</body>
+</html>

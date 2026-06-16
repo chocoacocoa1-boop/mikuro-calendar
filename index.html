@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>ミクロ姉の日めくりカレンダー💖</title>
+
+    <!-- PWA(ホーム画面アプリ)設定 -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6bae">
+
+    <!-- iPhone(Safari)でアプリみたいに全画面で開くための設定 -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="日めくり💖">
+    <link rel="apple-touch-icon" href="icon-180.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background: linear-gradient(135deg, #ff9de2, #ffb3ba, #ffd6a5, #ffffa1, #b5ffb8, #a0d4ff, #c9b8ff);
+            background-size: 400% 400%;
+            animation: rainbowBG 8s ease infinite;
+            overflow-x: hidden;
+            padding: 30px 15px;
+            /* iPhoneのノッチ・ホームバー部分を避ける */
+            padding-top: max(30px, env(safe-area-inset-top));
+            padding-bottom: max(30px, env(safe-area-inset-bottom));
+            padding-left: max(15px, env(safe-area-inset-left));
+            padding-right: max(15px, env(safe-area-inset-right));
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 季節ごとの背景 */
+        body.season-spring {
+            background: linear-gradient(135deg, #ffc2dd, #ffd6e8, #fff0b3, #d6ffd9, #ffc9f0, #ffe3ef);
+            background-size: 400% 400%;
+        }
+        body.season-summer {
+            background: linear-gradient(135deg, #7fd8ff, #a0ffd0, #fffa9e, #ffd6a5, #8fe3ff, #b5ffb8);
+            background-size: 400% 400%;
+        }
+        body.season-autumn {
+            background: linear-gradient(135deg, #ffba6b, #ffd6a5, #ff9e7d, #ffe8a1, #e8a87c, #ffc48c);
+            background-size: 400% 400%;
+        }
+        body.season-winter {
+            background: linear-gradient(135deg, #c9e6ff, #e8f4ff, #d6dcff, #f0f8ff, #b8d8ff, #e0f0ff);
+            background-size: 400% 400%;
+        }
+
+        @keyframes rainbowBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* 浮かぶデコレーション */
+        .deco {
+            position: fixed;
+            font-size: 2rem;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* メインカード */
+        .card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 40px;
+            padding: 50px 60px;
+            text-align: center;
+            box-shadow:
+                0 20px 60px rgba(255, 100, 200, 0.3),
+                0 0 0 4px rgba(255, 255, 255, 0.6);
+            max-width: 480px;
+            width: 90%;
+            position: relative;
+            animation: cardPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes cardPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -3px; left: -3px; right: -3px; bottom: -3px;
+            border-radius: 43px;
+            background: linear-gradient(135deg, #ff9de2, #a0d4ff, #b5ffb8, #ffffa1, #ff9de2);
+            background-size: 300% 300%;
+            animation: rainbowBG 3s ease infinite;
+            z-index: -1;
+        }
+
+        /* タイトル */
+        .title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ff6bae;
+            letter-spacing: 0.15em;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 8px rgba(255, 107, 174, 0.3);
+        }
+
+        /* 月 */
+        .month {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #9b59ff;
+            letter-spacing: 0.2em;
+            margin-bottom: 5px;
+        }
+
+        /* 日付 */
+        .day {
+            font-size: 7rem;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, #ff6bae, #ff9f43, #ffd93d, #6bcb77, #4da6ff, #c77dff);
+            background-size: 300% 300%;
+            animation: rainbowBG 3s ease infinite;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 10px 0;
+            text-shadow: none;
+            filter: drop-shadow(0 4px 8px rgba(200, 100, 255, 0.3));
+        }
+
+        /* 曜日 */
+        .weekday {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ff8c42;
+            margin-bottom: 30px;
+            letter-spacing: 0.1em;
+        }
+
+        /* 区切り線 */
+        .divider {
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #ff9de2, #a0d4ff, #b5ffb8, transparent);
+            border-radius: 2px;
+            margin: 0 auto 25px;
+            width: 80%;
+        }
+
+        /* ポエムエリア */
+        .poem-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #aaa;
+            letter-spacing: 0.2em;
+            margin-bottom: 12px;
+        }
+
+        .poem {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #555;
+            line-height: 1.9;
+            background: linear-gradient(135deg, rgba(255, 157, 226, 0.15), rgba(160, 212, 255, 0.15));
+            border-radius: 20px;
+            padding: 20px 25px;
+            border-left: 4px solid transparent;
+            border-image: linear-gradient(to bottom, #ff9de2, #a0d4ff) 1;
+            animation: poemFade 1s ease;
+        }
+
+        @keyframes poemFade {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 誕生日バナー */
+        .birthday-banner {
+            display: none;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #fff;
+            background: linear-gradient(135deg, #ff6bae, #ff9f43, #ffd93d, #ff6bae);
+            background-size: 300% 300%;
+            animation: rainbowBG 2s ease infinite, bounce 1s ease infinite;
+            border-radius: 20px;
+            padding: 14px 20px;
+            margin-bottom: 25px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 8px 20px rgba(255, 107, 174, 0.4);
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* 日めくりナビ */
+        .nav-area {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .nav-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9de2, #a0d4ff);
+            color: #fff;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(255, 157, 226, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 6px 18px rgba(255, 157, 226, 0.5);
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .today-btn {
+            display: none;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ff6bae, #ff9f43);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: 900;
+            font-family: inherit;
+            padding: 8px 18px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(255, 107, 174, 0.3);
+        }
+
+        .today-btn:hover {
+            transform: scale(1.08);
+        }
+
+        /* メモエリア */
+        .memo-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #aaa;
+            letter-spacing: 0.2em;
+            margin: 25px 0 12px;
+        }
+
+        .memo-input {
+            width: 100%;
+            min-height: 70px;
+            border: 3px solid rgba(255, 157, 226, 0.5);
+            border-radius: 20px;
+            padding: 15px 20px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #555;
+            background: rgba(255, 255, 255, 0.7);
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .memo-input:focus {
+            border-color: #ff9de2;
+            box-shadow: 0 0 12px rgba(255, 157, 226, 0.4);
+        }
+
+        .memo-status {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #ff6bae;
+            height: 1.2em;
+            margin-top: 6px;
+        }
+
+        /* フッター */
+        .footer {
+            margin-top: 25px;
+            font-size: 0.8rem;
+            color: #ccc;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="title">✨ ミクロ姉の日めくりカレンダー ✨</div>
+        <div class="month" id="month"></div>
+        <div class="nav-area">
+            <button class="nav-btn" id="prevBtn" title="前の日">◀</button>
+            <div class="day" id="day"></div>
+            <button class="nav-btn" id="nextBtn" title="次の日">▶</button>
+        </div>
+        <div class="weekday" id="weekday"></div>
+        <button class="today-btn" id="todayBtn">📅 今日に戻る</button>
+        <div class="birthday-banner" id="birthdayBanner"></div>
+        <div class="divider"></div>
+        <div class="poem-label">💌 今日のミクロ姉ポエム</div>
+        <div class="poem" id="poem"></div>
+        <div class="memo-label">📝 今日のひとことメモ</div>
+        <textarea class="memo-input" id="memoInput" placeholder="今日の気持ちや出来事を書いてみてね🌸"></textarea>
+        <div class="memo-status" id="memoStatus"></div>
+        <div class="footer">今日も最高の一日を💖</div>
+    </div>
+
+    <script>
+        const poems = [
+            "今日という日はたった一回だけ\nだから全力でかわいくいこ🌈",
+            "朝の光があなたに笑いかけてる\n笑い返してあげてね☀️",
+            "小さなことでいいんだよ\n今日もひとつ、ときめいてみて💫",
+            "あなたがいるだけで\n世界がちょっとあたたかい🌸",
+            "失敗してもだいじょぶ\nミクロ姉がそっと応援してるよ✨",
+            "今日の空の色は何色？\nあなたの心の色と同じかもね🌤️",
+            "ゆっくりでいい、あせらなくていい\nあなたのペースが一番素敵💖",
+            "好きなものを思い浮かべて\nそれだけでもう今日は勝ちだよ🎉",
+            "深呼吸して、さあ行こう\n今日もあなたらしく輝いて🌟",
+            "誰かに一言やさしくしてみて\nきっと自分にも返ってくるよ🦋",
+            "今日も生きてることに\nこっそりありがとうって言ってみて🌺",
+            "ちょっぴりサボっても大丈夫\n人間だもの、休もうよ☁️",
+            "あなたの笑顔はね\nちゃんと誰かの力になってるよ🌻",
+            "今日の自分をほめてあげて\n昨日よりちょっと、成長してるから💪",
+            "空を見上げるだけで\n心がすこし広くなるよ🌙",
+            "好きな音楽をかけて\n今日という日を踊っちゃおう🎵",
+            "難しい顔しなくていいよ\nあなたのそのままが最高だから🌈",
+            "誰かのことを思うとき\nあなたはもうやさしさの使い手だよ💫",
+            "今日のおやつは何にする？\n小さな楽しみが人生を彩るよ🍰",
+            "夢を持つのは自由だよ\nどんな夢でも、笑わないからね✨",
+            "あなたが選んだ今日という日\nそれだけで十分、素晴らしい🌸",
+            "転んでも立ち上がれるのは\nあなたの中に光があるから🌟",
+            "今日も世界はあなたのもの\nちょっとだけ好き勝手していいよ🎊",
+            "やさしい言葉をひとつ\n自分にもプレゼントしてあげて💝",
+            "今日という日に出会えたこと\nそれだけでもうラッキーだよ🍀",
+            "あなたの存在が\n誰かの安心になってるんだよ🌺",
+            "疲れた時は休んでいい\n強さって、休めることでもあるから💤",
+            "今日もあなたの物語が続いてる\nどんなページも大切な一ページ📖",
+            "空の星の数だけ\nあなたを応援してる人がいるよ⭐",
+            "今日もお疲れ様でした\n明日もまたよろしくね🌙",
+            "月の最後の日だよ\n今月のあなた、本当によく頑張ったね🎉"
+        ];
+
+        const weekdays = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
+        const weekdayColors = ["#ff6b6b", "#4da6ff", "#4da6ff", "#4da6ff", "#4da6ff", "#4da6ff", "#ff9f43"];
+
+        // お誕生日リスト(公開版では空にしてあるよ。
+        //  使う人が自分で { month: 月, day: 日, name: "名前" } を足してね)
+        const birthdays = [];
+
+        const seasons = {
+            spring: { class: "season-spring", decos: ['🌸', '🌷', '🦋', '💮', '🌼', '✨', '💖'] },
+            summer: { class: "season-summer", decos: ['🌻', '🌊', '🍉', '🎐', '⭐', '🎆', '💙'] },
+            autumn: { class: "season-autumn", decos: ['🍁', '🍂', '🌰', '🍇', '🌾', '✨', '🧡'] },
+            winter: { class: "season-winter", decos: ['❄️', '⛄', '🌨️', '💎', '🤍', '✨', '💙'] }
+        };
+
+        function getSeason(month) {
+            if (month >= 3 && month <= 5) return seasons.spring;
+            if (month >= 6 && month <= 8) return seasons.summer;
+            if (month >= 9 && month <= 11) return seasons.autumn;
+            return seasons.winter;
+        }
+
+        let currentDecos = ['🌸', '⭐', '💖', '✨', '🌈', '🦋', '💫', '🌺', '🎀', '💝'];
+
+        // 日めくりナビ用の表示日付
+        let displayDate = new Date();
+
+        function isToday(date) {
+            const now = new Date();
+            return date.getFullYear() === now.getFullYear() &&
+                   date.getMonth() === now.getMonth() &&
+                   date.getDate() === now.getDate();
+        }
+
+        function updateCalendar() {
+            const month = displayDate.getMonth() + 1;
+            const day = displayDate.getDate();
+            const weekday = displayDate.getDay();
+
+            document.getElementById('month').textContent = `${month}月`;
+            document.getElementById('day').textContent = day;
+            document.getElementById('weekday').textContent = weekdays[weekday];
+            document.getElementById('weekday').style.color = weekdayColors[weekday];
+
+            // 日ごとのポエム
+            const poemIndex = (day - 1) % poems.length;
+            document.getElementById('poem').textContent = poems[poemIndex];
+
+            // 季節の演出
+            const season = getSeason(month);
+            document.body.className = season.class;
+            currentDecos = season.decos;
+
+            // 誕生日の演出
+            const bday = birthdays.find(b => b.month === month && b.day === day);
+            const banner = document.getElementById('birthdayBanner');
+            if (bday) {
+                banner.textContent = `🎂 今日は${bday.name}のお誕生日！🎉`;
+                banner.style.display = 'block';
+                currentDecos = ['🎂', '🎉', '🎈', '🎁', '🥳', '✨', '💖'];
+            } else {
+                banner.style.display = 'none';
+            }
+
+            // 「今日に戻る」ボタンの表示
+            document.getElementById('todayBtn').style.display = isToday(displayDate) ? 'none' : 'inline-block';
+
+            // メモの読み込み
+            loadMemo();
+        }
+
+        // 日めくりナビのイベント
+        document.getElementById('prevBtn').addEventListener('click', () => {
+            displayDate.setDate(displayDate.getDate() - 1);
+            updateCalendar();
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => {
+            displayDate.setDate(displayDate.getDate() + 1);
+            updateCalendar();
+        });
+
+        document.getElementById('todayBtn').addEventListener('click', () => {
+            displayDate = new Date();
+            updateCalendar();
+        });
+
+        // メモ機能(表示中の日付に対応)
+        const memoInput = document.getElementById('memoInput');
+        const memoStatus = document.getElementById('memoStatus');
+
+        function memoKey() {
+            return `mikuro-memo-${displayDate.getFullYear()}-${(displayDate.getMonth() + 1)}-${displayDate.getDate()}`;
+        }
+
+        function loadMemo() {
+            memoInput.value = localStorage.getItem(memoKey()) || '';
+        }
+
+        updateCalendar();
+
+        let saveTimer;
+        memoInput.addEventListener('input', () => {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                localStorage.setItem(memoKey(), memoInput.value);
+                memoStatus.textContent = '保存したよ💾✨';
+                setTimeout(() => { memoStatus.textContent = ''; }, 2000);
+            }, 500);
+        });
+
+        // 浮かぶデコを生成
+        function createDeco() {
+            const deco = document.createElement('div');
+            deco.className = 'deco';
+            deco.textContent = currentDecos[Math.floor(Math.random() * currentDecos.length)];
+            deco.style.left = Math.random() * 90 + 5 + 'vw';
+            deco.style.top = '100vh';
+            deco.style.fontSize = (1.2 + Math.random() * 1.5) + 'rem';
+            deco.style.opacity = '0.5';
+            document.body.appendChild(deco);
+
+            const duration = 5000 + Math.random() * 4000;
+            const start = performance.now();
+            const startRotate = Math.random() * 360;
+
+            function step(now) {
+                const elapsed = now - start;
+                const progress = Math.min(elapsed / duration, 1);
+                const y = (1 - progress) * 100;
+                const rotate = startRotate + progress * 360;
+                const opacity = progress < 0.8 ? 0.5 : 0.5 * (1 - (progress - 0.8) / 0.2);
+                deco.style.top = y + 'vh';
+                deco.style.transform = 'rotate(' + rotate + 'deg)';
+                deco.style.opacity = opacity;
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    deco.remove();
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        setInterval(createDeco, 700);
+
+        // サービスワーカー登録(オフライン対応&ホーム画面アプリ化)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch((err) => {
+                    console.log('SW登録に失敗したよ:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
