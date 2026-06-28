@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>まのスティッキーズ 📝</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#f5c842">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="スティッキーズ">
+    <link rel="apple-touch-icon" href="icon-180.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background: #2c2c2c;
+            padding-top: max(10px, env(safe-area-inset-top));
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            padding-left: max(10px, env(safe-area-inset-left));
+            padding-right: max(10px, env(safe-area-inset-right));
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: rgba(44, 44, 44, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toolbar-title {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: #f5c842;
+        }
+
+        .toolbar-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .note-count {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 700;
+        }
+
+        .add-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: #f5c842;
+            color: #2c2c2c;
+            font-size: 1.8rem;
+            font-weight: 900;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(245, 200, 66, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+            line-height: 1;
+        }
+
+        .add-btn:active {
+            transform: scale(0.9);
+        }
+
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .sticky-note {
+            border-radius: 4px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 3px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.15s, box-shadow 0.15s;
+            position: relative;
+            animation: noteIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes noteIn {
+            0% { transform: scale(0.5) rotate(-5deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        .sticky-note.removing {
+            animation: noteOut 0.25s ease forwards;
+        }
+
+        @keyframes noteOut {
+            to { transform: scale(0.5) rotate(5deg); opacity: 0; }
+        }
+
+        .note-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px 4px;
+            cursor: grab;
+        }
+
+        .note-date {
+            font-size: 0.65rem;
+            font-weight: 700;
+            opacity: 0.5;
+        }
+
+        .note-delete {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s, background 0.2s;
+            color: inherit;
+        }
+
+        .sticky-note:hover .note-delete,
+        .sticky-note:focus-within .note-delete {
+            opacity: 0.6;
+        }
+
+        .note-delete:hover,
+        .note-delete:active {
+            opacity: 1 !important;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .note-body {
+            flex: 1;
+            padding: 4px 10px 10px;
+        }
+
+        .note-textarea {
+            width: 100%;
+            height: 100%;
+            min-height: 110px;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: inherit;
+            resize: none;
+            outline: none;
+            line-height: 1.6;
+        }
+
+        .note-textarea::placeholder {
+            color: inherit;
+            opacity: 0.35;
+        }
+
+        /* 付箋の色 */
+        .color-yellow { background: #f9e977; color: #5c4b00; }
+        .color-pink { background: #ffb3c6; color: #6b1a2e; }
+        .color-blue { background: #a8d8ff; color: #0a3d66; }
+        .color-green { background: #b8f0b0; color: #1a5c12; }
+        .color-purple { background: #d4b8ff; color: #3a1a6b; }
+        .color-orange { background: #ffd1a3; color: #6b3a00; }
+
+        /* 色選択パネル */
+        .color-picker {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(44, 44, 44, 0.98);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 200;
+            animation: slideUp 0.25s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .color-picker.active {
+            display: block;
+        }
+
+        .color-picker-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .color-options {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .color-option {
+            width: 48px;
+            height: 48px;
+            border: 3px solid transparent;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .color-option:active {
+            transform: scale(0.85);
+        }
+
+        .color-option.opt-yellow { background: #f9e977; }
+        .color-option.opt-pink { background: #ffb3c6; }
+        .color-option.opt-blue { background: #a8d8ff; }
+        .color-option.opt-green { background: #b8f0b0; }
+        .color-option.opt-purple { background: #d4b8ff; }
+        .color-option.opt-orange { background: #ffd1a3; }
+
+        .color-picker-cancel {
+            display: block;
+            margin: 16px auto 0;
+            border: none;
+            background: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            padding: 8px 20px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            color: rgba(255, 255, 255, 0.3);
+            text-align: center;
+            padding: 40px;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-text {
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toolbar">
+        <div class="toolbar-title">📝 まのスティッキーズ</div>
+        <div class="toolbar-right">
+            <span class="note-count" id="noteCount"></span>
+            <button class="add-btn" id="addBtn" title="新しい付箋">＋</button>
+        </div>
+    </div>
+
+    <div class="notes-grid" id="notesGrid"></div>
+
+    <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">📝</div>
+        <div class="empty-state-text">
+            まだ付箋がないべ〜<br>
+            「＋」ボタンで追加してみてけろ🌿
+        </div>
+    </div>
+
+    <div class="color-picker" id="colorPicker">
+        <div class="color-picker-title">付箋の色を選んでけろ〜🎨</div>
+        <div class="color-options">
+            <button class="color-option opt-yellow" data-color="yellow" title="黄色"></button>
+            <button class="color-option opt-pink" data-color="pink" title="ピンク"></button>
+            <button class="color-option opt-blue" data-color="blue" title="水色"></button>
+            <button class="color-option opt-green" data-color="green" title="緑"></button>
+            <button class="color-option opt-purple" data-color="purple" title="紫"></button>
+            <button class="color-option opt-orange" data-color="orange" title="オレンジ"></button>
+        </div>
+        <button class="color-picker-cancel" id="colorPickerCancel">やめる</button>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'mano-stickies';
+        const COLORS = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
+
+        function loadNotes() {
+            try {
+                return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+            } catch {
+                return [];
+            }
+        }
+
+        function saveNotes(notes) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+        }
+
+        function formatDate(timestamp) {
+            const d = new Date(timestamp);
+            return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        }
+
+        function updateCount() {
+            const notes = loadNotes();
+            const el = document.getElementById('noteCount');
+            el.textContent = notes.length > 0 ? `${notes.length}枚` : '';
+            document.getElementById('emptyState').style.display = notes.length === 0 ? 'flex' : 'none';
+        }
+
+        function createNoteElement(note) {
+            const div = document.createElement('div');
+            div.className = `sticky-note color-${note.color}`;
+            div.dataset.id = note.id;
+
+            const header = document.createElement('div');
+            header.className = 'note-header';
+
+            const dateEl = document.createElement('span');
+            dateEl.className = 'note-date';
+            dateEl.textContent = formatDate(note.createdAt);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'note-delete';
+            deleteBtn.textContent = '✕';
+            deleteBtn.title = '削除';
+            deleteBtn.addEventListener('click', () => deleteNote(note.id, div));
+
+            header.appendChild(dateEl);
+            header.appendChild(deleteBtn);
+
+            const body = document.createElement('div');
+            body.className = 'note-body';
+
+            const textarea = document.createElement('textarea');
+            textarea.className = 'note-textarea';
+            textarea.placeholder = 'メモを書いてね…';
+            textarea.value = note.text;
+
+            let saveTimer;
+            textarea.addEventListener('input', () => {
+                clearTimeout(saveTimer);
+                saveTimer = setTimeout(() => {
+                    const notes = loadNotes();
+                    const target = notes.find(n => n.id === note.id);
+                    if (target) {
+                        target.text = textarea.value;
+                        target.updatedAt = Date.now();
+                        saveNotes(notes);
+                    }
+                }, 400);
+            });
+
+            body.appendChild(textarea);
+            div.appendChild(header);
+            div.appendChild(body);
+
+            return div;
+        }
+
+        function renderNotes() {
+            const grid = document.getElementById('notesGrid');
+            grid.innerHTML = '';
+            const notes = loadNotes();
+            notes.forEach(note => {
+                grid.appendChild(createNoteElement(note));
+            });
+            updateCount();
+        }
+
+        function addNote(color) {
+            const note = {
+                id: generateId(),
+                text: '',
+                color: color,
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            const notes = loadNotes();
+            notes.unshift(note);
+            saveNotes(notes);
+
+            const grid = document.getElementById('notesGrid');
+            const el = createNoteElement(note);
+            grid.prepend(el);
+            updateCount();
+
+            const textarea = el.querySelector('.note-textarea');
+            setTimeout(() => textarea.focus(), 100);
+        }
+
+        function deleteNote(id, element) {
+            if (!confirm('この付箋を削除するべ？')) return;
+            element.classList.add('removing');
+            setTimeout(() => {
+                const notes = loadNotes().filter(n => n.id !== id);
+                saveNotes(notes);
+                element.remove();
+                updateCount();
+            }, 250);
+        }
+
+        // 色選択パネル
+        const colorPicker = document.getElementById('colorPicker');
+
+        document.getElementById('addBtn').addEventListener('click', () => {
+            colorPicker.classList.add('active');
+        });
+
+        document.getElementById('colorPickerCancel').addEventListener('click', () => {
+            colorPicker.classList.remove('active');
+        });
+
+        document.querySelectorAll('.color-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const color = btn.dataset.color;
+                colorPicker.classList.remove('active');
+                addNote(color);
+            });
+        });
+
+        colorPicker.addEventListener('click', (e) => {
+            if (e.target === colorPicker) {
+                colorPicker.classList.remove('active');
+            }
+        });
+
+        renderNotes();
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(err => {
+                    console.log('SW登録に失敗:', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
