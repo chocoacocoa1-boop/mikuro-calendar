@@ -107,6 +107,34 @@
             z-index: -1;
         }
 
+        /* ミクロ姉のアバター */
+        .mikuro-ring {
+            display: inline-block;
+            padding: 4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9de2, #a0d4ff, #b5ffb8, #ffffa1, #ff9de2);
+            background-size: 300% 300%;
+            animation: rainbowBG 3s ease infinite;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 20px rgba(255, 107, 174, 0.35);
+        }
+
+        .mikuro-avatar {
+            display: block;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            object-position: 50% 10%;
+            border: 4px solid #fff;
+            animation: mikuroFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes mikuroFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
         /* タイトル */
         .title {
             font-size: 1rem;
@@ -314,6 +342,9 @@
 <body>
 
     <div class="card">
+        <div class="mikuro-ring">
+            <img class="mikuro-avatar" src="mikuro-nee.webp" alt="ミクロ姉">
+        </div>
         <div class="title">✨ ミクロ姉の日めくりカレンダー ✨</div>
         <div class="month" id="month"></div>
         <div class="nav-area">
