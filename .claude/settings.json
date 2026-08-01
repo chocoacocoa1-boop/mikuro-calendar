@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__88eea8f0-5e21-40d5-a326-79c5ca1be0c9__generate_video",
+      "mcp__88eea8f0-5e21-40d5-a326-79c5ca1be0c9__generate_image",
+      "mcp__88eea8f0-5e21-40d5-a326-79c5ca1be0c9__job_display",
+      "mcp__88eea8f0-5e21-40d5-a326-79c5ca1be0c9__media_import_url",
+      "mcp__88eea8f0-5e21-40d5-a326-79c5ca1be0c9__models_explore",
+      "mcp__88eea8f0-5e21-40d5-a326-79c5ca1be0c9__show_generations"
+    ]
+  }
+}
