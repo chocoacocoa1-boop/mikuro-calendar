@@ -48,7 +48,7 @@ struct ContentView: View {
             Image("MikuroMama")
                 .resizable()
                 .scaledToFill()
-                .frame(height: 190, alignment: .top)
+                .frame(height: 250, alignment: .top)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
                 .overlay(
