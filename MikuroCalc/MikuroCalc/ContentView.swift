@@ -21,15 +21,31 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // ゆめかわグラデーション背景
-            LinearGradient(
-                colors: [pink.opacity(0.55), lavender.opacity(0.7), cream],
-                startPoint: .top, endPoint: .bottom
-            )
+            // 背景いっぱいのみくろん先生（顔が上に来るように上寄せ）
+            GeometryReader { geo in
+                Image("MikuroMama")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .top)
+                    .clipped()
+                    .overlay(
+                        // 下半分をふんわり明るくしてボタンを見やすく
+                        LinearGradient(
+                            stops: [
+                                .init(color: .clear, location: 0.0),
+                                .init(color: .clear, location: 0.35),
+                                .init(color: cream.opacity(0.55), location: 0.6),
+                                .init(color: cream.opacity(0.8), location: 1.0),
+                            ],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+            }
             .ignoresSafeArea()
 
             VStack(spacing: 14) {
-                mikuroHeader
+                Spacer()
+                praiseBubble
                 displayPanel
                 buttonGrid
             }
@@ -41,34 +57,19 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - みくろん先生
+    // MARK: - 先生のひとこと
 
-    private var mikuroHeader: some View {
-        VStack(spacing: 8) {
-            Image("MikuroMama")
-                .resizable()
-                .scaledToFill()
-                .frame(height: 250, alignment: .top)
-                .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.white.opacity(0.8), lineWidth: 3)
-                )
-                .shadow(color: deepPink.opacity(0.25), radius: 10, y: 4)
-
-            // 先生のひとこと
-            Text(praise)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundColor(deepPink)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 7)
-                .background(
-                    Capsule().fill(Color.white.opacity(0.85))
-                )
-                .shadow(color: pink.opacity(0.3), radius: 4, y: 2)
-                .animation(.spring(response: 0.4), value: praise)
-        }
+    private var praiseBubble: some View {
+        Text(praise)
+            .font(.system(size: 14, weight: .medium, design: .rounded))
+            .foregroundColor(deepPink)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                Capsule().fill(Color.white.opacity(0.85))
+            )
+            .shadow(color: pink.opacity(0.3), radius: 4, y: 2)
+            .animation(.spring(response: 0.4), value: praise)
     }
 
     // MARK: - 表示部
