@@ -171,6 +171,40 @@
 
         .zero { grid-column: span 2; }
 
+        /* ── めんこいエフェクト ── */
+        @keyframes glowPulse {
+            0%   { box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22); }
+            35%  { box-shadow: 0 0 22px 6px rgba(255, 138, 198, 0.75); }
+            100% { box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22); }
+        }
+        button.glow { animation: glowPulse 0.35s ease-out; }
+
+        @keyframes resultPop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .result.pop {
+            animation: resultPop 0.32s ease-out;
+            transform-origin: right center;
+        }
+
+        .particle {
+            position: fixed;
+            left: 0;
+            top: 0;
+            font-size: 1.1rem;
+            pointer-events: none;
+            z-index: 999;
+            animation: floatUp 0.95s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0%   { opacity: 0; transform: translate(var(--x), var(--y)) scale(0.4) rotate(0deg); }
+            15%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(calc(var(--x) + var(--dx)), calc(var(--y) - 80px)) scale(1.15) rotate(var(--rot)); }
+        }
+
         @media (max-height: 640px) {
             .avatar { width: 42px; height: 42px; }
             .result { font-size: 2.1rem; }
@@ -283,26 +317,112 @@
             bubbleEl.textContent = text;
         }
 
+        // ── めんこいサウンド（Web Audio APIで合成、音源ファイル不要）──
+        let audioCtx = null;
+        function ensureAudio() {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            if (!audioCtx) audioCtx = new AC();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        // 最初のタッチ/クリック/キーで音を解禁（iOSはユーザー操作が必要）
+        ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+            document.addEventListener(ev, ensureAudio, { passive: true })
+        );
+
+        function tone(freq, { start = 0, dur = 0.09, type = 'triangle', vol = 0.16, slide = 0 } = {}) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const t0 = audioCtx.currentTime + start;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, t0);
+            if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t0 + dur);
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.linearRampToValueAtTime(vol, t0 + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t0);
+            osc.stop(t0 + dur + 0.03);
+        }
+
+        // 0〜9：低い音からだんだん高い音になる「ピコッ」（ソ4〜シ5の音階）
+        const DIGIT_NOTES = [392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 698.5, 784.0, 880.0, 987.8];
+
+        const SOUNDS = {
+            digit(n) { tone(DIGIT_NOTES[n], { dur: 0.09, slide: 1.3 }); },                       // ピコッ
+            dot()    { tone(1174.7, { dur: 0.07, slide: 1.2, vol: 0.12 }); },                    // ピッ
+            op()     { tone(587.3, { dur: 0.06, type: 'sine' }); tone(880, { start: 0.07, dur: 0.09, type: 'sine' }); }, // ぷにっ
+            ac()     { tone(987.8, { dur: 0.28, type: 'sine', slide: 0.35, vol: 0.14 }); },      // ぴゅ〜ん
+            del()    { tone(329.6, { dur: 0.07, slide: 0.75, vol: 0.14 }); },                    // ぽっ
+            tax()    { tone(1568, { dur: 0.05, type: 'square', vol: 0.05 }); tone(2093, { start: 0.06, dur: 0.2, type: 'triangle', vol: 0.12 }); }, // チャリン
+            equals() {                                                                            // キラリン♪
+                [1046.5, 1318.5, 1568.0].forEach((f, i) => tone(f, { start: i * 0.09, dur: 0.14, type: 'sine', vol: 0.15 }));
+                tone(2093, { start: 0.27, dur: 0.4, type: 'sine', vol: 0.12 });
+            },
+            error()  { tone(233.1, { dur: 0.14, type: 'sine' }); tone(207.7, { start: 0.16, dur: 0.28, type: 'sine' }); } // ぷぷ〜
+        };
+
+        // ── 控えめでめんこい映像エフェクト ──
+        const PARTICLE_EMOJIS = ['💖', '✨', '🌸', '💫', '⭐'];
+        function burst(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('span');
+                p.className = 'particle';
+                p.textContent = PARTICLE_EMOJIS[Math.floor(Math.random() * PARTICLE_EMOJIS.length)];
+                p.style.setProperty('--x', `${x + (Math.random() - 0.5) * 90}px`);
+                p.style.setProperty('--y', `${y + (Math.random() - 0.5) * 16}px`);
+                p.style.setProperty('--dx', `${(Math.random() - 0.5) * 60}px`);
+                p.style.setProperty('--rot', `${(Math.random() - 0.5) * 50}deg`);
+                p.style.animationDelay = `${Math.random() * 0.12}s`;
+                document.body.appendChild(p);
+                p.addEventListener('animationend', () => p.remove());
+            }
+        }
+
+        function sparkleResult(count) {
+            const r = resultEl.getBoundingClientRect();
+            burst(r.left + r.width * 0.6, r.top + r.height / 2, count);
+            resultEl.classList.remove('pop');
+            void resultEl.offsetWidth;  // アニメーションを再発火させる
+            resultEl.classList.add('pop');
+        }
+
+        function glowButton(key) {
+            const btn = document.querySelector(`button[data-key="${key}"]`);
+            if (!btn) return;
+            btn.classList.remove('glow');
+            void btn.offsetWidth;
+            btn.classList.add('glow');
+        }
+
         function numToStr(n) {
             if (!isFinite(n)) return null;
             return String(round10(n));
         }
 
         function press(key) {
+            glowButton(key);
             if (/^[0-9]$/.test(key)) {
+                SOUNDS.digit(Number(key));
                 if (justEvaluated) { tokens = []; current = '0'; justEvaluated = false; }
                 if (current.replace(/[-.]/g, '').length >= 12) return;
                 current = current === '0' ? key : current + key;
             } else if (key === '.') {
+                SOUNDS.dot();
                 if (justEvaluated) { tokens = []; current = '0'; justEvaluated = false; }
                 if (!current.includes('.')) current += '.';
             } else if (key === 'ac') {
+                SOUNDS.ac();
                 tokens = []; current = '0'; justEvaluated = false;
                 say('まっさらにしたよ〜。焦らなくていいべ〜🌿');
             } else if (key === 'del') {
+                SOUNDS.del();
                 if (justEvaluated) return;
                 current = current.length > 1 ? current.slice(0, -1) : '0';
             } else if (/[+−×÷]/.test(key)) {
+                SOUNDS.op();
                 tokens.push(current, key);
                 current = '0';
                 justEvaluated = false;
@@ -310,10 +430,14 @@
                 const n = parseFloat(current) * 1.1;
                 const s = numToStr(Math.round(n * 100) / 100);
                 if (s !== null) {
+                    SOUNDS.tax();
                     tokens = [];
                     current = s;
                     justEvaluated = true;
                     say('消費税10%込みだと、こうなるっちゃ〜🛒');
+                    render();
+                    sparkleResult(3);
+                    return;
                 }
             } else if (key === '=') {
                 if (tokens.length === 0) return;
@@ -321,14 +445,19 @@
                 const n = evaluate(list);
                 const s = numToStr(n);
                 if (s === null) {
+                    SOUNDS.error();
                     current = '0'; tokens = [];
                     say('うーん…ゼロで割んのはわがんねべ〜🤔');
                 } else {
+                    SOUNDS.equals();
                     tokens = [];
                     current = s;
                     justEvaluated = true;
                     const intStr = s.split('.')[0].replace('-', '');
                     say(SPECIAL[intStr] || PHRASES[Math.floor(Math.random() * PHRASES.length)]);
+                    render();
+                    sparkleResult(6);
+                    return;
                 }
             }
             render();
