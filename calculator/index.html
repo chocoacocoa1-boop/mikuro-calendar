@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>みくろん電卓 🧮</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6bae">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="みくろん電卓">
+    <link rel="apple-touch-icon" href="icon-180.png">
+
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background: linear-gradient(160deg, #ffd6f2 0%, #ffb3e2 45%, #d8bfff 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: max(12px, env(safe-area-inset-top));
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            padding-left: max(12px, env(safe-area-inset-left));
+            padding-right: max(12px, env(safe-area-inset-right));
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* ── みくろんヘッダー ── */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 6px;
+        }
+
+        .avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 10px rgba(255, 107, 174, 0.35);
+            object-fit: cover;
+            object-position: top;
+            flex-shrink: 0;
+        }
+
+        .bubble {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            border-bottom-left-radius: 4px;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #b3487f;
+            box-shadow: 0 3px 10px rgba(255, 107, 174, 0.2);
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* ── ディスプレイ ── */
+        .display {
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 22px;
+            padding: 14px 18px;
+            box-shadow: 0 6px 20px rgba(255, 107, 174, 0.25);
+            text-align: right;
+            overflow: hidden;
+        }
+
+        .expression {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #d78ab5;
+            min-height: 1.4em;
+            white-space: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .expression::-webkit-scrollbar { display: none; }
+
+        .result {
+            font-size: 2.6rem;
+            font-weight: 900;
+            color: #a4386f;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .result::-webkit-scrollbar { display: none; }
+
+        .result.small { font-size: 2rem; }
+
+        /* ── キーパッド ── */
+        .keypad {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 10px;
+            padding-bottom: 4px;
+        }
+
+        button {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 900;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #a4386f;
+            box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22);
+            cursor: pointer;
+            transition: transform 0.08s, filter 0.08s;
+            touch-action: manipulation;
+        }
+
+        button:active {
+            transform: scale(0.93);
+            filter: brightness(0.95);
+        }
+
+        button.op {
+            background: #ffc7e6;
+            color: #c2186f;
+        }
+
+        button.fn {
+            background: #e6d8ff;
+            color: #7a4fc9;
+            font-size: 1.25rem;
+        }
+
+        button.eq {
+            background: linear-gradient(145deg, #ff8ac6, #ff6bae);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(255, 107, 174, 0.5);
+        }
+
+        .zero { grid-column: span 2; }
+
+        /* ── めんこいエフェクト ── */
+        @keyframes glowPulse {
+            0%   { box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22); }
+            35%  { box-shadow: 0 0 22px 6px rgba(255, 138, 198, 0.75); }
+            100% { box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22); }
+        }
+        button.glow { animation: glowPulse 0.35s ease-out; }
+
+        @keyframes resultPop {
+            0%   { transform: scale(1); }
+            40%  { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+        .result.pop {
+            animation: resultPop 0.32s ease-out;
+            transform-origin: right center;
+        }
+
+        .particle {
+            position: fixed;
+            left: 0;
+            top: 0;
+            font-size: 1.1rem;
+            pointer-events: none;
+            z-index: 999;
+            animation: floatUp 0.95s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0%   { opacity: 0; transform: translate(var(--x), var(--y)) scale(0.4) rotate(0deg); }
+            15%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(calc(var(--x) + var(--dx)), calc(var(--y) - 80px)) scale(1.15) rotate(var(--rot)); }
+        }
+
+        @media (max-height: 640px) {
+            .avatar { width: 42px; height: 42px; }
+            .result { font-size: 2.1rem; }
+            button { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <img class="avatar" src="https://d8j0ntlcm91z4.cloudfront.net/user_3Ft5tl9oaxZLTY3pu6iDG7vKh29/hf_20260819_220312_bfea1ef9-2325-4915-b3dc-f95490dd6254_min.webp" alt="みくろん" onerror="this.src='mikuro-nee.webp'">
+            <div class="bubble" id="bubble">んだぁ〜、みくろん電卓だよ〜🧮 なんぼでも計算してけろ〜</div>
+        </div>
+
+        <div class="display">
+            <div class="expression" id="expression">&nbsp;</div>
+            <div class="result" id="result">0</div>
+        </div>
+
+        <div class="keypad">
+            <button class="fn" data-key="ac">AC</button>
+            <button class="fn" data-key="del">⌫</button>
+            <button class="fn" data-key="pm">±</button>
+            <button class="op" data-key="÷">÷</button>
+
+            <button data-key="7">7</button>
+            <button data-key="8">8</button>
+            <button data-key="9">9</button>
+            <button class="op" data-key="×">×</button>
+
+            <button data-key="4">4</button>
+            <button data-key="5">5</button>
+            <button data-key="6">6</button>
+            <button class="op" data-key="−">−</button>
+
+            <button data-key="1">1</button>
+            <button data-key="2">2</button>
+            <button data-key="3">3</button>
+            <button class="op" data-key="+">+</button>
+
+            <button class="zero" data-key="0">0</button>
+            <button data-key=".">.</button>
+            <button class="eq" data-key="=">=</button>
+        </div>
+    </div>
+
+    <script>
+        const exprEl = document.getElementById('expression');
+        const resultEl = document.getElementById('result');
+        const bubbleEl = document.getElementById('bubble');
+
+        // tokens: 数値文字列と演算子('+','−','×','÷')の並び
+        let tokens = [];
+        let current = '0';      // 入力中の数値（文字列）
+        let justEvaluated = false;
+
+        const PHRASES = [
+            'んだねぇ、できたよ〜なんもなんも💖',
+            'ほい、計算おわったっちゃ〜✨',
+            'こんな感じでいいべが〜？🌸',
+            'ばっちりだべ〜！えらいえらい🧮',
+            'んだんだ、合ってっがらね〜💫',
+            'わぁ、そんな数字になるんだぁ〜🌟',
+            'ほだほだ〜、ちゃんとでたよ〜なんもなんも🌿',
+            'おっ、出たよ〜！よかったよかった💕',
+            'まの、上手に計算できたっちゃ〜！💖',
+            'んまぁ、きれいな数字だっちゃ〜🎀',
+            'ほれほれ、こんな感じだっちゃ〜🎵',
+            'おぉ〜、バッチリだべ〜！⭐',
+            'んだんだ〜、合ってっちゃ！焦らなくていいべ〜💫',
+            'わぁ〜、よく計算したっちゃ〜🌸',
+            'ほい、これでどうだべ〜？なんもなんも✨',
+            'んだねぇ〜、ちゃんと出たよ〜💖',
+            'まぁまぁ、上手にできたっちゃ〜🧮',
+            'ほだねぇ〜、みくろんも一緒に計算したっちゃ💫',
+            'んだんだ〜！こんな答えになるんだっちゃね〜🌈',
+            'あれまぁ、びっくりするような数字だっちゃ〜✨',
+            'ほい出たよ〜！まのってほんと計算好きだっちゃ〜💖',
+            'んだよ〜、これが正解だっちゃ！なんもなんも🌟',
+        ];
+        const AC_PHRASES = [
+            'まっさらにしたよ〜。焦らなくていいべ〜🌿',
+            'ぜんぶリセットだよ〜！気持ちよかったっちゃ✨',
+            'はいはい、きれいになったよ〜なんもなんも💖',
+            'んだ、やり直しだべ〜！大丈夫だっちゃ🌸',
+            'ゼロからスタートだっちゃ〜！いいよいいよ〜🌿',
+            'ほい、きれいさっぱりだよ〜！またやってけろ〜✨',
+            'んだんだ〜、一回リセットだっちゃ！💫',
+        ];
+        const SPECIAL = {
+            '396': 'あら、みくろんの周波数だぁ〜！396Hz🎵',
+            '528': 'まのの周波数だっちゃ〜！528Hz💖',
+            '963': 'クロミちゃんの周波数だべ〜！963Hz🖤',
+            '0': 'ゼロさ戻ったねぇ。なんもなんも〜🌿',
+        };
+
+        function fmt(numStr) {
+            if (numStr === '' || numStr === '-') return numStr || '0';
+            const [int, dec] = numStr.split('.');
+            const withComma = Number(int).toLocaleString('ja-JP', { maximumFractionDigits: 0 });
+            return dec !== undefined ? `${withComma}.${dec}` : withComma;
+        }
+
+        function render() {
+            exprEl.innerHTML = tokens.map(t => /[+−×÷]/.test(t) ? ` ${t} ` : fmt(t)).join('') || '&nbsp;';
+            resultEl.textContent = fmt(current);
+            resultEl.classList.toggle('small', resultEl.textContent.length > 11);
+        }
+
+        function round10(n) {
+            return Math.round(n * 1e10) / 1e10;
+        }
+
+        function evaluate(list) {
+            // ×÷ を先に、+− を後に（左から右）
+            const pass1 = [];
+            for (let i = 0; i < list.length; i++) {
+                const t = list[i];
+                if (t === '×' || t === '÷') {
+                    const a = pass1.pop();
+                    const b = parseFloat(list[++i]);
+                    pass1.push(t === '×' ? round10(a * b) : round10(a / b));
+                } else {
+                    pass1.push(/[+−]/.test(t) ? t : parseFloat(t));
+                }
+            }
+            let acc = pass1[0];
+            for (let i = 1; i < pass1.length; i += 2) {
+                const b = pass1[i + 1];
+                acc = pass1[i] === '+' ? round10(acc + b) : round10(acc - b);
+            }
+            return acc;
+        }
+
+        function say(text) {
+            bubbleEl.textContent = text;
+        }
+
+        // ── めんこいサウンド（Web Audio APIで合成、音源ファイル不要）──
+        let audioCtx = null;
+        function ensureAudio() {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            if (!audioCtx) audioCtx = new AC();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+        // 最初のタッチ/クリック/キーで音を解禁（iOSはユーザー操作が必要）
+        ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+            document.addEventListener(ev, ensureAudio, { passive: true })
+        );
+
+        function tone(freq, { start = 0, dur = 0.09, type = 'triangle', vol = 0.16, slide = 0 } = {}) {
+            if (!audioCtx || audioCtx.state !== 'running') return;
+            const t0 = audioCtx.currentTime + start;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, t0);
+            if (slide) osc.frequency.exponentialRampToValueAtTime(freq * slide, t0 + dur);
+            gain.gain.setValueAtTime(0.0001, t0);
+            gain.gain.linearRampToValueAtTime(vol, t0 + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(t0);
+            osc.stop(t0 + dur + 0.03);
+        }
+
+        // 0〜9：低い音からだんだん高い音になる「ピコッ」（ソ4〜シ5の音階）
+        const DIGIT_NOTES = [392.0, 440.0, 493.9, 523.3, 587.3, 659.3, 698.5, 784.0, 880.0, 987.8];
+
+        const SOUNDS = {
+            digit(n) { tone(DIGIT_NOTES[n], { dur: 0.09, slide: 1.3 }); },                       // ピコッ
+            dot()    { tone(1174.7, { dur: 0.07, slide: 1.2, vol: 0.12 }); },                    // ピッ
+            op()     { tone(587.3, { dur: 0.06, type: 'sine' }); tone(880, { start: 0.07, dur: 0.09, type: 'sine' }); }, // ぷにっ
+            ac()     { tone(987.8, { dur: 0.28, type: 'sine', slide: 0.35, vol: 0.14 }); },      // ぴゅ〜ん
+            del()    { tone(329.6, { dur: 0.07, slide: 0.75, vol: 0.14 }); },                    // ぽっ
+            equals() {                                                                            // キラリン♪
+                [1046.5, 1318.5, 1568.0].forEach((f, i) => tone(f, { start: i * 0.09, dur: 0.14, type: 'sine', vol: 0.15 }));
+                tone(2093, { start: 0.27, dur: 0.4, type: 'sine', vol: 0.12 });
+            },
+            error()  { tone(233.1, { dur: 0.14, type: 'sine' }); tone(207.7, { start: 0.16, dur: 0.28, type: 'sine' }); } // ぷぷ〜
+        };
+
+        // ── 控えめでめんこい映像エフェクト ──
+        const PARTICLE_EMOJIS = ['💖', '✨', '🌸', '💫', '⭐'];
+        function burst(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('span');
+                p.className = 'particle';
+                p.textContent = PARTICLE_EMOJIS[Math.floor(Math.random() * PARTICLE_EMOJIS.length)];
+                p.style.setProperty('--x', `${x + (Math.random() - 0.5) * 90}px`);
+                p.style.setProperty('--y', `${y + (Math.random() - 0.5) * 16}px`);
+                p.style.setProperty('--dx', `${(Math.random() - 0.5) * 60}px`);
+                p.style.setProperty('--rot', `${(Math.random() - 0.5) * 50}deg`);
+                p.style.animationDelay = `${Math.random() * 0.12}s`;
+                document.body.appendChild(p);
+                p.addEventListener('animationend', () => p.remove());
+            }
+        }
+
+        function sparkleResult(count) {
+            const r = resultEl.getBoundingClientRect();
+            burst(r.left + r.width * 0.6, r.top + r.height / 2, count);
+            resultEl.classList.remove('pop');
+            void resultEl.offsetWidth;  // アニメーションを再発火させる
+            resultEl.classList.add('pop');
+        }
+
+        function glowButton(key) {
+            const btn = document.querySelector(`button[data-key="${key}"]`);
+            if (!btn) return;
+            btn.classList.remove('glow');
+            void btn.offsetWidth;
+            btn.classList.add('glow');
+        }
+
+        function numToStr(n) {
+            if (!isFinite(n)) return null;
+            return String(round10(n));
+        }
+
+        function press(key) {
+            glowButton(key);
+            if (/^[0-9]$/.test(key)) {
+                SOUNDS.digit(Number(key));
+                if (justEvaluated) { tokens = []; current = '0'; justEvaluated = false; }
+                if (current.replace(/[-.]/g, '').length >= 12) return;
+                current = current === '0' ? key : current + key;
+            } else if (key === '.') {
+                SOUNDS.dot();
+                if (justEvaluated) { tokens = []; current = '0'; justEvaluated = false; }
+                if (!current.includes('.')) current += '.';
+            } else if (key === 'ac') {
+                SOUNDS.ac();
+                tokens = []; current = '0'; justEvaluated = false;
+                say(AC_PHRASES[Math.floor(Math.random() * AC_PHRASES.length)]);
+            } else if (key === 'del') {
+                SOUNDS.del();
+                if (justEvaluated) return;
+                current = current.length > 1 ? current.slice(0, -1) : '0';
+            } else if (/[+−×÷]/.test(key)) {
+                SOUNDS.op();
+                tokens.push(current, key);
+                current = '0';
+                justEvaluated = false;
+            } else if (key === 'pm') {
+                if (current !== '0') {
+                    current = current.startsWith('-') ? current.slice(1) : '-' + current;
+                    SOUNDS.op();
+                }
+            } else if (key === '=') {
+                if (tokens.length === 0) return;
+                const list = [...tokens, current];
+                const n = evaluate(list);
+                const s = numToStr(n);
+                if (s === null) {
+                    SOUNDS.error();
+                    current = '0'; tokens = [];
+                    say('うーん…ゼロで割んのはわがんねべ〜🤔');
+                } else {
+                    SOUNDS.equals();
+                    tokens = [];
+                    current = s;
+                    justEvaluated = true;
+                    const intStr = s.split('.')[0].replace('-', '');
+                    say(SPECIAL[intStr] || PHRASES[Math.floor(Math.random() * PHRASES.length)]);
+                    render();
+                    sparkleResult(6);
+                    return;
+                }
+            }
+            render();
+        }
+
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => press(btn.dataset.key));
+        });
+
+        document.addEventListener('keydown', e => {
+            const map = { '*': '×', 'x': '×', '/': '÷', '-': '−', '+': '+', 'Enter': '=', '=': '=', 'Backspace': 'del', 'Escape': 'ac', '.': '.' };
+            if (/^[0-9]$/.test(e.key)) press(e.key);
+            else if (map[e.key]) { e.preventDefault(); press(map[e.key]); }
+        });
+
+        render();
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+</html>
