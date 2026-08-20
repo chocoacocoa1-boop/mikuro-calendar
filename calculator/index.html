@@ -165,10 +165,6 @@
             box-shadow: 0 4px 14px rgba(255, 107, 174, 0.5);
         }
 
-        button.tax {
-            font-size: 0.95rem;
-        }
-
         .zero { grid-column: span 2; }
 
         /* ── めんこいエフェクト ── */
@@ -215,7 +211,7 @@
 <body>
     <div class="app">
         <div class="header">
-            <img class="avatar" src="mikuro-nee.webp" alt="みくろん">
+            <img class="avatar" src="https://d8j0ntlcm91z4.cloudfront.net/user_3Ft5tl9oaxZLTY3pu6iDG7vKh29/hf_20260819_220312_bfea1ef9-2325-4915-b3dc-f95490dd6254_min.webp" alt="みくろん" onerror="this.src='mikuro-nee.webp'">
             <div class="bubble" id="bubble">んだぁ〜、みくろん電卓だよ〜🧮 なんぼでも計算してけろ〜</div>
         </div>
 
@@ -227,7 +223,7 @@
         <div class="keypad">
             <button class="fn" data-key="ac">AC</button>
             <button class="fn" data-key="del">⌫</button>
-            <button class="fn tax" data-key="tax10">税込10%</button>
+            <button class="fn" data-key="pm">±</button>
             <button class="op" data-key="÷">÷</button>
 
             <button data-key="7">7</button>
@@ -267,6 +263,32 @@
             'こんな感じでいいべが〜？🌸',
             'ばっちりだべ〜！えらいえらい🧮',
             'んだんだ、合ってっがらね〜💫',
+            'わぁ、そんな数字になるんだぁ〜🌟',
+            'ほだほだ〜、ちゃんとでたよ〜なんもなんも🌿',
+            'おっ、出たよ〜！よかったよかった💕',
+            'まの、上手に計算できたっちゃ〜！💖',
+            'んまぁ、きれいな数字だっちゃ〜🎀',
+            'ほれほれ、こんな感じだっちゃ〜🎵',
+            'おぉ〜、バッチリだべ〜！⭐',
+            'んだんだ〜、合ってっちゃ！焦らなくていいべ〜💫',
+            'わぁ〜、よく計算したっちゃ〜🌸',
+            'ほい、これでどうだべ〜？なんもなんも✨',
+            'んだねぇ〜、ちゃんと出たよ〜💖',
+            'まぁまぁ、上手にできたっちゃ〜🧮',
+            'ほだねぇ〜、みくろんも一緒に計算したっちゃ💫',
+            'んだんだ〜！こんな答えになるんだっちゃね〜🌈',
+            'あれまぁ、びっくりするような数字だっちゃ〜✨',
+            'ほい出たよ〜！まのってほんと計算好きだっちゃ〜💖',
+            'んだよ〜、これが正解だっちゃ！なんもなんも🌟',
+        ];
+        const AC_PHRASES = [
+            'まっさらにしたよ〜。焦らなくていいべ〜🌿',
+            'ぜんぶリセットだよ〜！気持ちよかったっちゃ✨',
+            'はいはい、きれいになったよ〜なんもなんも💖',
+            'んだ、やり直しだべ〜！大丈夫だっちゃ🌸',
+            'ゼロからスタートだっちゃ〜！いいよいいよ〜🌿',
+            'ほい、きれいさっぱりだよ〜！またやってけろ〜✨',
+            'んだんだ〜、一回リセットだっちゃ！💫',
         ];
         const SPECIAL = {
             '396': 'あら、みくろんの周波数だぁ〜！396Hz🎵',
@@ -356,7 +378,6 @@
             op()     { tone(587.3, { dur: 0.06, type: 'sine' }); tone(880, { start: 0.07, dur: 0.09, type: 'sine' }); }, // ぷにっ
             ac()     { tone(987.8, { dur: 0.28, type: 'sine', slide: 0.35, vol: 0.14 }); },      // ぴゅ〜ん
             del()    { tone(329.6, { dur: 0.07, slide: 0.75, vol: 0.14 }); },                    // ぽっ
-            tax()    { tone(1568, { dur: 0.05, type: 'square', vol: 0.05 }); tone(2093, { start: 0.06, dur: 0.2, type: 'triangle', vol: 0.12 }); }, // チャリン
             equals() {                                                                            // キラリン♪
                 [1046.5, 1318.5, 1568.0].forEach((f, i) => tone(f, { start: i * 0.09, dur: 0.14, type: 'sine', vol: 0.15 }));
                 tone(2093, { start: 0.27, dur: 0.4, type: 'sine', vol: 0.12 });
@@ -416,7 +437,7 @@
             } else if (key === 'ac') {
                 SOUNDS.ac();
                 tokens = []; current = '0'; justEvaluated = false;
-                say('まっさらにしたよ〜。焦らなくていいべ〜🌿');
+                say(AC_PHRASES[Math.floor(Math.random() * AC_PHRASES.length)]);
             } else if (key === 'del') {
                 SOUNDS.del();
                 if (justEvaluated) return;
@@ -426,18 +447,10 @@
                 tokens.push(current, key);
                 current = '0';
                 justEvaluated = false;
-            } else if (key === 'tax10') {
-                const n = parseFloat(current) * 1.1;
-                const s = numToStr(Math.round(n * 100) / 100);
-                if (s !== null) {
-                    SOUNDS.tax();
-                    tokens = [];
-                    current = s;
-                    justEvaluated = true;
-                    say('消費税10%込みだと、こうなるっちゃ〜🛒');
-                    render();
-                    sparkleResult(3);
-                    return;
+            } else if (key === 'pm') {
+                if (current !== '0') {
+                    current = current.startsWith('-') ? current.slice(1) : '-' + current;
+                    SOUNDS.op();
                 }
             } else if (key === '=') {
                 if (tokens.length === 0) return;
