@@ -24,82 +24,120 @@
 
         html, body {
             height: 100%;
+            overflow: hidden;
         }
 
         body {
             font-family: 'Zen Maru Gothic', sans-serif;
-            background: linear-gradient(160deg, #ffd6f2 0%, #ffb3e2 45%, #d8bfff 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: max(12px, env(safe-area-inset-top));
-            padding-bottom: max(12px, env(safe-area-inset-bottom));
-            padding-left: max(12px, env(safe-area-inset-left));
-            padding-right: max(12px, env(safe-area-inset-right));
+            background: #ffd6f2;
             -webkit-tap-highlight-color: transparent;
             user-select: none;
             -webkit-user-select: none;
-            overflow: hidden;
         }
 
         .app {
             width: 100%;
-            max-width: 420px;
+            height: 100%;
+            max-width: 480px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ── みくろん背景画像 ── */
+        .character-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .character-bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+        }
+
+        /* 画像の上に薄いグラデーションオーバーレイ（下部を少しぼかして文字を読みやすく） */
+        .character-bg::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255, 214, 242, 0) 0%,
+                rgba(255, 214, 242, 0.3) 25%,
+                rgba(255, 214, 242, 0.55) 45%,
+                rgba(255, 214, 242, 0.75) 60%,
+                rgba(255, 214, 242, 0.9) 80%,
+                rgba(255, 200, 235, 0.95) 100%
+            );
+            pointer-events: none;
+        }
+
+        /* ── コンテンツ（背景の上に） ── */
+        .content {
+            position: relative;
+            z-index: 1;
+            width: 100%;
             height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            padding: max(8px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
         }
 
-        /* ── みくろんヘッダー ── */
-        .header {
+        /* ── 吹き出し（キャラの上に重なる） ── */
+        .bubble-area {
+            flex: 1;
             display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 4px 6px;
-        }
-
-        .avatar {
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            border: 3px solid #fff;
-            box-shadow: 0 3px 10px rgba(255, 107, 174, 0.35);
-            object-fit: cover;
-            object-position: top;
-            flex-shrink: 0;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            min-height: 0;
         }
 
         .bubble {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 16px;
-            border-bottom-left-radius: 4px;
-            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.55);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 8px 20px;
             font-size: 0.85rem;
             font-weight: 700;
-            color: #b3487f;
-            box-shadow: 0 3px 10px rgba(255, 107, 174, 0.2);
-            min-height: 40px;
-            display: flex;
-            align-items: center;
+            color: #e06ba0;
+            text-align: center;
+            max-width: 90%;
+            line-height: 1.5;
+            text-shadow: 0 0.5px 2px rgba(255, 255, 255, 0.6);
         }
 
         /* ── ディスプレイ ── */
         .display {
-            background: rgba(255, 255, 255, 0.92);
-            border-radius: 22px;
-            padding: 14px 18px;
-            box-shadow: 0 6px 20px rgba(255, 107, 174, 0.25);
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 20px rgba(255, 107, 174, 0.15);
             text-align: right;
             overflow: hidden;
         }
 
         .expression {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #d78ab5;
-            min-height: 1.4em;
+            min-height: 1.3em;
             white-space: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
@@ -107,71 +145,79 @@
         .expression::-webkit-scrollbar { display: none; }
 
         .result {
-            font-size: 2.6rem;
+            font-size: 2.8rem;
             font-weight: 900;
-            color: #a4386f;
-            line-height: 1.2;
+            color: #6b2d5e;
+            line-height: 1.15;
             white-space: nowrap;
             overflow-x: auto;
             scrollbar-width: none;
         }
         .result::-webkit-scrollbar { display: none; }
-
         .result.small { font-size: 2rem; }
 
         /* ── キーパッド ── */
         .keypad {
-            flex: 1;
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            grid-auto-rows: 1fr;
+            grid-template-rows: repeat(5, 1fr);
             gap: 10px;
             padding-bottom: 4px;
+            /* 画面の約45%をキーパッドに */
+            height: 46%;
+            min-height: 260px;
+            flex-shrink: 0;
         }
 
         button {
             font-family: 'Zen Maru Gothic', sans-serif;
-            font-size: 1.5rem;
+            font-size: 1.55rem;
             font-weight: 900;
             border: none;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.92);
-            color: #a4386f;
-            box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22);
+            border-radius: 18px;
             cursor: pointer;
             transition: transform 0.08s, filter 0.08s;
             touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         button:active {
-            transform: scale(0.93);
-            filter: brightness(0.95);
+            transform: scale(0.92);
+            filter: brightness(0.93);
         }
 
-        button.op {
-            background: #ffc7e6;
-            color: #c2186f;
+        /* 数字ボタン：白 */
+        button.num {
+            background: rgba(255, 255, 255, 0.92);
+            color: #6b2d5e;
+            box-shadow: 0 3px 8px rgba(160, 100, 140, 0.15);
         }
 
+        /* 機能ボタン（AC, ±, %）：ラベンダー */
         button.fn {
-            background: #e6d8ff;
-            color: #7a4fc9;
-            font-size: 1.25rem;
+            background: rgba(206, 192, 240, 0.85);
+            color: #e06ba0;
+            font-size: 1.35rem;
+            box-shadow: 0 3px 8px rgba(160, 130, 200, 0.2);
         }
 
-        button.eq {
-            background: linear-gradient(145deg, #ff8ac6, #ff6bae);
+        /* 演算ボタン（÷, ×, −, +, =）：ホットピンク */
+        button.op {
+            background: linear-gradient(145deg, #ff7eb8, #f75da0);
             color: #fff;
-            box-shadow: 0 4px 14px rgba(255, 107, 174, 0.5);
+            font-size: 1.7rem;
+            box-shadow: 0 4px 12px rgba(255, 107, 174, 0.4);
         }
 
         .zero { grid-column: span 2; }
 
         /* ── めんこいエフェクト ── */
         @keyframes glowPulse {
-            0%   { box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22); }
-            35%  { box-shadow: 0 0 22px 6px rgba(255, 138, 198, 0.75); }
-            100% { box-shadow: 0 4px 10px rgba(255, 107, 174, 0.22); }
+            0%   { box-shadow: 0 3px 8px rgba(160, 100, 140, 0.15); }
+            35%  { box-shadow: 0 0 18px 5px rgba(255, 138, 198, 0.65); }
+            100% { box-shadow: 0 3px 8px rgba(160, 100, 140, 0.15); }
         }
         button.glow { animation: glowPulse 0.35s ease-out; }
 
@@ -201,49 +247,76 @@
             100% { opacity: 0; transform: translate(calc(var(--x) + var(--dx)), calc(var(--y) - 80px)) scale(1.15) rotate(var(--rot)); }
         }
 
+        /* ── 小さい画面対応 ── */
         @media (max-height: 640px) {
-            .avatar { width: 42px; height: 42px; }
             .result { font-size: 2.1rem; }
-            button { font-size: 1.3rem; }
+            button { font-size: 1.25rem; border-radius: 14px; }
+            button.op { font-size: 1.4rem; }
+            button.fn { font-size: 1.1rem; }
+            .keypad { gap: 7px; height: 50%; }
+            .bubble { font-size: 0.78rem; padding: 6px 14px; }
+        }
+
+        @media (max-height: 550px) {
+            .bubble-area { display: none; }
+            .keypad { height: 55%; }
+        }
+
+        /* 大きめの画面 */
+        @media (min-height: 800px) {
+            .keypad { height: 44%; }
+            .result { font-size: 3.2rem; }
+            button { font-size: 1.7rem; border-radius: 22px; }
+            button.op { font-size: 1.9rem; }
         }
     </style>
 </head>
 <body>
     <div class="app">
-        <div class="header">
-            <img class="avatar" src="https://d8j0ntlcm91z4.cloudfront.net/user_3Ft5tl9oaxZLTY3pu6iDG7vKh29/hf_20260819_220312_bfea1ef9-2325-4915-b3dc-f95490dd6254_min.webp" alt="みくろん" onerror="this.src='mikuro-nee.webp'">
-            <div class="bubble" id="bubble">んだぁ〜、みくろん電卓だよ〜🧮 なんぼでも計算してけろ〜</div>
+        <!-- みくろんフルスクリーン背景 -->
+        <div class="character-bg">
+            <img src="https://d8j0ntlcm91z4.cloudfront.net/user_3Ft5tl9oaxZLTY3pu6iDG7vKh29/hf_20260819_220312_bfea1ef9-2325-4915-b3dc-f95490dd6254_min.webp" alt="みくろん" onerror="this.src='mikuro-nee.webp'">
         </div>
 
-        <div class="display">
-            <div class="expression" id="expression">&nbsp;</div>
-            <div class="result" id="result">0</div>
-        </div>
+        <!-- コンテンツ -->
+        <div class="content">
+            <!-- 吹き出し（キャラの上に浮かぶ） -->
+            <div class="bubble-area">
+                <div class="bubble" id="bubble">なんもなんも、かんぺきだっちゃ✨</div>
+            </div>
 
-        <div class="keypad">
-            <button class="fn" data-key="ac">AC</button>
-            <button class="fn" data-key="del">⌫</button>
-            <button class="fn" data-key="pm">±</button>
-            <button class="op" data-key="÷">÷</button>
+            <!-- ディスプレイ -->
+            <div class="display">
+                <div class="expression" id="expression">&nbsp;</div>
+                <div class="result" id="result">0</div>
+            </div>
 
-            <button data-key="7">7</button>
-            <button data-key="8">8</button>
-            <button data-key="9">9</button>
-            <button class="op" data-key="×">×</button>
+            <!-- キーパッド -->
+            <div class="keypad">
+                <button class="fn" data-key="ac">AC</button>
+                <button class="fn" data-key="pm">±</button>
+                <button class="fn" data-key="%">%</button>
+                <button class="op" data-key="÷">÷</button>
 
-            <button data-key="4">4</button>
-            <button data-key="5">5</button>
-            <button data-key="6">6</button>
-            <button class="op" data-key="−">−</button>
+                <button class="num" data-key="7">7</button>
+                <button class="num" data-key="8">8</button>
+                <button class="num" data-key="9">9</button>
+                <button class="op" data-key="×">×</button>
 
-            <button data-key="1">1</button>
-            <button data-key="2">2</button>
-            <button data-key="3">3</button>
-            <button class="op" data-key="+">+</button>
+                <button class="num" data-key="4">4</button>
+                <button class="num" data-key="5">5</button>
+                <button class="num" data-key="6">6</button>
+                <button class="op" data-key="−">−</button>
 
-            <button class="zero" data-key="0">0</button>
-            <button data-key=".">.</button>
-            <button class="eq" data-key="=">=</button>
+                <button class="num" data-key="1">1</button>
+                <button class="num" data-key="2">2</button>
+                <button class="num" data-key="3">3</button>
+                <button class="op" data-key="+">+</button>
+
+                <button class="num zero" data-key="0">0</button>
+                <button class="num" data-key=".">.</button>
+                <button class="op" data-key="=">=</button>
+            </div>
         </div>
     </div>
 
@@ -280,6 +353,7 @@
             'あれまぁ、びっくりするような数字だっちゃ〜✨',
             'ほい出たよ〜！まのってほんと計算好きだっちゃ〜💖',
             'んだよ〜、これが正解だっちゃ！なんもなんも🌟',
+            'なんもなんも、かんぺきだっちゃ✨',
         ];
         const AC_PHRASES = [
             'まっさらにしたよ〜。焦らなくていいべ〜🌿',
@@ -378,6 +452,7 @@
             op()     { tone(587.3, { dur: 0.06, type: 'sine' }); tone(880, { start: 0.07, dur: 0.09, type: 'sine' }); }, // ぷにっ
             ac()     { tone(987.8, { dur: 0.28, type: 'sine', slide: 0.35, vol: 0.14 }); },      // ぴゅ〜ん
             del()    { tone(329.6, { dur: 0.07, slide: 0.75, vol: 0.14 }); },                    // ぽっ
+            pct()    { tone(784.0, { dur: 0.08, type: 'sine', vol: 0.13 }); tone(1046.5, { start: 0.06, dur: 0.1, type: 'sine', vol: 0.12 }); },
             equals() {                                                                            // キラリン♪
                 [1046.5, 1318.5, 1568.0].forEach((f, i) => tone(f, { start: i * 0.09, dur: 0.14, type: 'sine', vol: 0.15 }));
                 tone(2093, { start: 0.27, dur: 0.4, type: 'sine', vol: 0.12 });
@@ -411,7 +486,7 @@
         }
 
         function glowButton(key) {
-            const btn = document.querySelector(`button[data-key="${key}"]`);
+            const btn = document.querySelector(`button[data-key="${CSS.escape(key)}"]`);
             if (!btn) return;
             btn.classList.remove('glow');
             void btn.offsetWidth;
@@ -438,10 +513,23 @@
                 SOUNDS.ac();
                 tokens = []; current = '0'; justEvaluated = false;
                 say(AC_PHRASES[Math.floor(Math.random() * AC_PHRASES.length)]);
-            } else if (key === 'del') {
-                SOUNDS.del();
-                if (justEvaluated) return;
-                current = current.length > 1 ? current.slice(0, -1) : '0';
+            } else if (key === '%') {
+                // パーセント：現在の値を100で割る
+                SOUNDS.pct();
+                const val = parseFloat(current);
+                if (tokens.length >= 2) {
+                    // 例: 200 + 10% → 200 + (200 * 0.1)
+                    const base = evaluate([...tokens.slice(0, -1), tokens[tokens.length - 2] || current]);
+                    // 直前の演算子が +/− のとき、baseに対するパーセンテージ
+                    const lastOp = tokens[tokens.length - 1];
+                    if (lastOp === '+' || lastOp === '−') {
+                        current = numToStr(round10(base * val / 100)) || '0';
+                    } else {
+                        current = numToStr(round10(val / 100)) || '0';
+                    }
+                } else {
+                    current = numToStr(round10(val / 100)) || '0';
+                }
             } else if (/[+−×÷]/.test(key)) {
                 SOUNDS.op();
                 tokens.push(current, key);
@@ -481,10 +569,28 @@
         });
 
         document.addEventListener('keydown', e => {
-            const map = { '*': '×', 'x': '×', '/': '÷', '-': '−', '+': '+', 'Enter': '=', '=': '=', 'Backspace': 'del', 'Escape': 'ac', '.': '.' };
+            const map = { '*': '×', 'x': '×', '/': '÷', '-': '−', '+': '+', 'Enter': '=', '=': '=', 'Backspace': 'del', 'Escape': 'ac', '.': '.', '%': '%' };
             if (/^[0-9]$/.test(e.key)) press(e.key);
             else if (map[e.key]) { e.preventDefault(); press(map[e.key]); }
         });
+
+        // バックスペースキーは引き続きdel動作（ボタンはないがキーボードは使える）
+        // ディスプレイ左スワイプで1文字削除
+        let swipeStartX = null;
+        const displayEl = document.querySelector('.display');
+        displayEl.addEventListener('touchstart', e => {
+            swipeStartX = e.touches[0].clientX;
+        }, { passive: true });
+        displayEl.addEventListener('touchend', e => {
+            if (swipeStartX === null) return;
+            const dx = e.changedTouches[0].clientX - swipeStartX;
+            if (dx < -40 && !justEvaluated) {
+                SOUNDS.del();
+                current = current.length > 1 ? current.slice(0, -1) : '0';
+                render();
+            }
+            swipeStartX = null;
+        }, { passive: true });
 
         render();
 
