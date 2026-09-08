@@ -1,6 +1,6 @@
 // みくろん電卓のService Worker
 // キャッシュを更新したいときは CACHE_NAME のバージョン番号を上げること
-const CACHE_NAME = 'mikuron-calculator-v5';
+const CACHE_NAME = 'mikuron-calculator-v6';
 const ASSETS = [
     './',
     './index.html',
