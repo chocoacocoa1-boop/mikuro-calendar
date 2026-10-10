@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OrbitControls } from '../lib/OrbitControls.js';
+import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { ctx } from './ctx.js';
 import { NavGrid } from './nav.js';
 import { buildEnv } from './env.js';
