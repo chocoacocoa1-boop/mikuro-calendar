@@ -47,14 +47,17 @@ export function strikeBowl(color = 0xffb3d6) {
 // ── 子みくろんの行動 ──
 
 function* actSleep(k) {
-    k.label = 'ねむくなってきた…';
-    say(k, L.sleepy);
-    yield* goSpot(k, W().spots.bed);
+    // 夜にアプリを開いたときは、もうベッドの中（あくびも日記もなし）
+    if (k.onSpot !== W().spots.bed) {
+        k.label = 'ねむくなってきた…';
+        say(k, L.sleepy);
+        yield* goSpot(k, W().spots.bed);
+    }
     k.label = 'ベッドでぐっすり眠っている💤';
     k.sleeping = k.deepSleep = true;
     W().setBedCover(true);
     S().lights = false;
-    log('おやすみなさい🌙');
+    if (S().diary[0]?.t !== 'おやすみなさい🌙') log('おやすみなさい🌙');
     let z = 0;
     try {
         while (isNight()) {
