@@ -1,6 +1,6 @@
 // 子みくろんのおうち サービスワーカー
-// キャッシュを更新したいときは CACHE_NAME のバージョン番号を上げること
-const CACHE_NAME = 'komikuron-ouchi-v2';
+// 中身を変えたら CACHE_NAME の番号を上げること（js/main.js の APP_VER もいっしょに）
+const CACHE_NAME = 'komikuron-ouchi-v3';
 const ASSETS = [
     './',
     './index.html',
@@ -35,7 +35,8 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
-    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+    // ブラウザのHTTPキャッシュ（GitHub Pagesは10分）に残った古いファイルを拾わないよう、必ず取り直す
+    event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS.map((url) => new Request(url, { cache: 'reload' })))));
     self.skipWaiting();
 });
 

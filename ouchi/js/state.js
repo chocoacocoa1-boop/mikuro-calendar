@@ -2,6 +2,7 @@ import { ctx } from './ctx.js';
 import { clamp } from './util.js';
 
 const KEY = 'komikuron-ouchi-v1';
+let cleared = false;
 
 export function defaultState() {
     return {
@@ -25,6 +26,7 @@ export function defaultState() {
         lastPetLog: -999,
         lastTalkLog: -999,
         memo: {},
+        seenVer: 0,
         diary: [],
     };
 }
@@ -44,6 +46,7 @@ export function loadState() {
 }
 
 export function saveState() {
+    if (cleared) return;
     try {
         localStorage.setItem(KEY, JSON.stringify(ctx.state));
     } catch {
@@ -52,6 +55,7 @@ export function saveState() {
 }
 
 export function clearState() {
+    cleared = true;
     try {
         localStorage.removeItem(KEY);
     } catch {

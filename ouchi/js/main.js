@@ -20,6 +20,10 @@ import { cbox } from './build.js';
 import { damp, clamp, lerp, pick, wrapAngle } from './util.js';
 
 // ホーム視点：右手前の斜め上から、おうちと庭をまるごと
+// 中身を変えたら上げる（sw.js の CACHE_NAME の番号もいっしょに）
+const APP_VER = 3;
+const APP_VER_NAME = 'おしゃべり版';
+
 const HOME = { target: new THREE.Vector3(2.0, 0.6, 2.0), polar: 0.88, azim: 0.6 };
 // おうちがいっぱいに見えるように合わせる（庭の端は少し切れてもいい）
 const FIT_POINTS = [
@@ -356,8 +360,22 @@ function boot() {
 
     if (/[?&]debug\b/.test(location.search)) window.__ouchi = { ctx, life, family, chatter, home };
 
+    document.getElementById('ver').textContent = `子みくろんのおうち ver.${APP_VER}（${APP_VER_NAME}）`;
+    if (!fresh && s.seenVer !== APP_VER) setTimeout(() => ctx.fx.toast(`おうちが新しくなったよ✨ ver.${APP_VER}（${APP_VER_NAME}）`, 5), 2500);
+    s.seenVer = APP_VER;
+
     try {
         if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+            // 新しい版が届いたら、その場で読みこみ直す（はじめて入れたときは何もしない）
+            const hadController = !!navigator.serviceWorker.controller;
+            let reloading = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (!hadController || reloading) return;
+                reloading = true;
+                saveState();
+                ctx.fx.toast('新しいおうちを読みこむね…🏡', 3);
+                setTimeout(() => location.reload(), 1200);
+            });
             navigator.serviceWorker.register('sw.js').catch(() => {});
         }
     } catch {
