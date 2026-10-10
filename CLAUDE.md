@@ -15,3 +15,4 @@
 - HTML/CSS/JavaScript（フレームワークなし）
 - PWA（manifest.json + sw.js）
 - スタンドアロン版あり（mikuro-calendar-standalone.html）
+- `ouchi/`：子みくろんのおうち（3D日常観察ゲーム、別PWA）。Three.js 0.160.0 を `ouchi/lib/` に同梱。JSを増やしたら `ouchi/sw.js` の ASSETS とキャッシュ名も更新すること

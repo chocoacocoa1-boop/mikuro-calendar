@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>子みくろんのおうち</title>
+    <meta name="description" content="子みくろんの毎日をのんびり見守る、3Dの日常観察ゲーム">
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6bae">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="子みくろん">
+    <link rel="apple-touch-icon" href="icon-180.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --pink: #ff6bae;
+            --plum: #5b2e52;
+            --plum-2: #8a6080;
+            --muted: #a77d9a;
+            --cream: #fffaf4;
+            --edge: #f1dde6;
+            --card: rgba(255, 250, 244, 0.95);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body { height: 100%; overflow: hidden; }
+
+        body {
+            font-family: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', system-ui, sans-serif;
+            background: #c9e3ff;
+            color: var(--plum);
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
+            user-select: none;
+            overscroll-behavior: none;
+        }
+
+        button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+
+        #scene {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+            touch-action: none;
+        }
+
+        /* 吹き出し・エフェクト用のレイヤー（3Dの上、パネルの下） */
+        #fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        .bubble {
+            position: absolute;
+            left: 0;
+            top: 0;
+            max-width: 230px;
+            width: max-content;
+            padding: 6px 13px 7px;
+            background: #fff;
+            border: 2.5px solid #ff6bae;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.45;
+            color: #4a2a44;
+            text-align: center;
+            box-shadow: 0 3px 0 rgba(91, 46, 82, 0.12);
+            will-change: transform, opacity;
+            transition: opacity 0.25s;
+        }
+        .bubble::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: -9px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-right: 2.5px solid var(--bc, #ff6bae);
+            border-bottom: 2.5px solid var(--bc, #ff6bae);
+            transform: translateX(-50%) rotate(45deg);
+        }
+        .bubble .who {
+            display: block;
+            font-size: 10.5px;
+            letter-spacing: 0.08em;
+            opacity: 0.75;
+            margin-bottom: 1px;
+        }
+
+        .fxp {
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 20px;
+            line-height: 1;
+            will-change: transform, opacity;
+        }
+
+        /* ── 上のHUD ── */
+        .hud {
+            position: fixed;
+            z-index: 10;
+            top: max(10px, env(safe-area-inset-top));
+            left: max(10px, env(safe-area-inset-left));
+            right: max(10px, env(safe-area-inset-right));
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .hud-row { display: flex; gap: 8px; align-items: center; }
+        .hud-row > * { pointer-events: auto; }
+        .spacer { flex: 1; pointer-events: none !important; }
+
+        .pill {
+            background: var(--card);
+            border: 2px solid #ffd3e6;
+            border-radius: 16px;
+            padding: 6px 12px;
+            font-weight: 700;
+            font-size: 14px;
+            white-space: nowrap;
+            box-shadow: 0 2px 10px rgba(160, 90, 130, 0.12);
+        }
+        .pill.title { color: var(--pink); font-weight: 900; font-size: 16px; }
+
+        .seg {
+            display: inline-flex;
+            background: var(--card);
+            border: 2px solid #ffd3e6;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(160, 90, 130, 0.12);
+        }
+        .seg button {
+            border: none;
+            background: none;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--plum-2);
+            padding: 7px 12px;
+        }
+        .seg button.on { background: var(--pink); color: #fff; }
+
+        .round {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            border: 2px solid #ffd3e6;
+            background: var(--card);
+            font-size: 17px;
+            line-height: 1;
+            box-shadow: 0 2px 10px rgba(160, 90, 130, 0.12);
+        }
+
+        .toast {
+            position: fixed;
+            z-index: 30;
+            top: calc(max(10px, env(safe-area-inset-top)) + 92px);
+            left: 50%;
+            transform: translate(-50%, -8px);
+            max-width: 90vw;
+            width: max-content;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(91, 46, 82, 0.9);
+            color: #fff;
+            font-weight: 700;
+            font-size: 14px;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+        .banner {
+            position: fixed;
+            z-index: 25;
+            left: 50%;
+            top: 30%;
+            transform: translate(-50%, -50%) scale(0.85);
+            width: max-content;
+            max-width: 94vw;
+            padding: 14px 18px;
+            border-radius: 22px;
+            border: 3px solid #ffb3d6;
+            background: linear-gradient(135deg, #fff5fb, #f1eaff);
+            box-shadow: 0 10px 34px rgba(255, 107, 174, 0.38);
+            font-weight: 900;
+            font-size: 18px;
+            text-align: center;
+            color: var(--plum);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s, transform 0.6s;
+        }
+        .banner.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .banner small {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12.5px;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+        }
+
+        /* ── 下のパネル ── */
+        .panel {
+            position: fixed;
+            z-index: 20;
+            left: max(10px, env(safe-area-inset-left));
+            right: max(10px, env(safe-area-inset-right));
+            bottom: max(10px, env(safe-area-inset-bottom));
+            height: 41vh;
+            height: 41dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--cream);
+            border: 2px solid #ffd9ea;
+            border-radius: 24px;
+            box-shadow: 0 6px 26px rgba(150, 80, 120, 0.18);
+            transition: height 0.3s ease;
+        }
+        .panel.collapsed { height: 96px; }
+        .panel.collapsed .panel-scroll { overflow: hidden; }
+
+        .handle {
+            flex: none;
+            height: 20px;
+            border: none;
+            background: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .handle span {
+            width: 46px;
+            height: 5px;
+            border-radius: 3px;
+            background: #f2c9dc;
+        }
+
+        .panel-scroll {
+            flex: 1;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0 18px 18px;
+        }
+
+        h3 {
+            margin: 14px 0 6px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.25em;
+            color: var(--muted);
+        }
+        h3:first-child { margin-top: 0; }
+
+        .now { font-size: 20px; font-weight: 900; line-height: 1.35; }
+
+        .bars .row {
+            display: grid;
+            grid-template-columns: 4.6em 1fr 2.2em;
+            align-items: center;
+            gap: 8px;
+            margin: 7px 0;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .track { height: 12px; border-radius: 8px; background: #f6e9ee; overflow: hidden; }
+        .fill { height: 100%; border-radius: 8px; transition: width 0.4s; }
+        .num { text-align: right; color: var(--plum-2); font-variant-numeric: tabular-nums; }
+
+        .counters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 14px;
+            margin-top: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--plum-2);
+        }
+        .counters b { color: var(--plum); }
+
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+        .btn {
+            padding: 12px 6px;
+            border-radius: 16px;
+            border: 2px solid var(--edge);
+            background: #fff;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--plum);
+            transition: transform 0.08s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn.on { background: #ffe58f; border-color: #f2cc5a; }
+
+        .hint { margin-top: 8px; font-size: 12.5px; color: #a07f97; line-height: 1.5; }
+
+        .family { display: grid; gap: 8px; }
+        .fam {
+            display: grid;
+            grid-template-columns: 42px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-radius: 16px;
+            border: 2px solid var(--edge);
+            background: #fff;
+        }
+        .fam.here { border-color: var(--fc); background: color-mix(in srgb, var(--fc) 10%, #fff); }
+        .fam svg { width: 42px; height: 36px; shape-rendering: crispEdges; }
+        .fam .nm { font-weight: 900; font-size: 15px; }
+        .fam .hz { font-size: 12px; font-weight: 700; color: #a07f97; }
+        .fam button {
+            min-width: 74px;
+            padding: 8px 12px;
+            border-radius: 14px;
+            border: none;
+            background: var(--pink);
+            color: #fff;
+            font-weight: 900;
+            font-size: 14px;
+        }
+        .fam button.bye { background: #fff; color: var(--plum-2); border: 2px solid var(--edge); }
+        .fam button:disabled { opacity: 0.55; }
+
+        .talk { display: flex; gap: 8px; }
+        .talk input {
+            flex: 1;
+            min-width: 0;
+            padding: 11px 14px;
+            border-radius: 16px;
+            border: 2px solid var(--edge);
+            background: #fff;
+            color: var(--plum);
+            font: inherit;
+            font-size: 16px;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        .talk input:focus { outline: none; border-color: #ffb3d6; }
+        .talk button {
+            padding: 0 18px;
+            border: none;
+            border-radius: 16px;
+            background: var(--pink);
+            color: #fff;
+            font-weight: 900;
+            font-size: 16px;
+        }
+
+        .diary { list-style: none; }
+        .diary li {
+            display: flex;
+            gap: 10px;
+            padding: 8px 2px;
+            border-bottom: 1.5px dashed #f0dbe5;
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1.45;
+        }
+        .diary .t { flex: none; color: var(--pink); font-variant-numeric: tabular-nums; }
+        .diary .day {
+            justify-content: center;
+            padding-top: 12px;
+            border-bottom: none;
+            font-size: 12px;
+            letter-spacing: 0.2em;
+            color: #b48aa6;
+        }
+
+        .reset {
+            width: 100%;
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 16px;
+            border: 2px dashed #f0cfe0;
+            background: none;
+            font-weight: 700;
+            font-size: 14px;
+            color: #a07f97;
+        }
+        .reset.armed { border-color: var(--pink); color: var(--pink); }
+
+        #loading {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(160deg, #ffe3f1, #e9e0ff);
+            font-weight: 900;
+            color: var(--pink);
+            text-align: center;
+            padding: 24px;
+            transition: opacity 0.6s;
+        }
+        #loading.hide { opacity: 0; pointer-events: none; }
+        #loading .sub { font-size: 13px; font-weight: 700; color: var(--plum-2); }
+
+        /* 横長の大きい画面ではパネルを右側に */
+        @media (min-width: 860px) and (min-aspect-ratio: 1/1) {
+            .panel {
+                left: auto;
+                top: max(12px, env(safe-area-inset-top));
+                bottom: max(12px, env(safe-area-inset-bottom));
+                width: 370px;
+                height: auto;
+            }
+            .panel.collapsed { height: auto; }
+            .handle { display: none; }
+            .panel-scroll { padding-top: 16px; }
+            .hud { right: calc(370px + 24px); }
+        }
+    </style>
+
+    <script type="importmap">
+        { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/" } }
+    </script>
+</head>
+<body>
+    <canvas id="scene"></canvas>
+    <div id="fx"></div>
+
+    <div class="hud">
+        <div class="hud-row">
+            <div class="pill title">子みくろんのおうち</div>
+            <div class="pill" id="clock">1日目 07:00（朝）</div>
+        </div>
+        <div class="hud-row">
+            <div class="seg" id="speed">
+                <button data-speed="0">停止</button>
+                <button data-speed="1">×1</button>
+                <button data-speed="4">×4</button>
+                <button data-speed="12">×12</button>
+            </div>
+            <span class="spacer"></span>
+            <button class="round" id="btn-sound" aria-label="おとの入り切り">🔔</button>
+            <button class="round" id="btn-home" aria-label="おうち全体を見る">🏠</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <div class="banner" id="banner"></div>
+
+    <section class="panel" id="panel">
+        <button class="handle" id="panel-handle" aria-label="パネルを開け閉め"><span></span></button>
+        <div class="panel-scroll" id="panel-scroll">
+            <h3>いまの子みくろん</h3>
+            <div class="now" id="now">…</div>
+
+            <h3>ようす</h3>
+            <div class="bars" id="bars"></div>
+            <div class="counters" id="counters"></div>
+
+            <h3>かかわる</h3>
+            <div class="grid2">
+                <button class="btn" id="btn-food">ごはんを置く</button>
+                <button class="btn" id="btn-ball">ボールを投げる</button>
+                <button class="btn" id="btn-light">照明を切り替え</button>
+                <button class="btn" id="btn-follow">子みくろんを追う</button>
+            </div>
+            <p class="hint">子みくろんをタップでなでなで。家具をタップでおねがい。</p>
+
+            <h3>ソルフェジオファミリー</h3>
+            <div class="family" id="family"></div>
+            <p class="hint">みんなを呼んで、子みくろんのおうちに遊びに来てもらおう。4人そろうと…？✨</p>
+
+            <h3>話しかける</h3>
+            <form class="talk" id="talk" autocomplete="off">
+                <input id="talk-input" type="text" placeholder="こんにちは／すき／あそぼ…" maxlength="60" enterkeyhint="send">
+                <button type="submit">送る</button>
+            </form>
+
+            <h3>子みくろんの日記</h3>
+            <ol class="diary" id="diary"></ol>
+            <button class="reset" id="btn-reset">記録を消して最初から</button>
+        </div>
+    </section>
+
+    <div id="loading">
+        <div>子みくろんのおうちを準備中…🌸</div>
+        <div class="sub">ちょっと待っとってけろ〜🌿</div>
+    </div>
+
+    <script type="module" src="./js/main.js"></script>
+</body>
+</html>
