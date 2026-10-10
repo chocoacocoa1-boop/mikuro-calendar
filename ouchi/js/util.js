@@ -38,6 +38,9 @@ export function partOfDay(min) {
     return '夜';
 }
 
+// 吹き出しを出しておく秒数（長いセリフほど長く）
+export const speechSec = (text) => clamp(1.7 + [...String(text)].length * 0.085, 2.6, 5.4);
+
 export const fill = (s, vars) => s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ''));
 
 export function shuffle(arr) {

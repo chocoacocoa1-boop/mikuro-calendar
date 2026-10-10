@@ -25,7 +25,7 @@ export function createFx(W) {
     }
 
     const fx = {
-        say(agent, text, sec = 3.6) {
+        say(agent, text, sec = 3.6, o = {}) {
             let b = bubbles.get(agent);
             if (!b) {
                 const el = document.createElement('div');
@@ -46,6 +46,14 @@ export function createFx(W) {
                 b.el.appendChild(who);
             }
             b.el.appendChild(document.createTextNode(text));
+            if (o.hint) {
+                const tip = document.createElement('span');
+                tip.className = 'tap';
+                tip.textContent = o.hint;
+                b.el.appendChild(tip);
+            }
+            b.el.classList.toggle('ask', !!o.onTap);
+            b.el.onclick = o.onTap ? (e) => { e.stopPropagation(); o.onTap(); } : null;
             b.life = sec;
             b.age = 0;
         },
@@ -127,17 +135,27 @@ export function createFx(W) {
                 active.push({ b, x: p.x, y: p.y, w: b.el.offsetWidth, h: b.el.offsetHeight });
             }
             active.sort((a, b) => b.y - a.y);
+            const vw = window.innerWidth;
             for (const a of active) {
+                // 画面の端で切れないように、吹き出しだけ内側へ寄せる（しっぽは話している人へ）
+                const left = Math.min(Math.max(a.x - a.w / 2, 6), Math.max(6, vw - a.w - 6));
+                const cx = left + a.w / 2;
                 let top = a.y - a.h - 10;
                 for (const o of placed) {
-                    const overlapX = Math.abs(a.x - o.x) < (a.w + o.w) / 2 + 4;
+                    const overlapX = Math.abs(cx - o.x) < (a.w + o.w) / 2 + 4;
                     if (overlapX && top + a.h > o.top - 4 && top < o.top + o.h) top = o.top - a.h - 6;
                 }
-                placed.push({ x: a.x, top, w: a.w, h: a.h });
+                placed.push({ x: cx, top, w: a.w, h: a.h });
+                const tail = Math.min(Math.max(a.x - left, 16), a.w - 16);
+                const tailPx = `${Math.round(tail)}px`;
+                if (a.b.tail !== tailPx) {
+                    a.b.tail = tailPx;
+                    a.b.el.style.setProperty('--tail', tailPx);
+                }
                 const pop = Math.min(1, a.b.age / 0.14);
                 const fade = Math.min(1, a.b.life / 0.3);
                 a.b.el.style.opacity = String(fade);
-                a.b.el.style.transform = `translate(${a.x - a.w / 2}px, ${top}px) scale(${0.85 + 0.15 * pop})`;
+                a.b.el.style.transform = `translate(${left}px, ${top}px) scale(${0.85 + 0.15 * pop})`;
             }
 
             for (let i = parts.length - 1; i >= 0; i--) {

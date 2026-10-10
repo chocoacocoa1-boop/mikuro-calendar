@@ -1,6 +1,6 @@
 // 子みくろんのおうち サービスワーカー
 // キャッシュを更新したいときは CACHE_NAME のバージョン番号を上げること
-const CACHE_NAME = 'komikuron-ouchi-v1';
+const CACHE_NAME = 'komikuron-ouchi-v2';
 const ASSETS = [
     './',
     './index.html',
@@ -15,7 +15,9 @@ const ASSETS = [
     './js/audio.js',
     './js/ball.js',
     './js/build.js',
+    './js/chatter.js',
     './js/clawd.js',
+    './js/convos.js',
     './js/ctx.js',
     './js/env.js',
     './js/family.js',

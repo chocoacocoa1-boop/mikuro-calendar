@@ -24,6 +24,7 @@ export function defaultState() {
         sound: true,
         lastPetLog: -999,
         lastTalkLog: -999,
+        memo: {},
         diary: [],
     };
 }

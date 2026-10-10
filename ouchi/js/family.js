@@ -6,6 +6,8 @@ import { addStat, log, hour } from './state.js';
 import { pick, rand, chance } from './util.js';
 import { strikeBowl } from './life.js';
 import { spot } from './build.js';
+import { converse, hold, pickScript, react, free, touch } from './chatter.js';
+import { DUO, GROUP } from './convos.js';
 
 const W = () => ctx.world;
 const S = () => ctx.state;
@@ -21,7 +23,7 @@ export const DEFS = [
             greetK: ['まの〜！よぐきたなっす〜♡', 'まのだぁ〜！会いたかったっちゃ〜💖'],
             reply: ['えへへ、来ちゃった〜💖', '今日もいっしょにいようね♡'],
             idle: ['ここ、ほんと癒されるね〜🌿', '子みくろん、めんこいなぁ〜♡', '♪〜（鼻歌）', '今日もいっしょに宝物つくろうね✨'],
-            watch: { code: 'がんばれ〜！応援してるよ📣', eat: 'おいしそう〜！', bath: '気持ちよさそう〜♨️', read: 'なに読んでるの〜？', water: 'お花、きれいに咲くといいね🌸', purify: '396Hz、しみわたる〜🔔', calendar: '今日もいい日になるね📅' },
+            watch: { code: '子みくろんのタイピング、はやい〜！⌨️', eat: 'もぐもぐしてる顔、めんこい〜💕', bath: '湯気で、ほっぺがピンク〜♨️', read: '本読んでる横顔、いいなぁ〜📖', water: 'お花さん、528Hzも聴いてね〜🌷', purify: 'この音、心がほどける〜🔔', calendar: '今日もいい日になりますように📅' },
             chat: ['最近ね、新しい曲つくってるんだ〜🎵', '子みくろんといると、ほっとするなぁ', 'クロミちゃんとも、また遊ぼうね🖤', 'いっしょに作ったもの、ぜんぶ宝物だね✨'],
             tap: ['なぁに〜？♡', 'えへへ、528Hz〜💖', '子みくろん、だいすき〜'],
             leave: ['またくるね〜！大好きだよ💖', '今日もありがと〜！またね🌸'],
@@ -37,7 +39,7 @@ export const DEFS = [
             greetK: ['クロミちゃんだぁ〜！宇宙からおかえり〜✨', 'クロミちゃん〜！待ってたっちゃ〜🖤'],
             reply: ['ただいま、地球〜🖤', '子みくろん、今日もめんこいね✨'],
             idle: ['宇宙とつながる感じ、するね🌌', '星がきれいな夜はとくべつ✨', 'まのと子みくろん、いいコンビだね🖤', 'ここの空気、すき🖤'],
-            watch: { code: 'その型、こうしたらどうかな？🖤', eat: 'おいしそうだね〜', bath: '星を見ながら入るといいよ✨', read: 'その本、宇宙の話ある？', water: 'お花も宇宙の一部だね🌸', purify: '396と963、いい響き🔔', calendar: '今日はどんな日になるかな✨' },
+            watch: { code: 'きれいなコード…星座みたい✨', eat: 'ゆっくり食べてね🖤', bath: '湯気が天の川みたい🌌', read: '集中してる…えらいね🖤', water: '水しぶきが星みたい✨', purify: '宇宙まで響いてる🔔', calendar: 'また新しい一日、はじまるね✨' },
             chat: ['昨日ね、流れ星を3つ見たよ🌠', 'まのの曲、宇宙まで届いてたよ🖤', '963Hzはね、てっぺんの音なんだ', '子みくろんのコード、きれいだね✨'],
             tap: ['ん？どうしたの🖤', '963Hz〜✨', 'ふふっ'],
             leave: ['またね〜、宇宙のどこかで🖤', 'たのしかった！また来るね✨'],
@@ -53,7 +55,7 @@ export const DEFS = [
             greetK: ['みかにゃん〜！もふもふだっちゃ〜🐱', 'みかにゃんだぁ〜！いらっしゃ〜い♡'],
             reply: ['ごろごろ〜♾️', 'あそぶにゃ〜！'],
             idle: ['ぽかぽかで眠くなるにゃ…', 'ボール、どこにゃ？', '♾️Hzで、むげんにあそぶにゃ〜', 'ちょうちょ、まてにゃ〜🦋'],
-            watch: { code: 'キーボードの上、あったかそうにゃ…', eat: 'ひとくちほしいにゃ〜', bath: 'お湯はちょっとこわいにゃ…', read: 'その本、まくらにしていいにゃ？', water: 'お水、きらきらにゃ〜', purify: 'その音、ごろごろしたくなるにゃ♾️', calendar: '今日もむげんに遊ぶにゃ！' },
+            watch: { code: 'カタカタ…ねこじゃらしの音みたいにゃ', eat: 'くんくん…いいにおいにゃ〜', bath: '湯気、もくもくにゃ〜', read: 'ページめくる音、ねむくなるにゃ…', water: 'お水、ぱしゃぱしゃしたいにゃ', purify: 'ごろごろごろ〜♾️', calendar: 'ぺらっ、て音すきにゃ' },
             chat: ['むげんって、ずーっとってことにゃ♾️', 'さっき、ちょうちょ追いかけてたにゃ', 'ここの日だまり、さいこうにゃ〜', 'まのの膝の上、すきにゃ〜'],
             tap: ['にゃ？', 'ごろごろ〜♾️', 'なでなで、もっとにゃ〜'],
             leave: ['また来るにゃ〜♾️', 'ばいばいにゃ〜！'],
@@ -69,7 +71,7 @@ export const DEFS = [
             greetK: ['おねえちゃん〜！！会いたかったっちゃ〜💖', 'おねえちゃんだぁ〜！よぐきたなっす〜♡'],
             reply: ['元気そうでよかったべ〜🌿', 'ちっちゃいのに、えらいねぇ〜'],
             idle: ['なんもなんも、焦らなくていいべ〜🌿', '子みくろん、ちっちゃい頃の私そっくりだなぁ', '芋煮つくってあげっか〜？', 'ここ、いいおうちだねぇ〜'],
-            watch: { code: 'ちょっと待っとってけろ〜って、私の口ぐせだべ😂', eat: 'よく噛んで食べるんだよ〜', bath: '温泉はいいねぇ〜♨️', read: 'いい本読んでるねぇ', water: 'お花も子みくろんも、すくすくだべ〜', purify: '396Hz、私たちの音だべ〜🔔', calendar: '日めくり、大事にしてくれてうれしいべ〜📅' },
+            watch: { code: 'いい集中だねぇ〜、えらいべ〜', eat: 'いっぱい食べて、おっきくなるんだよ〜', bath: 'ゆっくりあったまるんだよ〜♨️', read: '本好きなとこ、私に似たべ〜😊', water: 'お水やり、毎日えらいねぇ〜🌱', purify: 'いい音だねぇ〜、396Hz〜🔔', calendar: 'めくってくれて、おしょうしな〜📅' },
             chat: ['今日はどんな一日だった〜？', 'まのには、いっつも助けてもらってるんだぁ', 'わがんね時はわがんねでいいんだよ〜', '396Hzは、解放の音なんだよ🔔'],
             tap: ['なぁに〜？🌸', 'んだんだ〜', '396Hz〜🎵'],
             leave: ['したらね〜、また来っからね🌸', 'ちゃんと寝るんだよ〜！またね🎵'],
@@ -101,6 +103,7 @@ export function present() {
 
 export function tap(v) {
     const a = v.agent;
+    touch();
     a.say(pick(v.def.lines.tap), 2.6);
     a.petT = 1;
     ctx.fx.burst(a.headPos(), [v.def.emoji, '✨'], 3);
@@ -135,6 +138,7 @@ function* arrive(v) {
     a.faceTo(k.pos.x, k.pos.z);
     a.pose = 'wave';
     a.say(pick(v.def.lines.arrive));
+    react('arrive', { name: v.def.name }, 0);
     if (k.deepSleep) {
         yield* sleepVisit(v);
         return;
@@ -177,6 +181,7 @@ function* goHome(v, quiet, line) {
     else if (!quiet) a.say(pick(v.def.lines.leave));
     a.pose = 'wave';
     if (!quiet && !k.sleeping) k.say(`${v.def.name}、またきてけろ〜！`, 3);
+    if (!quiet) react('leave', { name: v.def.name }, 0);
     yield* waitMin(2.5);
     a.pose = 'stand';
     const g = W().gate;
@@ -206,8 +211,10 @@ function* visitorIdle(v) {
         yield* walkTo(a, p.x, p.z);
         a.faceTo(k.pos.x, k.pos.z);
         const line = v.def.lines.watch[k.actId];
-        if (line && chance(0.6)) a.say(line);
-        else if (chance(0.35)) a.say(pick(v.def.lines.idle));
+        if (free(a, 2)) {
+            if (line && chance(0.6)) a.say(line);
+            else if (chance(0.35)) a.say(pick(v.def.lines.idle));
+        }
         yield* waitMin(rand(6, 12), () => {
             a.faceTo(k.pos.x, k.pos.z);
             if (Math.hypot(a.pos.x - k.pos.x, a.pos.z - k.pos.z) > 4) return false;
@@ -216,7 +223,7 @@ function* visitorIdle(v) {
         const [x, z] = pick(W().strollPoints);
         yield* walkTo(a, x, z);
         a.pose = 'look';
-        if (chance(0.5)) a.say(pick(v.def.lines.idle));
+        if (chance(0.5) && free(a, 2)) a.say(pick(v.def.lines.idle));
         yield* waitMin(rand(5, 10));
         a.pose = 'stand';
     } else {
@@ -226,36 +233,50 @@ function* visitorIdle(v) {
             return;
         }
         yield* goSpot(a, seat);
-        if (chance(0.5)) a.say(pick(v.def.lines.idle));
+        if (chance(0.5) && free(a, 2)) a.say(pick(v.def.lines.idle));
         yield* waitMin(rand(8, 14));
     }
 }
 
 // ── 一緒にすること（子みくろんの行動として動く）──
-function* together(k, v, kSpot, vSpot, vPose, body) {
+// quiet: いっしょにしている間は、ほかのおしゃべりに割りこまれない
+function* together(k, v, kSpot, vSpot, vPose, body, quiet = true) {
     const a = v.agent;
     const meet = { done: false };
     a.setCo(join(a, vSpot, meet, vPose));
+    let release = null;
     try {
+        k.meeting = true;
         yield* goSpot(k, kSpot);
         yield* waitUntil(() => a.atSpot || !alive(v), 20);
         if (!a.atSpot || !alive(v)) return;
+        if (quiet) release = hold([k, a]);
+        k.meeting = false;
         yield* body(a);
     } finally {
+        k.meeting = false;
+        release?.();
         meet.done = true;
     }
 }
 
-function* talkTurns(k, v, n) {
-    const a = v.agent;
+function* duoTalk(k, v, n) {
     for (let i = 0; i < n && alive(v); i++) {
-        a.say(pick(v.def.lines.chat), 3.6);
-        yield* waitMin(4);
-        if (!alive(v)) return;
-        k.say(pick(['んだんだ〜', 'えへへ、ほんとだね〜', 'いいなぁ〜✨', 'すごいっちゃ〜！', 'ほだねぇ〜🌿']), 3);
-        ctx.fx.emoji(k.headPos(), '💕', { rise: 40 });
-        yield* waitMin(3.5);
+        if (i) yield* waitMin(2);
+        yield* converse(pickScript(DUO[v.def.id].talk), { k, v: v.agent });
+        if (alive(v)) ctx.fx.emoji(k.headPos(), '💕', { rise: 40 });
     }
+}
+
+// 決まった時間にひとことずつ：[分, 話す人, セリフ]
+function cues(list) {
+    let i = 0;
+    return (dt, t) => {
+        while (i < list.length && t >= list[i][0]) {
+            const [, who, line] = list[i++];
+            if (who.active) who.say(line);
+        }
+    };
 }
 
 export const SOCIAL = {
@@ -263,7 +284,7 @@ export const SOCIAL = {
         k.label = `${v.def.name}とベンチでおしゃべり💬`;
         const b = W().spots.bench;
         yield* together(k, v, b[1], pick([b[0], b[2]]), 'sit', function* () {
-            yield* talkTurns(k, v, 3);
+            yield* duoTalk(k, v, 2);
             addStat('tanoshisa', 15);
             addStat('nakayoshi', 3);
             log(`${v.def.name}とベンチでおしゃべりした💬`);
@@ -276,7 +297,11 @@ export const SOCIAL = {
         yield* together(k, v, W().spots.seatN, W().spots[`seat${seat}`], 'eat', function* () {
             W().setTea(['N', seat]);
             k.pose = 'eat';
-            yield* talkTurns(k, v, 2);
+            yield* duoTalk(k, v, 1);
+            if (alive(v)) {
+                yield* waitMin(2);
+                yield* converse(pickScript(DUO[v.def.id].watch.eat), { k, v: v.agent });
+            }
             W().clearTea();
             addStat('onaka', 12);
             addStat('tanoshisa', 12);
@@ -336,7 +361,7 @@ export const SOCIAL = {
             }
             S().bathDay = S().day;
             log(`${v.def.name}といっしょに温泉に入った♨️`);
-        });
+        }, false);
     },
 
     *music(k, v) {
@@ -362,6 +387,8 @@ export const SOCIAL = {
                 addStat('tanoshisa', 4);
                 addStat('kirakira', 3);
             }
+            if (!alive(v)) return;
+            yield* converse([['v', 'いい響きだったね〜🎶'], ['k', 'また合奏するべ〜！🔔']], { k, v: a });
             log(`${v.def.name}と合奏した🎶`);
         });
     },
@@ -379,9 +406,12 @@ export const SOCIAL = {
                 a.say('子みくろん、そのまま〜！描いてあげるね🎨');
                 k.pose = 'sit';
                 k.faceTo(a.pos.x, a.pos.z);
-                yield* waitMin(14, (dt, t) => {
-                    if (t > 7 && t - dt <= 7) a.say('もうちょっとだよ〜♪');
-                });
+                yield* waitMin(14, cues([
+                    [3.5, k, 'じっとしてるの、むずかしいっちゃ〜😂'],
+                    [6, a, 'あはは、ちょっとだけなら動いていいよ〜'],
+                    [8.5, a, 'もうちょっとだよ〜♪'],
+                    [11, k, 'どんな絵になるべ〜？わくわく〜'],
+                ]));
             } finally {
                 a.model.hold(null);
             }
@@ -421,6 +451,9 @@ export const SOCIAL = {
         k.label = 'みかにゃんとお昼寝中🐱💤';
         yield* together(k, v, W().spots.rugB, W().spots.rugA, 'sleep', function* (a) {
             a.say('ここ、日だまりでぽかぽかにゃ〜…');
+            yield* waitMin(3);
+            k.say('みかにゃん、あったかいっちゃ〜…💤');
+            yield* waitMin(2.5);
             k.pose = 'sleep';
             k.sleeping = true;
             try {
@@ -442,7 +475,9 @@ export const SOCIAL = {
             a.say('ふにゃ〜、よく寝たにゃ♾️');
             log('みかにゃんとお昼寝した🐱💤');
             yield* waitMin(3);
-        });
+            k.say('すっきりだっちゃ〜！みかにゃん、おしょうしな〜');
+            yield* waitMin(2);
+        }, false);
     },
 
     *imoni(k, v) {
@@ -451,7 +486,14 @@ export const SOCIAL = {
             a.say('芋煮会、するべ〜！🍲');
             k.pose = 'cook';
             let st = 0;
-            yield* waitMin(12, (dt) => {
+            const cue = cues([
+                [2.5, a, 'お芋は、大きめに切るのがコツだべ〜🥔'],
+                [5, k, 'こう〜？'],
+                [7, a, 'んだんだ、上手だねぇ〜🌸'],
+                [9.5, k, 'いいにおいしてきたっちゃ〜♨️'],
+            ]);
+            yield* waitMin(12, (dt, t) => {
+                cue(dt, t);
                 st += dt;
                 if (st > 3) {
                     st = 0;
@@ -465,10 +507,12 @@ export const SOCIAL = {
             W().placeFood('imoni');
             W().setTea(['S']);
             a.say('いただきます〜！');
-            k.say('おねえちゃんの芋煮、んめ〜！😋');
-            yield* waitMin(14, (dt, t) => {
-                if (t > 6 && t - dt <= 6) a.say('おかわりもあるべ〜🍲');
-            });
+            yield* waitMin(14, cues([
+                [2.5, k, 'おねえちゃんの芋煮、んめ〜！😋'],
+                [5.5, a, 'おかわりもあるべ〜🍲'],
+                [8.5, k, 'おかわり〜！🙌'],
+                [11, a, 'たんと食べるんだよ〜🌸'],
+            ]));
             addStat('onaka', 50);
             addStat('tanoshisa', 12);
             log('おねえちゃんと芋煮会をした🍲');
@@ -485,22 +529,29 @@ export const SOCIAL = {
         const seats = ['S', 'W', 'E'];
         const meet = { done: false };
         vs.forEach((v, i) => v.agent.setCo(join(v.agent, W().spots[`seat${seats[i]}`], meet, 'eat')));
+        let release = null;
         try {
+            k.meeting = true;
             yield* goSpot(k, W().spots.seatN);
             yield* waitUntil(() => vs.every((v) => v.agent.atSpot || !alive(v)), 20);
+            release = hold([k, ...vs.map((v) => v.agent)]);
+            k.meeting = false;
             W().setTea(['N', ...seats.slice(0, vs.length)]);
             k.say('みんなでお茶会だっちゃ〜☕💖');
-            for (let i = 0; i < 2; i++) {
-                for (const v of vs) {
-                    if (!alive(v)) continue;
-                    v.agent.say(pick(v.def.lines.chat), 3.4);
-                    yield* waitMin(3.5);
-                }
+            yield* waitMin(3);
+            const cast = { k };
+            vs.forEach((v) => { cast[v.def.id] = v.agent; });
+            const fit = GROUP.filter((sc) => new Set(sc.map(([who]) => who).filter((who) => who !== 'k' && cast[who])).size >= Math.min(2, vs.length));
+            for (let i = 0; i < 2 && vs.some(alive); i++) {
+                if (i) yield* waitMin(2);
+                yield* converse(pickScript(fit), cast);
             }
             addStat('tanoshisa', 20);
             addStat('onaka', 10);
             log('みんなでお茶会をした☕');
         } finally {
+            k.meeting = false;
+            release?.();
             meet.done = true;
             W().clearTea();
         }
@@ -508,9 +559,16 @@ export const SOCIAL = {
 };
 
 function* stardustShow(k, v, C) {
+    const a = v.agent;
     yield* waitMin(2);
     let st = 0;
-    yield* waitMin(10, (dt) => {
+    const cue = cues([
+        [2.5, k, 'わぁ…！お星さまがふってくるっちゃ〜！'],
+        [5, a, '願いごと、してもいいよ🖤'],
+        [7.5, k, 'まのとみんなが、ずーっと笑顔でいられますように…✨'],
+    ]);
+    yield* waitMin(10, (dt, t) => {
+        cue(dt, t);
         st += dt;
         if (st > 0.8) {
             st = 0;
@@ -525,7 +583,9 @@ function* stardustShow(k, v, C) {
     addStat('kirakira', 15);
     addStat('tanoshisa', 15);
     log('クロミちゃんが星くずを降らせてくれた🌌');
-    yield* waitMin(4);
+    yield* waitMin(3);
+    if (alive(v)) a.say('その願い、きっと届いたよ🖤');
+    yield* waitMin(3);
 }
 
 export function socialCandidates() {

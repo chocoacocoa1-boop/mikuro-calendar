@@ -98,12 +98,14 @@ export function createUI(h) {
         return { v, row, btn, last: '' };
     });
 
-    $('talk').addEventListener('submit', (e) => {
+    const talkForm = $('talk');
+    const talkInput = $('talk-input');
+    const talkPlaceholder = talkInput.placeholder;
+    talkForm.addEventListener('submit', (e) => {
         e.preventDefault();
-        const inp = $('talk-input');
-        h.talk(inp.value);
-        inp.value = '';
-        inp.blur();
+        h.talk(talkInput.value);
+        talkInput.value = '';
+        talkInput.blur();
     });
 
     const resetBtn = $('btn-reset');
@@ -152,6 +154,16 @@ export function createUI(h) {
     return {
         diaryDirty() { dirty = true; },
         syncFollow,
+        // 子みくろんの質問に答えられるように、話しかける欄をひらく
+        openTalk() {
+            panel.classList.remove('collapsed');
+            talkInput.focus({ preventScroll: true });
+            talkForm.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        },
+        setAsk(hint) {
+            talkInput.placeholder = hint ?? talkPlaceholder;
+            talkForm.classList.toggle('asking', !!hint);
+        },
         update() {
             const s = S();
             clockEl.textContent = `${s.day}日目 ${clockText(s.min)}（${partOfDay(s.min)}）`;

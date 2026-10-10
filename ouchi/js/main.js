@@ -12,6 +12,7 @@ import { makeKoMikuron } from './clawd.js';
 import { loadState, saveState, clearState, log } from './state.js';
 import * as life from './life.js';
 import * as family from './family.js';
+import * as chatter from './chatter.js';
 import { createBall } from './ball.js';
 import { createUI } from './ui.js';
 import { L } from './lines.js';
@@ -327,6 +328,7 @@ function boot() {
         const dtGame = dt * ctx.state.speed;
         life.sim(dtGame);
         for (const a of ctx.agents) if (a.active) a.update(dtGame, dt);
+        chatter.update(dt);
         ctx.ball.update(dtGame);
         updateLamps(dt);
         W.env.update(ctx.state.min, dt, ctx.tReal, camera, camera.position.distanceTo(controls.target));
@@ -352,7 +354,7 @@ function boot() {
         document.getElementById('loading').classList.add('hide');
     });
 
-    if (/[?&]debug\b/.test(location.search)) window.__ouchi = { ctx, life, family, home };
+    if (/[?&]debug\b/.test(location.search)) window.__ouchi = { ctx, life, family, chatter, home };
 
     try {
         if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
