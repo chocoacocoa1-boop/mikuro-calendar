@@ -85,7 +85,7 @@
         .bubble::after {
             content: '';
             position: absolute;
-            left: 50%;
+            left: var(--tail, 50%);
             bottom: -9px;
             width: 12px;
             height: 12px;
@@ -94,6 +94,15 @@
             border-bottom: 2.5px solid var(--bc, #ff6bae);
             transform: translateX(-50%) rotate(45deg);
         }
+        .bubble.ask { pointer-events: auto; cursor: pointer; }
+        .bubble .tap {
+            display: block;
+            margin-top: 3px;
+            font-size: 11px;
+            color: var(--pink);
+            animation: tapblink 1.4s ease-in-out infinite;
+        }
+        @keyframes tapblink { 50% { opacity: 0.45; } }
         .bubble .who {
             display: block;
             font-size: 10.5px;
@@ -358,6 +367,7 @@
             user-select: text;
         }
         .talk input:focus { outline: none; border-color: #ffb3d6; }
+        .talk.asking input { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255, 107, 174, 0.18); }
         .talk button {
             padding: 0 18px;
             border: none;

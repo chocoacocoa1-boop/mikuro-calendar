@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
-import { L, TALK, TALK_DEFAULT } from './lines.js';
+import { L, TALK, TALK_DEFAULT, TALK_ASK } from './lines.js';
 import { DISHES } from './house.js';
 import { goSpot, leaveSpot, walkTo, waitMin, freeSpot } from './agent.js';
 import { addStat, log, hour, absMin } from './state.js';
-import { pick, rand, randInt, chance, fill, shuffle, clockText } from './util.js';
+import { pick, rand, randInt, chance, fill, shuffle, clockText, speechSec } from './util.js';
+import { free, react, touch, answer, chime, hush } from './chatter.js';
 
 const W = () => ctx.world;
 const S = () => ctx.state;
@@ -20,6 +21,10 @@ const isBedtime = () => {
 
 function say(k, lines, vars, sec) {
     k.say(fill(pick(lines), vars ?? {}), sec);
+}
+// おまけのひとこと：ほかのおしゃべりの途中なら言わない
+function murmur(k, lines, vars) {
+    if (free(k)) say(k, lines, vars);
 }
 function sparkle(k, chars, n = 4) {
     ctx.fx.burst(k.headPos(), chars, n);
@@ -107,6 +112,7 @@ function* actCalendar(k) {
     k.pose = 'happy';
     say(k, L.calendar, { n: S().day });
     sparkle(k, ['🌸', '✨', '📅']);
+    react('calendar', { day: S().day });
     log(`カレンダーをめくった（${S().day}日目）📅`);
     addStat('tanoshisa', 4);
     yield* waitMin(5);
@@ -119,7 +125,7 @@ function* actEat(k) {
     if (!dish) {
         k.label = 'ごはんの準備をしている🍳';
         yield* goSpot(k, W().spots.cook);
-        say(k, L.cook);
+        murmur(k, L.cook);
         let st = 0;
         yield* waitMin(rand(12, 18), (dt) => {
             st += dt;
@@ -174,7 +180,7 @@ function* actCode(k) {
             addStat('genki', -dt * 0.03);
             if (t > next) {
                 next = t + rand(14, 24);
-                say(k, L.code);
+                murmur(k, L.code);
             }
             if (t > commitAt && commits < 2) {
                 commits++;
@@ -183,6 +189,7 @@ function* actCode(k) {
                 ctx.sound.commit();
                 say(k, L.commit, { n: S().commits });
                 sparkle(k, ['✨', '🎉', '💖'], 5);
+                react('commit');
                 log(`コミットした（${S().commits}回目）✨`);
             }
         }
@@ -237,6 +244,7 @@ function* actWater(k) {
         k.pose = 'happy';
         say(k, L.bloom);
         sparkle(k, ['🌸', '🌷', '✨'], 5);
+        react('bloom');
         ctx.sound.sparkle();
         log('お花が咲いた🌸');
     } else {
@@ -258,6 +266,7 @@ function* actCherry(k) {
     k.pose = 'happy';
     say(k, L.cherry, { n });
     sparkle(k, ['🍒', '✨'], 5);
+    react('cherry');
     addStat('onaka', 6);
     addStat('tanoshisa', 8);
     log(`さくらんぼを収穫した（${n}個）🍒`);
@@ -277,7 +286,7 @@ function* actBath(k) {
             addStat('genki', dt * 0.12);
             if (t > bt) {
                 bt = t + rand(10, 16);
-                say(k, L.bath);
+                murmur(k, L.bath);
                 ctx.fx.emoji(k.headPos(), '♨️', { rise: 40 });
             }
         });
@@ -308,7 +317,7 @@ function* actRead(k) {
             addStat('tanoshisa', dt * 0.35);
             if (t > next) {
                 next = t + rand(14, 22);
-                say(k, L.read);
+                murmur(k, L.read);
             }
             if (isBedtime()) return false;
         });
@@ -331,7 +340,7 @@ function* actPurify(k) {
         if (t > ring) {
             ring = t + 4;
             strikeBowl();
-            if (chance(0.3)) say(k, L.purify);
+            if (chance(0.3)) murmur(k, L.purify);
         }
     });
     log('396Hzで浄化した🔔');
@@ -355,7 +364,7 @@ function* actStroll(k) {
     for (const [x, z] of shuffle(W().strollPoints).slice(0, 3)) {
         yield* walkTo(k, x, z);
         k.pose = 'look';
-        if (chance(0.55)) say(k, L.stroll);
+        if (chance(0.55)) murmur(k, L.stroll);
         yield* waitMin(rand(3, 6), (dt) => addStat('tanoshisa', dt * 0.2));
         k.pose = 'stand';
     }
@@ -372,7 +381,7 @@ function* actBench(k) {
         addStat('genki', dt * 0.1);
         addStat('tanoshisa', dt * 0.1);
     });
-    if (chance(0.5)) say(k, L.stroll);
+    if (chance(0.5)) murmur(k, L.stroll);
     log('ベンチでひとやすみした');
 }
 
@@ -381,7 +390,7 @@ function* actIdle(k) {
     const p = ctx.nav.snap(rand(-4.5, 1.6), rand(0.6, 3.3));
     yield* walkTo(k, p.x, p.z);
     k.faceCamera();
-    if (chance(0.5)) say(k, L.idle);
+    if (chance(0.5)) murmur(k, L.idle);
     yield* waitMin(rand(4, 8));
 }
 
@@ -572,6 +581,7 @@ export function sim(dt) {
 let lastPetReal = 0;
 
 export function pet(k) {
+    touch();
     if (k.sleeping) {
         say(k, L.petSleep, null, 2.4);
         ctx.fx.emoji(k.headPos(), '💤');
@@ -581,6 +591,7 @@ export function pet(k) {
     say(k, L.pet, null, 2.6);
     ctx.fx.burst(k.headPos(), ['💖', '💕', '✨'], 4);
     ctx.sound.pet();
+    react('pet', {}, 12);
     const now = performance.now();
     if (now - lastPetReal > 1500) {
         lastPetReal = now;
@@ -600,6 +611,7 @@ export function placeFood() {
         ctx.fx.toast('もうテーブルにごはんがあるよ〜🍽️');
         return;
     }
+    touch();
     const dish = pickDish();
     s.food = dish.id;
     k.cookedFood = false;
@@ -613,18 +625,21 @@ export function placeFood() {
         say(k, L.foodThanks);
         startAct(k, 'eat');
     }
+    if (!k.deepSleep) react('food');
 }
 
 export function throwBall() {
     const k = ctx.km;
     ctx.ball.throwIn(rand(-3.5, 6.5), rand(6.7, 8.2));
     ctx.sound.pop();
+    touch();
     ctx.family.onBall();
     if (k.deepSleep) {
         ctx.fx.toast('子みくろんはすやすや…ボールは庭でころころ〜💤');
         return;
     }
     if (canInterrupt(k) && k.actId !== 'ball') startAct(k, 'ball');
+    react('ball', {}, 15);
 }
 
 export function toggleLights() {
@@ -641,6 +656,7 @@ const REQ = {
 
 export function request(id) {
     const k = ctx.km, s = S(), st = s.stats;
+    touch();
     if (id === 'lamp' || id === 'lantern') { toggleLights(); return; }
     if (k.deepSleep) {
         ctx.fx.toast('子みくろんはぐっすり眠っている…💤');
@@ -685,23 +701,64 @@ export function request(id) {
     startAct(k, act);
 }
 
+const MEMO_NAMES = { food: '好きな食べもの', color: '好きな色', animal: '好きな動物', season: '好きな季節', music: '最近聴いてる曲', place: '行ってみたいとこ', dream: '夢' };
+
+function talkSpecial(reply) {
+    const k = ctx.km, s = S(), st = s.stats;
+    switch (reply) {
+        case '@hungry': return st.onaka < 60 ? 'おなかすいたっちゃ〜…ごはん置いてけろ〜🍚' : 'さっき食べたばっかりだべ〜😋';
+        case '@doing': return `いまはね、${k.label || 'のんびりしてる'}だよ〜`;
+        case '@code': return `コード書くの大好きだべ〜！今まで${s.commits}回コミットしたっちゃ💪`;
+        case '@sky': return W().env.night > 0.5 ? 'お星さまきれいだべ〜✨' : 'いいお天気だなぁ〜☀️';
+        case '@cherry': return `さくらんぼ、${s.cherries}個とれたよ〜🍒 山形の宝石だべ〜`;
+        case '@genki':
+            if (st.genki > 60) return 'げんきいっぱいだっちゃ〜！💪 まのは元気〜？';
+            if (st.genki < 30) return 'ちょっとねむいべ〜…でも、まのと話せてうれしいっちゃ';
+            return 'まあまあだべ〜🌿 まのは元気〜？';
+        case '@calendar': return `今日は${s.day}日目だべ〜📅 おねえちゃんの日めくりカレンダーも、毎日見てけろ〜`;
+        case '@time': return `いま${clockText(s.min)}だべ〜🕰️`;
+        case '@age': return `${s.day}日目だから…${s.day}日さいだっちゃ〜？😂`;
+        case '@flower': {
+            const n = s.flowers.filter((f) => f.g >= 3).length;
+            return n ? `お花、${n}つ咲いてるっちゃ〜🌸 毎朝お水あげてるんだべ〜` : 'お花、まだつぼみだべ〜🌱 毎朝お水あげてるっちゃ';
+        }
+        case '@memo': {
+            const known = Object.keys(MEMO_NAMES).filter((key) => s.memo?.[key]);
+            if (!known.length) return 'まののこと、もっと教えてけろ〜💬 子みくろん、ぜんぶ覚えるっちゃ〜';
+            const key = pick(known);
+            return `まのの${MEMO_NAMES[key]}は「${s.memo[key]}」だべ〜？ちゃんと覚えてるっちゃ💖`;
+        }
+        default: return reply;
+    }
+}
+
 export function talk(text) {
     const k = ctx.km;
     const t = text.trim();
     if (!t) return;
+    touch();
     if (k.sleeping) {
         say(k, L.petSleep);
         return;
     }
     const s = S();
-    const rule = TALK.find(([re]) => re.test(t));
-    let reply = rule ? pick(rule[1]) : pick(TALK_DEFAULT);
-    if (reply === '@hungry') reply = s.stats.onaka < 60 ? 'おなかすいたっちゃ〜…ごはん置いてけろ〜🍚' : 'さっき食べたばっかりだべ〜😋';
-    if (reply === '@doing') reply = `いまはね、${k.label || 'のんびりしてる'}だよ〜`;
-    if (reply === '@code') reply = `コード書くの大好きだべ〜！今まで${s.commits}回コミットしたっちゃ💪`;
-    if (reply === '@sky') reply = W().env.night > 0.5 ? 'お星さまきれいだべ〜✨' : 'いいお天気だなぁ〜☀️';
-    if (reply === '@cherry') reply = `さくらんぼ、${s.cherries}個とれたよ〜🍒 山形の宝石だべ〜`;
-    k.say(reply, 4.2);
+    // あいさつは質問の答えにしない
+    const casual = /おはよ|おやすみ|こんにち|こんばん|おばん|ただいま|いってき|行ってき|ばいばい|バイバイ|またね/.test(t);
+    const ans = casual ? null : answer(t);
+    let reply, topic = null;
+    if (ans) {
+        reply = ans.reply;
+        ctx.fx.burst(k.headPos(), ['💖', '✨', '💬'], 4);
+        addStat('nakayoshi', 3);
+        log(ans.store ? `まのの${MEMO_NAMES[ans.id]}は「${ans.a}」だって📝` : 'まのが今日のことを教えてくれた💬');
+    } else {
+        const rule = TALK.find(([re]) => re.test(t));
+        reply = talkSpecial(rule ? pick(rule[1]) : pick(/[?？]$/.test(t) ? TALK_ASK : TALK_DEFAULT));
+        topic = rule?.[2] ?? 'default';
+    }
+    const sec = Math.max(4.2, speechSec(reply));
+    hush(sec + 2.5);
+    k.say(reply, sec);
     if (!k.onSpot && !k.moving) k.faceCamera();
     k.petT = Math.max(k.petT, 0.6);
     if (/すき|好き|愛して|あいして|love/i.test(t)) {
@@ -713,6 +770,7 @@ export function talk(text) {
         ctx.fx.ring(new THREE.Vector3(k.pos.x, k.pos.y + 0.05, k.pos.z), 0xffb3d6, { s0: 0.2, s1: 1.6, life: 2 });
     }
     if (/あそ[ぼぶ]|遊[ぼぶ]/.test(t)) ctx.fx.toast('「ボールを投げる」で遊べるよ⚽');
+    if (topic) chime(topic, speechSec(reply) * 0.8);
     ctx.sound.pet();
     addStat('nakayoshi', 1.5);
     if (absMin() - s.lastTalkLog > 120) {

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
-import { damp, dampAngle } from './util.js';
+import { damp, dampAngle, speechSec } from './util.js';
 import { FLOOR_Y } from './house.js';
 import { spot as makeSpot } from './build.js';
 
@@ -30,6 +30,9 @@ export class Agent {
         this.goal = null;
         this.yOverride = null;
         this.petT = 0;
+        this.talkT = 0;
+        this.quietAt = 0;
+        this.scripted = 0;
         this.active = true;
         this.label = '';
         this.root.userData.agent = this;
@@ -59,7 +62,12 @@ export class Agent {
 
     setCo(gen) { this.pending = gen; }
 
-    say(text, sec) { ctx.fx.say(this, text, sec); }
+    say(text, sec, o) {
+        const s = sec ?? speechSec(text);
+        ctx.fx.say(this, text, s, o);
+        this.quietAt = ctx.tReal + s;
+        this.talkT = Math.min(1.8, 0.4 + [...text].length * 0.05);
+    }
 
     headPos(out = new THREE.Vector3()) {
         return out.copy(this.root.position).setY(this.root.position.y + this.model.top);
@@ -101,6 +109,7 @@ export class Agent {
         this.yaw = dampAngle(this.yaw, this.targetYaw, 9, dtReal);
         this.root.rotation.y = this.yaw;
         if (this.petT > 0) this.petT = Math.max(0, this.petT - dtReal * 1.6);
+        if (this.talkT > 0) this.talkT = Math.max(0, this.talkT - dtReal);
         this.model.animate(this, dtReal, ctx.tReal);
     }
 }
@@ -224,11 +233,13 @@ export function freeSpot(list, self) {
 // 相手を席へ呼んで、合図があるまで待っていてもらう
 export function* join(a, s, meet, pose) {
     a.atSpot = false;
+    a.joining = true;
     try {
         yield* goSpot(a, s, pose);
         a.atSpot = true;
         while (!meet.done) yield;
     } finally {
         a.atSpot = false;
+        a.joining = false;
     }
 }

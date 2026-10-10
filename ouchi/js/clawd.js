@@ -96,6 +96,7 @@ export function createClawd(o) {
                 case 'draw': rx = 0.08; break;
             }
             if (a.petT > 0) hop = Math.max(hop, Math.sin((1 - a.petT) * Math.PI) * 0.3);
+            if (a.talkT > 0) by += Math.abs(Math.sin(t * 12 + seed)) * 0.024 * Math.min(1, a.talkT * 2.5);
             body.position.y = by;
             const inv = 1 / Math.sqrt(sq);
             body.scale.set(inv, sq, inv);
