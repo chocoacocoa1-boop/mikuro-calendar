@@ -27,7 +27,11 @@ export const DEFS = [
             chat: ['最近ね、新しい曲つくってるんだ〜🎵', '子みくろんといると、ほっとするなぁ', 'クロミちゃんとも、また遊ぼうね🖤', 'いっしょに作ったもの、ぜんぶ宝物だね✨'],
             tap: ['なぁに〜？♡', 'えへへ、528Hz〜💖', '子みくろん、だいすき〜'],
             leave: ['またくるね〜！大好きだよ💖', '今日もありがと〜！またね🌸'],
-            sleepVisit: ['しーっ…寝顔、めんこいなぁ…🌙'],
+            curfew: ['もうこんな時間！そろそろ帰るね🌙', '夜になっちゃった〜、またあしたね💖'],
+            sleepFind: ['あれ…子みくろん、ねんねしてる🌙', 'しーっ…子みくろん、もう夢の中みたい🌙'],
+            sleepShh: ['ほんとだ…しーっ、だね🤫', 'そーっと、そーっと…💖'],
+            sleepVisit: ['しーっ…寝顔、めんこいなぁ…🌙', 'ほっぺぷにぷにしたい…がまんがまん💕'],
+            sleepBye: ['おやすみ、子みくろん。いい夢みてね💖', '528Hzの子守唄、おいてくね…🎵'],
         },
     },
     {
@@ -43,7 +47,11 @@ export const DEFS = [
             chat: ['昨日ね、流れ星を3つ見たよ🌠', 'まのの曲、宇宙まで届いてたよ🖤', '963Hzはね、てっぺんの音なんだ', '子みくろんのコード、きれいだね✨'],
             tap: ['ん？どうしたの🖤', '963Hz〜✨', 'ふふっ'],
             leave: ['またね〜、宇宙のどこかで🖤', 'たのしかった！また来るね✨'],
-            sleepVisit: ['夢の中で、宇宙を案内してあげるね…🌙'],
+            curfew: ['お星さまが呼んでるから、帰るね🖤', '夜空をおさんぽしながら帰るね✨'],
+            sleepFind: ['あ…子みくろん、夢の中だね🌙', '今夜は、もうおやすみなんだね…🖤'],
+            sleepShh: ['しーっ…起こさないようにね🖤', 'ふふっ、足音しのばせてね…🖤'],
+            sleepVisit: ['夢の中で、宇宙を案内してあげるね…🌙', 'すぴーって…めんこい寝息🖤'],
+            sleepBye: ['おやすみ…夢で会おうね🖤', '星をひとつ、枕もとに置いてくね✨'],
         },
     },
     {
@@ -59,7 +67,11 @@ export const DEFS = [
             chat: ['むげんって、ずーっとってことにゃ♾️', 'さっき、ちょうちょ追いかけてたにゃ', 'ここの日だまり、さいこうにゃ〜', 'まのの膝の上、すきにゃ〜'],
             tap: ['にゃ？', 'ごろごろ〜♾️', 'なでなで、もっとにゃ〜'],
             leave: ['また来るにゃ〜♾️', 'ばいばいにゃ〜！'],
-            sleepVisit: ['いっしょに丸くなって寝たいにゃ…💤'],
+            curfew: ['ねむくなってきたにゃ…帰るにゃ〜', 'おうちのおふとんが待ってるにゃ♾️'],
+            sleepFind: ['にゃ…子みくろん、寝てるにゃ🌙', 'すやすやにゃ…しずかにするにゃ…'],
+            sleepShh: ['しのびあしにゃ…🐾', 'ねこは足音しないにゃ…🐾'],
+            sleepVisit: ['いっしょに丸くなって寝たいにゃ…💤', '寝顔、まんまるにゃ…♾️'],
+            sleepBye: ['おやすみにゃ…また来るにゃ♾️', 'こんどは、いっしょにお昼寝するにゃ…💤'],
         },
     },
     {
@@ -75,14 +87,27 @@ export const DEFS = [
             chat: ['今日はどんな一日だった〜？', 'まのには、いっつも助けてもらってるんだぁ', 'わがんね時はわがんねでいいんだよ〜', '396Hzは、解放の音なんだよ🔔'],
             tap: ['なぁに〜？🌸', 'んだんだ〜', '396Hz〜🎵'],
             leave: ['したらね〜、また来っからね🌸', 'ちゃんと寝るんだよ〜！またね🎵'],
-            sleepVisit: ['ぐっすりだねぇ…おやすみ、子みくろん🌙'],
+            curfew: ['あら、もうこんな時間だべ〜、帰っぺね🌸', '子みくろん、はやぐ寝るんだよ〜🌙'],
+            sleepFind: ['あんれまぁ、もう寝でだのが〜🌙', 'ありゃ、ねんねの時間だったべ…🌙'],
+            sleepShh: ['みんな、静かにね〜🤫', 'そーっとだよ、そーっと…🌸'],
+            sleepVisit: ['ぐっすりだねぇ…おやすみ、子みくろん🌙', 'お布団、かけなおしてあげっかね…🌙'],
+            sleepBye: ['あったかくして寝るんだよ…またね🌸', 'したらね、おやすみ〜…🌙'],
         },
     },
 ];
 
-const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false }));
+const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false, night: false }));
 const byId = Object.fromEntries(rt.map((v) => [v.def.id, v]));
 let resonanceLock = false;
+let turnAt = 0;
+
+// みんな同時に来たり帰ったりしても声が重ならないよう、ひとりずつ順番に言う。
+// 速回しで待ちきれなかったら、そのひとことは言わずに進む
+function* inTurn(a, choose) {
+    if (!(yield* waitUntil(() => ctx.tReal >= turnAt && S().speed > 0, 20))) return;
+    a.say(choose());
+    turnAt = a.quietAt + 0.5;
+}
 
 const alive = (v) => v.state === 'visiting';
 
@@ -137,12 +162,13 @@ function* arrive(v) {
     const k = ctx.km;
     a.faceTo(k.pos.x, k.pos.z);
     a.pose = 'wave';
-    a.say(pick(v.def.lines.arrive));
-    react('arrive', { name: v.def.name }, 0);
     if (k.deepSleep) {
+        yield* inTurn(a, () => pick(v.def.lines.arrive));
         yield* sleepVisit(v);
         return;
     }
+    a.say(pick(v.def.lines.arrive));
+    react('arrive', { name: v.def.name }, 0);
     ctx.life.greet(v);
     yield* waitMin(4);
     a.pose = 'stand';
@@ -152,16 +178,19 @@ function* arrive(v) {
 
 function* sleepVisit(v) {
     const a = v.agent;
+    const L = v.def.lines;
     yield* waitMin(3);
     a.pose = 'stand';
-    a.say('あれ…子みくろん、寝てるみたい🌙');
+    // 最初に気づいた人が「寝てる」と言い、あとの人は「しーっ」と合わせる
+    yield* inTurn(a, () => pick(rt.some((o) => o !== v && o.night) ? L.sleepShh : L.sleepFind));
+    v.night = true;
     const p = ctx.nav.snap(0.9 + rand(-0.4, 0.4), -1.35);
     yield* walkTo(a, p.x, p.z);
     a.faceTo(0.3, -3.0);
     yield* waitMin(2);
-    a.say(pick(v.def.lines.sleepVisit), 4);
+    yield* inTurn(a, () => pick(L.sleepVisit));
     yield* waitMin(18);
-    a.say('おやすみ、子みくろん。またくるね🌙');
+    yield* inTurn(a, () => pick(L.sleepBye));
     yield* waitMin(3);
     leave(v.def.id, true);
 }
@@ -177,7 +206,7 @@ export function leave(id, quiet = false, line) {
 function* goHome(v, quiet, line) {
     const a = v.agent;
     const k = ctx.km;
-    if (line) a.say(line);
+    if (line) yield* inTurn(a, () => line);
     else if (!quiet) a.say(pick(v.def.lines.leave));
     a.pose = 'wave';
     if (!quiet && !k.sleeping) k.say(`${v.def.name}、またきてけろ〜！`, 3);
@@ -189,6 +218,7 @@ function* goHome(v, quiet, line) {
     yield* walkTo(a, g.outside.x, g.outside.z);
     v.state = 'away';
     v.greeted = false;
+    v.night = false;
     a.active = false;
     a.root.visible = false;
     log(`${v.def.name}が帰っていった${v.def.emoji}`);
@@ -196,7 +226,7 @@ function* goHome(v, quiet, line) {
 
 export function curfew() {
     for (const v of rt) {
-        if (v.state === 'visiting' || v.state === 'arriving') leave(v.def.id, true, 'もうこんな時間！そろそろ帰るね🌙');
+        if (v.state === 'visiting' || v.state === 'arriving') leave(v.def.id, true, pick(v.def.lines.curfew));
     }
 }
 
