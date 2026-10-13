@@ -166,7 +166,8 @@ export function createUI(h) {
         },
         update() {
             const s = S();
-            clockEl.textContent = `${s.day}日目 ${clockText(s.min)}（${partOfDay(s.min)}）`;
+            clockEl.textContent = `${s.speed ? '' : '⏸ '}${s.day}日目 ${clockText(s.min)}（${partOfDay(s.min)}）`;
+            clockEl.classList.toggle('paused', !s.speed);
             const label = ctx.km.label || '…';
             if (nowEl.textContent !== label) nowEl.textContent = label;
             for (const b of bars) {
