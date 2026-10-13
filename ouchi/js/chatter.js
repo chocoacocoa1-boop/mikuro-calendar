@@ -318,13 +318,15 @@ function soon(sec, fn) {
     later.push({ t: clock + sec, fn });
 }
 
-export function react(ev, vars = {}, gap = 6) {
+// still: 言う直前にもう一度たしかめる（そのあいだに状況が変わっていたら言わない）
+export function react(ev, vars = {}, gap = 6, still) {
     if (throttle[ev] !== undefined && clock - throttle[ev] < gap) return;
     const vs = ctx.family.present().filter((v) => v.greeted && REACT[v.def.id]?.[ev] && canSpeak(v.agent) && free(v.agent, 0) && v.agent.pose !== 'sleep');
     if (!vs.length) return;
     throttle[ev] = clock;
     const v = pick(vs);
     soon(rand(1.0, 1.6), () => {
+        if (still && !still()) return;
         if (canSpeak(v.agent) && !(v.agent.scripted > 0)) v.agent.say(fill(pick(REACT[v.def.id][ev]), vars));
     });
 }

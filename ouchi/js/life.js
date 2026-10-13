@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ctx } from './ctx.js';
 import { L, TALK, TALK_DEFAULT, TALK_ASK } from './lines.js';
 import { DISHES } from './house.js';
-import { goSpot, leaveSpot, walkTo, waitMin, freeSpot } from './agent.js';
+import { goSpot, leaveSpot, walkTo, waitMin, waitUntil, freeSpot, indoors } from './agent.js';
 import { addStat, log, hour, absMin } from './state.js';
 import { pick, rand, randInt, chance, fill, shuffle, clockText, speechSec } from './util.js';
 import { free, react, touch, answer, chime, hush } from './chatter.js';
@@ -507,22 +507,92 @@ export function canInterrupt(k) {
     return !k.deepSleep && k.actId !== 'greet' && k.actId !== 'resonance';
 }
 
-// ── お出迎え（遊びに来た順に）──
+// ── お出迎え・お見送り（来た順・帰る順に）──
 export function greet(v) {
+    door(ctx.km, v, false);
+}
+
+// 帰る人を門まで送る。寝ていたり共鳴の途中だったりして送れないときは false
+export function seeOff(v) {
     const k = ctx.km;
-    (k.greetQueue ||= []).push(v);
+    if (k.sleeping || k.actId === 'resonance') return false;
+    door(k, v, true);
+    return true;
+}
+
+function door(k, v, bye) {
+    (k.doorQueue ||= []).push({ v, bye });
     if (k.actId !== 'greet' && k.actId !== 'resonance') {
         k.actId = 'greet';
-        k.setCo(actGreetAll(k));
+        k.setCo(actDoor(k));
     }
 }
 
-function* actGreetAll(k) {
+function* actDoor(k) {
     k.actId = 'greet';
-    while (k.greetQueue.length) {
-        const v = k.greetQueue.shift();
-        if (v.state === 'visiting') yield* actGreet(k, v);
+    const waved = [];
+    for (;;) {
+        while (k.doorQueue.length) {
+            const { v, bye } = k.doorQueue.shift();
+            if (bye) {
+                if (yield* actSeeOff(k, v)) waved.push(v);
+            } else if (v.state === 'visiting') {
+                yield* actGreet(k, v);
+            }
+        }
+        if (!waved.length) return;
+        // 門の外へ見えなくなるまで、手をふって見送る
+        const g = W().gate;
+        k.label = '門のところで手をふっている👋';
+        k.pose = 'wave';
+        yield* waitMin(12, () => {
+            k.faceTo(g.outside.x, g.outside.z);
+            if (k.doorQueue.length || waved.every((v) => v.state !== 'leaving')) return false;
+        });
+        k.pose = 'stand';
+        if (k.doorQueue.length) continue;
+        say(k, ctx.family.present().length ? L.seeOffStay : L.seeOffDone);
+        yield* waitMin(3);
+        return;
     }
+}
+
+// 門の手前で待ち合わせて、ひとりずつ「またね」
+function* actSeeOff(k, v) {
+    const bye = v.bye;
+    if (!bye || bye.done || v.state !== 'leaving') return false;
+    const a = v.agent;
+    const g = W().gate;
+    k.label = `${v.def.name}をお見送り👋`;
+    const p = ctx.nav.snap(g.inside.x, g.inside.z - 0.8);
+    if (Math.hypot(k.pos.x - p.x, k.pos.z - p.z) > 0.3) {
+        // 「帰るね」を聞いてから、こたえる
+        yield* waitUntil(() => a.quietAt > bye.t0 && ctx.tReal >= a.quietAt - 1.2, 4);
+        k.pose = 'stand';
+        say(k, L.seeOffGo);
+        yield* walkTo(k, p.x, p.z, { speed: 1.25 });
+    }
+    yield* waitUntil(() => bye.ready || bye.done || v.state !== 'leaving', 25);
+    if (!bye.ready || bye.done || v.state !== 'leaving') {
+        bye.done = true;
+        return false;
+    }
+    k.faceTo(a.pos.x, a.pos.z);
+    a.faceTo(k.pos.x, k.pos.z);
+    k.pose = 'happy';
+    k.say(pick(v.def.lines.byeK));
+    ctx.fx.burst(k.headPos(), ['💖', '✨', v.def.emoji], 5);
+    ctx.sound.pet();
+    yield* waitMin(3);
+    a.pose = 'wave';
+    a.say(pick(v.def.lines.byeReply));
+    yield* waitMin(3);
+    a.pose = 'stand';
+    k.pose = 'wave';
+    bye.said = true;
+    bye.done = true;
+    addStat('nakayoshi', 3);
+    return true;
 }
 
 function* actGreet(k, v) {
@@ -530,6 +600,7 @@ function* actGreet(k, v) {
     k.label = `${v.def.name}をお出迎え`;
     const p = ctx.nav.snap(a.pos.x - 0.75, a.pos.z - 0.75);
     yield* walkTo(k, p.x, p.z, { speed: 1.25 });
+    if (v.state !== 'visiting') return;
     k.faceTo(a.pos.x, a.pos.z);
     a.faceTo(k.pos.x, k.pos.z);
     k.pose = 'happy';
@@ -650,6 +721,35 @@ export function toggleLights() {
     s.lights = !s.lights;
     ctx.sound.pop();
     ctx.fx.toast(s.lights ? 'あかりをつけたよ💡' : 'あかりを消したよ🌙');
+    touch();
+    lightReact(ctx.km, s.lights);
+}
+
+let lightTaps = [];
+
+function lightReact(k, on) {
+    const now = ctx.tReal;
+    lightTaps = lightTaps.filter((t) => now - t < 4);
+    lightTaps.push(now);
+    if (k.sleeping) {
+        say(k, on ? L.lightOnSleep : L.lightOffSleep, null, 2.6);
+        ctx.fx.emoji(k.headPos(), on ? '😣' : '💤', { rise: 40 });
+        return;
+    }
+    const dark = W().env.night > 0.3;
+    const h = hour();
+    let lines;
+    if (lightTaps.length >= 4) lines = L.lightBlink;
+    else if (!indoors(k.pos.x, k.pos.z)) lines = !dark ? L.lightOutDay : on ? L.lightOnOut : L.lightOffOut;
+    else if (on) lines = dark ? L.lightOn : L.lightOnDay;
+    else lines = !dark ? L.lightOffDay : h >= 21 || h < 5 ? L.lightOffLate : L.lightOff;
+    say(k, lines);
+    if (!k.onSpot && !k.moving) k.faceCamera();
+    k.petT = Math.max(k.petT, 0.7);
+    if (lines === L.lightBlink) ctx.fx.burst(k.headPos(), ['💡', '🌙', '😵‍💫'], 4);
+    else if (on) ctx.fx.burst(k.headPos(), ['💡', '✨'], 3);
+    else ctx.fx.emoji(k.headPos(), dark ? '👀' : '🌿', { rise: 40 });
+    if (dark && lines !== L.lightBlink) react(on ? 'lightOn' : 'lightOff', {}, 8, () => S().lights === on);
 }
 
 const REQ = {
