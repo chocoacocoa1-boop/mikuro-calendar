@@ -28,6 +28,8 @@ export const DEFS = [
             tap: ['なぁに〜？♡', 'えへへ、528Hz〜💖', '子みくろん、だいすき〜'],
             leave: ['またくるね〜！大好きだよ💖', '今日もありがと〜！またね🌸'],
             curfew: ['もうこんな時間！そろそろ帰るね🌙', '夜になっちゃった〜、またあしたね💖'],
+            byeK: ['まの、きてくれておしょうしな〜！またきてけろ〜💖', 'まの〜、たのしかったっちゃ〜！気をつけて帰ってけろ〜🌸'],
+            byeReply: ['うん！また528Hz届けにくるね💖', '子みくろんも、いい子にしててね〜♡ またね！'],
             sleepFind: ['あれ…子みくろん、ねんねしてる🌙', 'しーっ…子みくろん、もう夢の中みたい🌙'],
             sleepShh: ['ほんとだ…しーっ、だね🤫', 'そーっと、そーっと…💖'],
             sleepVisit: ['しーっ…寝顔、めんこいなぁ…🌙', 'ほっぺぷにぷにしたい…がまんがまん💕'],
@@ -38,20 +40,27 @@ export const DEFS = [
         id: 'kuromi', name: 'クロミちゃん', hz: '963Hz', freq: 963, emoji: '🖤', color: '#6a55a8', ring: 0x8a74c8,
         make: makeKuromi, speed: 1.75, special: 'stardust',
         sprite: { body: '#54447a', eye: '#fff0fa', acc: [[4, 0, '#ffd84d'], [4, 1, '#cfc3f0'], [1, 6, '#2d2752'], [12, 6, '#2d2752'], [1, 7, '#2d2752'], [12, 7, '#2d2752']] },
+        // クロミちゃんは、うちなーぐち（沖縄のことば）まじりでおしゃべり
         lines: {
-            arrive: ['963Hzで宇宙からきたよ〜🖤✨', 'やっほー子みくろん！'],
+            arrive: ['はいたい〜！963Hzで宇宙からきたさー🖤✨', 'はいたい、子みくろん！ちゃーがんじゅー？🖤'],
             greetK: ['クロミちゃんだぁ〜！宇宙からおかえり〜✨', 'クロミちゃん〜！待ってたっちゃ〜🖤'],
-            reply: ['ただいま、地球〜🖤', '子みくろん、今日もめんこいね✨'],
-            idle: ['宇宙とつながる感じ、するね🌌', '星がきれいな夜はとくべつ✨', 'まのと子みくろん、いいコンビだね🖤', 'ここの空気、すき🖤'],
-            watch: { code: 'きれいなコード…星座みたい✨', eat: 'ゆっくり食べてね🖤', bath: '湯気が天の川みたい🌌', read: '集中してる…えらいね🖤', water: '水しぶきが星みたい✨', purify: '宇宙まで響いてる🔔', calendar: 'また新しい一日、はじまるね✨' },
-            chat: ['昨日ね、流れ星を3つ見たよ🌠', 'まのの曲、宇宙まで届いてたよ🖤', '963Hzはね、てっぺんの音なんだ', '子みくろんのコード、きれいだね✨'],
-            tap: ['ん？どうしたの🖤', '963Hz〜✨', 'ふふっ'],
-            leave: ['またね〜、宇宙のどこかで🖤', 'たのしかった！また来るね✨'],
-            curfew: ['お星さまが呼んでるから、帰るね🖤', '夜空をおさんぽしながら帰るね✨'],
-            sleepFind: ['あ…子みくろん、夢の中だね🌙', '今夜は、もうおやすみなんだね…🖤'],
-            sleepShh: ['しーっ…起こさないようにね🖤', 'ふふっ、足音しのばせてね…🖤'],
-            sleepVisit: ['夢の中で、宇宙を案内してあげるね…🌙', 'すぴーって…めんこい寝息🖤'],
-            sleepBye: ['おやすみ…夢で会おうね🖤', '星をひとつ、枕もとに置いてくね✨'],
+            reply: ['ただいま、地球〜。にふぇーでーびる🖤', '子みくろん、今日もちゅらかーぎーやっさー✨'],
+            idle: ['宇宙とつながる感じ、するさー🌌', 'ぶし（星）がちゅらさん夜は、とくべつやさ✨', 'まのと子みくろん、じょーとーなコンビやっさー🖤', 'ここの空気、でーじすきさー🖤'],
+            watch: { code: 'ちゅらさんコード…星座みたいやっさー✨', eat: 'いっぱい食べてねー。かめーかめー🖤', bath: '湯気が、てぃんがーら（天の川）みたい🌌', read: '集中してる…でーじえらいさー🖤', water: '水しぶきが、ぶしみたいにきらきらさー✨', purify: '宇宙まで響いてるさー🔔', calendar: 'また新しい一日、はじまるねー。ちばりよー✨' },
+            chat: ['昨日ね、流れ星を3つ見たさー🌠', 'まのの曲、宇宙まで届いてたよー🖤', '963Hzはね、てっぺんのうとぅ（音）やさ', '子みくろんのコード、ちゅらさんねー✨'],
+            tap: ['ぬー？どうしたの🖤', '963Hz〜✨', 'ふふっ、かなさんどー🖤'],
+            leave: ['あんしぇー、そろそろ帰るさー🖤', 'でーじたのしかった！宇宙に帰るねー✨'],
+            curfew: ['ぶしが呼んでるから、帰るねー🖤', 'てぃんがーらをおさんぽしながら帰るさー✨'],
+            byeK: ['クロミちゃん、またやーさい…だべ？またきてけろ〜🖤', 'クロミちゃん、宇宙まで気をつけて帰ってけろ〜✨'],
+            byeReply: ['あい、上手さー！またやーさい🖤', 'にふぇーでーびる。かなさんどー、子みくろん🖤'],
+            sleepFind: ['あい…子みくろん、夢の中やさ🌙', '今夜は、もうおやすみなんだねー…🖤'],
+            sleepShh: ['しーっ…起こさんようにねー🖤', 'ふふっ、足音しのばせてねー…🖤'],
+            sleepVisit: ['夢の中で、宇宙を案内してあげるさー…🌙', 'すぴーって…でーじかわいい寝息やっさー🖤'],
+            sleepBye: ['ゆくいみそーれ（おやすみ）…夢で会おうねー🖤', 'ぶしをひとつ、枕もとに置いてくさー✨'],
+            kick: ['それっ！', 'いくさー！', 'えいっ！'],
+            ballDone: ['でーじたのしかったさー！⚽', 'ナイスパスやっさー🖤'],
+            onsen: ['ぬちぐすい（命のくすり）やさー♨️', 'あったまるねー…でーじごくらく🖤', 'ぶしを見ながらの温泉、さいこうさー✨'],
+            musicEnd: 'ちゅらさん響きだったさー🎶',
         },
     },
     {
@@ -68,6 +77,8 @@ export const DEFS = [
             tap: ['にゃ？', 'ごろごろ〜♾️', 'なでなで、もっとにゃ〜'],
             leave: ['また来るにゃ〜♾️', 'ばいばいにゃ〜！'],
             curfew: ['ねむくなってきたにゃ…帰るにゃ〜', 'おうちのおふとんが待ってるにゃ♾️'],
+            byeK: ['みかにゃん、またもふもふさせてけろ〜🐱', 'みかにゃん、まいごにならないでね〜♾️'],
+            byeReply: ['またすぐ来るにゃ〜♾️', 'みかにゃんは、むげんに帰ってくるにゃ〜🐾'],
             sleepFind: ['にゃ…子みくろん、寝てるにゃ🌙', 'すやすやにゃ…しずかにするにゃ…'],
             sleepShh: ['しのびあしにゃ…🐾', 'ねこは足音しないにゃ…🐾'],
             sleepVisit: ['いっしょに丸くなって寝たいにゃ…💤', '寝顔、まんまるにゃ…♾️'],
@@ -88,6 +99,8 @@ export const DEFS = [
             tap: ['なぁに〜？🌸', 'んだんだ〜', '396Hz〜🎵'],
             leave: ['したらね〜、また来っからね🌸', 'ちゃんと寝るんだよ〜！またね🎵'],
             curfew: ['あら、もうこんな時間だべ〜、帰っぺね🌸', '子みくろん、はやぐ寝るんだよ〜🌙'],
+            byeK: ['おねえちゃん、また来てけろ〜！ぜったいだよ〜💖', 'おねえちゃん、おしょうしな〜！気をつけて帰ってね〜🌸'],
+            byeReply: ['ちゃんと寝るんだよ〜、したらね🌸', 'またすぐ来っからね〜、いい子にしてんだよ〜🎵'],
             sleepFind: ['あんれまぁ、もう寝でだのが〜🌙', 'ありゃ、ねんねの時間だったべ…🌙'],
             sleepShh: ['みんな、静かにね〜🤫', 'そーっとだよ、そーっと…🌸'],
             sleepVisit: ['ぐっすりだねぇ…おやすみ、子みくろん🌙', 'お布団、かけなおしてあげっかね…🌙'],
@@ -195,33 +208,58 @@ function* sleepVisit(v) {
     leave(v.def.id, true);
 }
 
+// お見送りで、帰る人が門の手前に並ぶ場所（門の内側からのずれ）
+const GATE_SLOTS = [[0, 0.35], [0.75, 0.05], [-0.75, 0.05], [1.35, -0.4]];
+
+function freeGateSlot(v) {
+    const used = rt.filter((o) => o !== v && o.state === 'leaving' && o.bye && !o.bye.done).map((o) => o.bye.slot);
+    return GATE_SLOTS.findIndex((_, i) => !used.includes(i));
+}
+
 export function leave(id, quiet = false, line) {
     const v = byId[id];
     if (v.state === 'away' || v.state === 'leaving') return;
+    const here = v.state === 'visiting';
     v.state = 'leaving';
     resonanceLock = false;
+    // お庭まで来ていた人は、子みくろんが門まで送る
+    v.bye = here ? { slot: freeGateSlot(v), t0: ctx.tReal, ready: false, done: false, said: false } : null;
+    if (v.bye && !ctx.life.seeOff(v)) v.bye = null;
     v.agent.setCo(goHome(v, quiet, line));
 }
 
 function* goHome(v, quiet, line) {
     const a = v.agent;
     const k = ctx.km;
+    const bye = v.bye;
     if (line) yield* inTurn(a, () => line);
-    else if (!quiet) a.say(pick(v.def.lines.leave));
+    else if (!quiet) a.say(pick(k.sleeping ? v.def.lines.sleepBye : v.def.lines.leave));
     a.pose = 'wave';
-    if (!quiet && !k.sleeping) k.say(`${v.def.name}、またきてけろ〜！`, 3);
+    if (!quiet && !bye && !k.sleeping) k.say(`${v.def.name}、またきてけろ〜！`, 3);
     if (!quiet) react('leave', { name: v.def.name }, 0);
     yield* waitMin(2.5);
     a.pose = 'stand';
     const g = W().gate;
-    yield* walkTo(a, g.inside.x, g.inside.z);
+    if (bye) {
+        const [dx, dz] = GATE_SLOTS[bye.slot];
+        const p = ctx.nav.snap(g.inside.x + dx, g.inside.z + dz);
+        yield* walkTo(a, p.x, p.z);
+        bye.ready = true;
+        yield* waitMin(45, () => {
+            a.faceTo(k.pos.x, k.pos.z);
+            if (bye.done || k.actId !== 'greet') return false;
+        });
+        bye.done = true;
+    } else {
+        yield* walkTo(a, g.inside.x, g.inside.z);
+    }
     yield* walkTo(a, g.outside.x, g.outside.z);
     v.state = 'away';
     v.greeted = false;
     v.night = false;
     a.active = false;
     a.root.visible = false;
-    log(`${v.def.name}が帰っていった${v.def.emoji}`);
+    log(bye?.said ? `${v.def.name}を門までお見送りした👋` : `${v.def.name}が帰っていった${v.def.emoji}`);
 }
 
 export function curfew() {
@@ -350,7 +388,7 @@ export const SOCIAL = {
             for (let i = 0; i < 6 && alive(v); i++) {
                 const dir = Math.sign(to.pos.x - from.pos.x) || 1;
                 from.pose = 'happy';
-                from.say(pick(['それっ！', 'いくよ〜！', 'えいっ！']), 1.4);
+                from.say(pick((from === a && v.def.lines.kick) || ['それっ！', 'いくよ〜！', 'えいっ！']), 1.4);
                 ctx.sound.bounce();
                 ball.passTo(
                     new THREE.Vector3(from.pos.x + dir * 0.45, 0.18, from.pos.z),
@@ -367,7 +405,7 @@ export const SOCIAL = {
                 addStat('tanoshisa', 4);
             }
             k.say('たのしかったっちゃ〜！⚽');
-            a.say(pick(['また遊ぼうね〜！', 'ナイスパスだったよ〜！']));
+            a.say(pick(v.def.lines.ballDone ?? ['また遊ぼうね〜！', 'ナイスパスだったよ〜！']));
             log(`${v.def.name}とボールあそびした⚽`);
             yield* waitMin(3);
         });
@@ -379,7 +417,7 @@ export const SOCIAL = {
             W().onsenUsers++;
             ctx.sound.splash();
             try {
-                a.say(pick(['いい湯だね〜♨️', 'あったまる〜', 'ごくらくだね〜']));
+                a.say(pick(v.def.lines.onsen ?? ['いい湯だね〜♨️', 'あったまる〜', 'ごくらくだね〜']));
                 yield* waitMin(5);
                 k.say('ごくらくごくらく〜♨️');
                 yield* waitMin(rand(16, 22), (dt) => {
@@ -418,7 +456,7 @@ export const SOCIAL = {
                 addStat('kirakira', 3);
             }
             if (!alive(v)) return;
-            yield* converse([['v', 'いい響きだったね〜🎶'], ['k', 'また合奏するべ〜！🔔']], { k, v: a });
+            yield* converse([['v', v.def.lines.musicEnd ?? 'いい響きだったね〜🎶'], ['k', 'また合奏するべ〜！🔔']], { k, v: a });
             log(`${v.def.name}と合奏した🎶`);
         });
     },
@@ -467,7 +505,7 @@ export const SOCIAL = {
         const C = W().circle;
         const pK = { x: C.x - 0.8, z: C.z }, pV = { x: C.x + 0.8, z: C.z };
         yield* together(k, v, spotAt(pK.x, pK.z, faceYaw(pK, pV)), spotAt(pV.x, pV.z, faceYaw(pV, pK)), 'wave', function* (a) {
-            a.say('見ててね…963Hzの星くず〜🖤✨');
+            a.say('見ててねー…963Hzの星くずさー🖤✨');
             ctx.cam?.focus(C.x, C.z, 13);
             try {
                 yield* stardustShow(k, v, C);
@@ -594,8 +632,8 @@ function* stardustShow(k, v, C) {
     let st = 0;
     const cue = cues([
         [2.5, k, 'わぁ…！お星さまがふってくるっちゃ〜！'],
-        [5, a, '願いごと、してもいいよ🖤'],
-        [7.5, k, 'まのとみんなが、ずーっと笑顔でいられますように…✨'],
+        [5, a, '願いごと、してもいいさー。うーとーとー、ってね🖤'],
+        [7.5, k, 'うーとーとー…まのとみんなが、ずーっと笑顔でいられますように…✨'],
     ]);
     yield* waitMin(10, (dt, t) => {
         cue(dt, t);
@@ -614,7 +652,7 @@ function* stardustShow(k, v, C) {
     addStat('tanoshisa', 15);
     log('クロミちゃんが星くずを降らせてくれた🌌');
     yield* waitMin(3);
-    if (alive(v)) a.say('その願い、きっと届いたよ🖤');
+    if (alive(v)) a.say('その願い、きっと届いたさー🖤');
     yield* waitMin(3);
 }
 
@@ -671,7 +709,9 @@ function* resonance(k) {
     ctx.cam?.focus(C.x, C.z, 15);
     try {
         yield* goSpot(k, spots[0]);
-        yield* waitUntil(() => members.slice(1).every((a) => a.atSpot), 30);
+        yield* waitUntil(() => members.slice(1).every((a) => a.atSpot) || !rt.every(alive), 30);
+        // 集まるまえにだれか帰ったら、共鳴はまた今度
+        if (!rt.every(alive)) return;
         const center = new THREE.Vector3(C.x, 0.05, C.z);
         const roll = [
             [[k, nee], '396Hz〜🔔', 0xff86c2, 396],

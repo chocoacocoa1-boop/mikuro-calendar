@@ -4,8 +4,10 @@ import { damp, dampAngle, speechSec } from './util.js';
 import { FLOOR_Y } from './house.js';
 import { spot as makeSpot } from './build.js';
 
+export const indoors = (x, z) => x > -6.1 && x < 6.1 && z > -4.1 && z < 4.1;
+
 export function groundY(x, z) {
-    return x > -6.1 && x < 6.1 && z > -4.1 && z < 4.1 ? FLOOR_Y : 0;
+    return indoors(x, z) ? FLOOR_Y : 0;
 }
 
 // 行動はジェネレーターで書く。yield するたびに「経過したゲーム内の分」を受け取る
