@@ -653,6 +653,16 @@ export function sim(dt) {
 
 // ── まのからのかかわり ──
 let lastPetReal = 0;
+let pausedHintAt = -99;
+
+function pausedHint() {
+    if (S().speed) return false;
+    if (ctx.tReal - pausedHintAt > 3) {
+        pausedHintAt = ctx.tReal;
+        ctx.fx.toast('いまは時間が止まってるよ⏸「×1」で動きだすよ', 3.5);
+    }
+    return true;
+}
 
 export function pet(k) {
     touch();
@@ -700,6 +710,7 @@ export function placeFood() {
         startAct(k, 'eat');
     }
     if (!k.deepSleep) react('food');
+    pausedHint();
 }
 
 export function throwBall() {
@@ -714,6 +725,7 @@ export function throwBall() {
     }
     if (canInterrupt(k) && k.actId !== 'ball') startAct(k, 'ball');
     react('ball', {}, 15);
+    pausedHint();
 }
 
 export function toggleLights() {
@@ -779,6 +791,10 @@ export function request(id) {
     }
     const act = REQ[id];
     if (!act) return;
+    if (pausedHint()) {
+        k.say('いまは時間が止まってて、動けないべ〜⏸');
+        return;
+    }
     const refuse = {
         nap: st.genki >= 85 && 'まだげんきいっぱいだっちゃ〜！',
         eat: !s.food && st.onaka >= 90 && 'おなかいっぱいだべ〜😋',

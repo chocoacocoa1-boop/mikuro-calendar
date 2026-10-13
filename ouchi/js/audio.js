@@ -8,7 +8,8 @@ const lastPlayed = new Map();
 
 function unlock() {
     if (ac) {
-        if (ac.state === 'suspended') ac.resume();
+        // iPhone はアプリを裏にまわすと 'interrupted' になって、そのままだと鳴らなくなる
+        if (ac.state !== 'running') ac.resume().catch(() => {});
         return;
     }
     const AC = window.AudioContext || window.webkitAudioContext;
