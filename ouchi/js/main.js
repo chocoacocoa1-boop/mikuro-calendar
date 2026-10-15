@@ -21,8 +21,8 @@ import { damp, clamp, lerp, pick, wrapAngle } from './util.js';
 
 // ホーム視点：右手前の斜め上から、おうちと庭をまるごと
 // 中身を変えたら上げる（sw.js の CACHE_NAME の番号もいっしょに）
-const APP_VER = 6;
-const APP_VER_NAME = 'とまってるの、わかる版';
+const APP_VER = 7;
+const APP_VER_NAME = 'みんなの音叉と星くず版';
 
 const HOME = { target: new THREE.Vector3(2.0, 0.6, 2.0), polar: 0.88, azim: 0.6 };
 // おうちがいっぱいに見えるように合わせる（庭の端は少し切れてもいい）

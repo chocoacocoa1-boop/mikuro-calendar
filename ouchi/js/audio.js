@@ -5,6 +5,7 @@ let noiseBuf = null;
 let enabled = true;
 const VOLUME = 0.55;
 const lastPlayed = new Map();
+const STAR_NOTES = [963, 963 * 1.25, 963 * 1.5, 963 * 2, 963 * 2.5];
 
 function unlock() {
     if (ac) {
@@ -93,12 +94,34 @@ export const sound = {
         osc(1046.5, { dur: 0.1, vol: 0.09 });
         osc(1568, { start: 0.08, dur: 0.18, vol: 0.08 });
     },
-    // シンギングボウル：少しずらした2つの音でうなりを出す
-    bowl(freq = 396) {
-        if (throttled('bowl', 2.4)) return;
-        osc(freq, { dur: 3.2, vol: 0.1, attack: 0.01 });
-        osc(freq + 1.6, { dur: 3, vol: 0.06, attack: 0.01 });
-        osc(freq * 2.71, { dur: 1.6, vol: 0.022, attack: 0.01 });
+    // 音叉：たたいた瞬間だけ高い「ちーん」、あとは澄んだ音が長く残る。♾️Hzは、くるくるの音
+    fork(freq) {
+        if (throttled(`fork${freq}`, 0.8)) return;
+        if (!freq) {
+            infinity();
+            osc(1056, { start: 0.5, dur: 2.6, vol: 0.035, attack: 0.05 });
+            return;
+        }
+        osc(freq, { dur: 4.2, vol: 0.11, attack: 0.006 });
+        osc(freq * 2, { dur: 1.2, vol: 0.016, attack: 0.004 });
+        osc(freq * 6.27, { dur: 0.12, vol: 0.02, attack: 0.002 });
+    },
+    // クロミちゃんの星くず（963Hzの和音から、ひとつぶずつ）
+    twinkle() {
+        if (throttled('twinkle', 0.16)) return;
+        const f = STAR_NOTES[Math.floor(Math.random() * 4)];
+        osc(f, { dur: 0.5, vol: 0.032, attack: 0.004 });
+        osc(f * 2, { dur: 0.2, vol: 0.01, attack: 0.004 });
+    },
+    meteor() {
+        if (throttled('meteor', 0.8)) return;
+        osc(2600, { dur: 0.9, vol: 0.035, slide: 0.35 });
+        noise({ dur: 0.7, vol: 0.022, type: 'highpass', freq: 3000 });
+        [STAR_NOTES[3], STAR_NOTES[2], STAR_NOTES[0]].forEach((f, i) => bell(f, { start: 0.35 + i * 0.09, dur: 0.9, vol: 0.03 }));
+    },
+    starfall() {
+        STAR_NOTES.forEach((f, i) => bell(f, { start: i * 0.09, dur: 1.6, vol: 0.045 }));
+        bell(396, { start: 0.5, dur: 3, vol: 0.05 });
     },
     freq(f) {
         if (!f) { infinity(); return; }

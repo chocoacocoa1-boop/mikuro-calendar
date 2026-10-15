@@ -7,7 +7,7 @@ const W = 1.0;
 const H = 0.62;
 const D = 0.7;
 const LEG = 0.2;
-const SIT_POSES = new Set(['sit', 'sleep', 'soak', 'type', 'eat', 'read', 'bowl', 'draw']);
+const SIT_POSES = new Set(['sit', 'sleep', 'soak', 'type', 'eat', 'read', 'draw']);
 
 export function createClawd(o) {
     const s = o.scale ?? 1;
@@ -113,7 +113,8 @@ export function createClawd(o) {
                     case 'happy': off.set(0, 0.24, 0); break;
                     case 'water': if (i) off.set(-0.02, 0.06, 0.18); break;
                     case 'cook': if (i) off.set(-0.05 + Math.cos(t * 6) * 0.04, 0.05, 0.16 + Math.sin(t * 6) * 0.04); break;
-                    case 'bowl': if (i) off.set(-0.05, 0.03 + Math.max(0, Math.sin(t * 2.5)) * 0.09, 0.16); break;
+                    // 音叉：ふりかぶって（windup）、ちょんとたたく
+                    case 'fork': if (i) off.set(-0.05, a.windup ? 0.26 : 0.04, a.windup ? 0.1 : 0.2); break;
                     case 'read': off.set(-sx * 0.06, 0.06, 0.18); break;
                     case 'eat': if (i) off.set(-0.03, 0.04 + Math.max(0, Math.sin(t * 5)) * 0.06, 0.14); break;
                     case 'dance': off.set(0, 0.15 + Math.sin(t * 5 + i * Math.PI) * 0.12, 0); break;
@@ -191,9 +192,19 @@ export function makeKuromi() {
         .forEach(([x, y]) => cbox(capePivot, 0.045, 0.045, 0.02, starM, x, y, -0.03));
     cbox(r.body, 1.1, 0.07, 0.22, mat(0xff9de2), 0, H - 0.01, -D / 2 + 0.05);
     cbox(r.body, 0.025, 0.26, 0.025, mat(0xcfc3f0), -0.24, H + 0.13, 0.05);
-    const star = mesh(starGeo(0.1, 0.04), starM, r.body, -0.24, H + 0.3, 0.05);
+    // アンテナの星は、星くずを降らせるときに光ってくるくる回る（glow を 0〜1 で）
+    const antM = new THREE.MeshLambertMaterial({ color: 0xffe27a, emissive: 0x6a5200 });
+    const star = mesh(starGeo(0.1, 0.04), antM, r.body, -0.24, H + 0.3, 0.05);
+    const dim = new THREE.Color(0x6a5200), bright = new THREE.Color(0xffd84d);
+    let spin = 0, glow = 0;
+    r.glow = 0;
+    r.antennaPos = (out = new THREE.Vector3()) => star.getWorldPosition(out);
     r.extraAnim = (a, dt, t) => {
-        star.rotation.y = t * 1.6;
+        glow = damp(glow, r.glow, 3, dt);
+        spin += dt * (1.6 + glow * 11);
+        star.rotation.y = spin;
+        star.scale.setScalar(1 + glow * (0.55 + Math.sin(t * 10) * 0.15));
+        antM.emissive.copy(dim).lerp(bright, glow);
         capePivot.rotation.x = damp(capePivot.rotation.x, a.moving ? 0.35 + Math.sin(t * 9) * 0.06 : 0.04, 6, dt);
     };
     return r;
