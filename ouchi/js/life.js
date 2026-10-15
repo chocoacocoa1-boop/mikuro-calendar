@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
 import { L, TALK, TALK_DEFAULT, TALK_ASK } from './lines.js';
-import { DISHES } from './house.js';
+import { DISHES, FORKS } from './house.js';
 import { goSpot, leaveSpot, walkTo, waitMin, waitUntil, freeSpot, indoors } from './agent.js';
 import { addStat, log, hour, absMin } from './state.js';
 import { pick, rand, randInt, chance, fill, shuffle, clockText, speechSec } from './util.js';
-import { free, react, touch, answer, chime, hush } from './chatter.js';
+import { free, react, touch, answer, chime, hush, hold } from './chatter.js';
 
 const W = () => ctx.world;
 const S = () => ctx.state;
@@ -37,11 +37,36 @@ function pickDish() {
     return DISHES.find((d) => d.id === id);
 }
 
-export function strikeBowl(color = 0xffb3d6) {
-    ctx.sound.bowl(396);
-    const p = W().bowlPos;
-    ctx.fx.ring(new THREE.Vector3(p.x, p.y - 0.1, p.z), color, { s0: 0.3, s1: 2.2, life: 2.2 });
-    ctx.fx.emoji(p, '🎵', { rise: 50 });
+// ── 音叉（i は FORKS の番号：0=396Hz 1=528Hz 2=963Hz 3=♾️Hz）──
+export const forkOf = (id) => FORKS.findIndex((f) => f.who.includes(id));
+
+export function strikeFork(i) {
+    const f = W().forks[i];
+    W().strikeFork(i);
+    ctx.sound.fork(f.freq);
+    ctx.fx.ring(new THREE.Vector3(f.base.x, f.base.y + 0.1, f.base.z), f.ring, { s0: 0.3, s1: 1.9, life: 2.2 });
+    ctx.fx.emoji(f.top, f.freq ? '🎵' : '♾️', { rise: 50 });
+}
+
+// その音叉のうしろへ行って、ふりかぶって、ちょん
+export function* tapFork(k, i) {
+    yield* goSpot(k, W().spots.fork[i], 'fork');
+    k.windup = true;
+    try {
+        yield* waitMin(0.45);
+    } finally {
+        k.windup = false;
+    }
+    strikeFork(i);
+}
+
+export function holdMallet(k, on) {
+    if (on) {
+        k.model.hold(W().props.mallet, new THREE.Vector3(0, 0.05, 0.16));
+        return;
+    }
+    k.model.hold(null);
+    W().returnMallet();
 }
 
 // ── 子みくろんの行動 ──
@@ -332,23 +357,80 @@ function* actRead(k) {
 }
 
 function* actPurify(k) {
-    k.label = 'シンギングボウルのところへ';
-    yield* goSpot(k, W().spots.bowl);
-    k.label = '396Hzで浄化している🔔';
-    say(k, L.purify);
-    let ring = 0;
-    yield* waitMin(rand(16, 24), (dt, t) => {
-        addStat('kirakira', dt * 1.0);
-        addStat('tanoshisa', dt * 0.2);
-        if (t > ring) {
-            ring = t + 4;
-            strikeBowl();
+    k.label = '音叉のところへ';
+    yield* goSpot(k, W().spots.fork[0], 'fork');
+    k.label = '音叉で396Hzを響かせている🔔';
+    holdMallet(k, true);
+    try {
+        say(k, L.purify);
+        const dur = rand(16, 24);
+        let t = 0;
+        while (t < dur) {
+            yield* tapFork(k, 0);
             if (chance(0.3)) murmur(k, L.purify);
+            yield* waitMin(3.5, (dt) => {
+                t += dt;
+                addStat('kirakira', dt * 1.0);
+                addStat('tanoshisa', dt * 0.2);
+            });
         }
-    });
+    } finally {
+        holdMallet(k, false);
+    }
     log('396Hzで浄化した🔔');
     sparkle(k, ['✨', '🔔', '💖'], 5);
     yield* waitMin(2);
+}
+
+// 音叉で、ソルフェジオファミリーみんなの音をひとつずつ聴く。ひとりのときも、みんなの音といっしょ
+function* actListen(k) {
+    k.label = '音叉のところへ';
+    yield* goSpot(k, W().spots.fork[0], 'fork');
+    k.label = '音叉でみんなの周波数を聴いている🎵';
+    holdMallet(k, true);
+    const release = hold([k]);
+    const here = (id) => ctx.family.present().some((v) => v.def.id === id && v.greeted);
+    const glow = (dt) => {
+        addStat('kirakira', dt * 0.5);
+        addStat('tanoshisa', dt * 0.3);
+    };
+    try {
+        say(k, L.listenStart);
+        yield* waitMin(2.5);
+        for (let i = 0; i < FORKS.length; i++) {
+            yield* tapFork(k, i);
+            const [owner] = FORKS[i].who;
+            say(k, L.listen[owner]);
+            react(`fork_${owner}`, {}, 0);
+            yield* waitMin(3.4, glow);
+            // その音の人がいないときは、とどけ〜って思いうかべる
+            const away = FORKS[i].who.filter((id) => id !== 'km' && !here(id));
+            if (away.length && chance(0.65)) {
+                say(k, L.listenAway[pick(away)]);
+                yield* waitMin(3, glow);
+            }
+        }
+        k.windup = true;
+        yield* waitMin(0.6);
+        k.windup = false;
+        W().forks.forEach((f, i) => {
+            W().strikeFork(i);
+            ctx.fx.ring(new THREE.Vector3(f.base.x, f.base.y + 0.1, f.base.z), f.ring, { s0: 0.3, s1: 2.4, life: 2.6, delay: i * 0.15 });
+        });
+        ctx.sound.chord();
+        k.pose = 'happy';
+        say(k, L.listenEnd);
+        sparkle(k, ['💖', '✨', '🎵', '♾️'], 6);
+        addStat('nakayoshi', 6);
+        addStat('kirakira', 6);
+        addStat('tanoshisa', 6);
+        log('音叉でみんなの周波数を聴いた🎵');
+        yield* waitMin(4);
+    } finally {
+        k.windup = false;
+        release();
+        holdMallet(k, false);
+    }
 }
 
 function* actWindow(k) {
@@ -439,6 +521,7 @@ export const ACTS = {
     bath: actBath,
     read: actRead,
     purify: actPurify,
+    listen: actListen,
     window: actWindow,
     stroll: actStroll,
     bench: actBench,
@@ -468,6 +551,8 @@ function chooseActivity(k) {
     add('code', 110 + (h >= 9 && h < 18 ? 60 : 0) + st.genki * 0.3);
     add('read', (100 - st.tanoshisa) * 1.1 + 30);
     add('purify', (100 - st.kirakira) * 0.9 + 25);
+    // ひとりのときほど、音叉でみんなの音を聴きたくなる
+    add('listen', 35 + (ctx.family.present().length ? 0 : 45) + (100 - st.nakayoshi) * 0.5);
     add('window', 45);
     add('stroll', h >= 7 && h < 18.5 ? 70 : 25);
     add('bench', h >= 8 && h < 18 ? 35 : 0);
@@ -766,7 +851,7 @@ function lightReact(k, on) {
 
 const REQ = {
     bed: 'nap', sofa: 'read', bookshelf: 'read', desk: 'code', table: 'eat', fridge: 'eat', cook: 'eat',
-    bowl: 'purify', flowerbed: 'water', cherry: 'cherry', onsen: 'bath', calendar: 'calendar', bench: 'bench',
+    fork: 'listen', flowerbed: 'water', cherry: 'cherry', onsen: 'bath', calendar: 'calendar', bench: 'bench',
 };
 
 export function request(id) {
@@ -884,9 +969,14 @@ export function talk(text) {
         ctx.fx.burst(k.headPos(), ['💖', '💕', '💗'], 6);
         addStat('nakayoshi', 3);
     }
-    if (/つかれ|疲れ|しんど|つらい|辛い|浄化|じょうか|396/.test(t)) {
-        ctx.sound.bowl(396);
-        ctx.fx.ring(new THREE.Vector3(k.pos.x, k.pos.y + 0.05, k.pos.z), 0xffb3d6, { s0: 0.2, s1: 1.6, life: 2 });
+    // 周波数の話をしたら、その音叉がひとりでに鳴る
+    const tone = /つかれ|疲れ|しんど|つらい|辛い|浄化|じょうか|396/.test(t) ? 0
+        : /528/.test(t) ? 1 : /963/.test(t) ? 2 : /♾|∞|無限|むげん/.test(t) ? 3 : -1;
+    if (tone >= 0) {
+        const f = FORKS[tone];
+        ctx.sound.fork(f.freq);
+        W().strikeFork(tone);
+        ctx.fx.ring(new THREE.Vector3(k.pos.x, k.pos.y + 0.05, k.pos.z), f.ring, { s0: 0.2, s1: 1.6, life: 2 });
     }
     if (/あそ[ぼぶ]|遊[ぼぶ]/.test(t)) ctx.fx.toast('「ボールを投げる」で遊べるよ⚽');
     if (topic) chime(topic, speechSec(reply) * 0.8);

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { sparkleTexture } from './textures.js';
 
 const v = new THREE.Vector3();
 const anchor = new THREE.Vector3();
@@ -10,6 +11,12 @@ export function createFx(W) {
     const bubbles = new Map();
     const parts = [];
     const rings = [];
+    const sparks = [];
+    const sparkTex = new Map();
+    const sparkTexOf = (c) => {
+        if (!sparkTex.has(c)) sparkTex.set(c, sparkleTexture(`#${new THREE.Color(c).getHexString()}`));
+        return sparkTex.get(c);
+    };
     const ringGeo = new THREE.RingGeometry(0.86, 1.0, 48);
     ringGeo.rotateX(-Math.PI / 2);
     let toastTimer = 0;
@@ -94,6 +101,30 @@ export function createFx(W) {
             r.scale.setScalar(o.s0 ?? 0.2);
             W.scene.add(r);
             rings.push({ r, age: -(o.delay ?? 0), life: o.life ?? 1.6, s0: o.s0 ?? 0.2, s1: o.s1 ?? 1.6 });
+        },
+
+        // 3Dの中を飛ぶ、きらきらの星。vel は1秒あたり。trail を入れると尾を引く
+        spark(pos, o = {}) {
+            const color = o.color ?? 0xffe27a;
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTexOf(color), transparent: true, opacity: 0, depthWrite: false }));
+            sp.position.copy(pos);
+            sp.visible = false;
+            sp.renderOrder = 3;
+            W.scene.add(sp);
+            sparks.push({
+                sp, color,
+                vel: o.vel ? o.vel.clone() : new THREE.Vector3(),
+                age: -(o.delay ?? 0),
+                life: o.life ?? 1.4,
+                size: o.size ?? 0.35,
+                spin: o.spin ?? 0,
+                grav: o.grav ?? 0,
+                floor: o.floor ?? -Infinity,
+                onLand: o.onLand,
+                trail: o.trail ?? 0,
+                emit: 0,
+                ph: Math.random() * 6,
+            });
         },
 
         toast(text, sec = 2.8) {
@@ -192,6 +223,35 @@ export function createFx(W) {
                 }
                 r.r.scale.setScalar(r.s0 + (r.s1 - r.s0) * (1 - (1 - k) * (1 - k)));
                 r.r.material.opacity = 0.85 * (1 - k);
+            }
+
+            for (let i = sparks.length - 1; i >= 0; i--) {
+                const s = sparks[i];
+                s.age += dt;
+                if (s.age < 0) continue;
+                const sp = s.sp;
+                const k = s.age / s.life;
+                const landed = sp.position.y < s.floor;
+                if (k >= 1 || landed) {
+                    if (landed) s.onLand?.(sp.position);
+                    W.scene.remove(sp);
+                    sp.material.dispose();
+                    sparks.splice(i, 1);
+                    continue;
+                }
+                sp.visible = true;
+                s.vel.y -= s.grav * dt;
+                sp.position.addScaledVector(s.vel, dt);
+                sp.material.opacity = Math.min(1, s.age / 0.12) * (1 - Math.max(0, (k - 0.7) / 0.3));
+                sp.material.rotation += s.spin * dt;
+                sp.scale.setScalar(s.size * (0.78 + 0.22 * Math.sin(s.age * 21 + s.ph)));
+                if (s.trail) {
+                    s.emit -= dt;
+                    if (s.emit <= 0) {
+                        s.emit = 0.03;
+                        fx.spark(sp.position, { color: s.color, size: s.size * 0.5, life: s.trail });
+                    }
+                }
             }
         },
     };

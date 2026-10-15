@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
-import { mat, mesh, box, cbox, cyl, ball, blob, heartGeo, cherryPair, disposeChildren, spot } from './build.js';
+import { mat, mesh, box, cbox, cyl, ball, blob, heartGeo, starGeo, cherryPair, disposeChildren, spot } from './build.js';
 import * as T from './textures.js';
 import { damp } from './util.js';
 
@@ -24,6 +24,39 @@ export const DISHES = [
     { id: 'ramen', name: '冷やしラーメン' },
     { id: 'dadacha', name: 'だだちゃ豆' },
 ];
+
+// 左から 396Hz（子みくろん・みくろん姉）、528Hz（まの）、963Hz（クロミちゃん）、♾️Hz（みかにゃん）。
+// 高い音ほど音叉は短い。who は、その音の持ち主（396Hz はふたり）
+export const FORKS = [
+    { who: ['km', 'nee'], freq: 396, hz: '396Hz', color: 0xffa6d3, ring: 0xff86c2, mark: 'bow', markColor: 0xb9a0f5, len: 0.36 },
+    { who: ['mano'], freq: 528, hz: '528Hz', color: 0x9fe6c6, ring: 0x8fdfbb, mark: 'heart', markColor: 0xff7fb5, len: 0.31 },
+    { who: ['kuromi'], freq: 963, hz: '963Hz', color: 0xb4a2ea, ring: 0x8a74c8, mark: 'star', markColor: 0xffc93d, len: 0.24 },
+    { who: ['mikanyan'], freq: 0, hz: '♾️Hz', color: 0xffc98a, ring: 0xffb36b, mark: 'inf', markColor: 0xe6863d, len: 0.28 },
+];
+
+// 共鳴箱の前につける印（リボン・ハート・星・∞）
+function forkMark(parent, kind, color, x, y, z) {
+    const m = mat(color);
+    const g = new THREE.Group();
+    g.position.set(x, y, z);
+    parent.add(g);
+    switch (kind) {
+        case 'bow':
+            cbox(g, 0.022, 0.022, 0.01, m, 0, 0, 0);
+            cbox(g, 0.04, 0.03, 0.008, m, -0.026, 0, 0).rotation.z = 0.35;
+            cbox(g, 0.04, 0.03, 0.008, m, 0.026, 0, 0).rotation.z = -0.35;
+            break;
+        case 'heart':
+            mesh(heartGeo(0.08), m, g, 0, 0, 0.002, false);
+            break;
+        case 'star':
+            mesh(starGeo(0.042, 0.008), m, g, 0, 0, 0.004, false);
+            break;
+        case 'inf':
+            [-1, 1].forEach((s) => mesh(new THREE.TorusGeometry(0.017, 0.006, 6, 16), m, g, s * 0.019, 0, 0.004, false));
+            break;
+    }
+}
 
 function shadeMaterial(color = 0xfff1dc) {
     return new THREE.MeshLambertMaterial({ color, emissive: 0x000000, side: THREE.DoubleSide });
@@ -270,20 +303,46 @@ export function buildHouse(W) {
     addLamp(-5.4, y0 + 1.5, -3.25, flShade, 7, 9);
     nav.blockCircle(-5.45, -3.45, 0.22, 0.25);
 
-    // 396Hz のシンギングボウル（浄化スポット）
-    const bowlG = furn('bowl', -4.5, 1.7);
-    box(bowlG, 0.78, 0.09, 0.78, 0xcdb9f5, 0, 0, 0);
-    const prof = [];
-    for (let i = 0; i <= 8; i++) {
-        const a = (i / 8) * (Math.PI / 2);
-        prof.push(new THREE.Vector2(0.06 + Math.sin(a) * 0.17, (1 - Math.cos(a)) * 0.15));
-    }
-    mesh(new THREE.LatheGeometry(prof, 28), new THREE.MeshLambertMaterial({ color: 0xf2c46b, emissive: 0x3a2a00, side: THREE.DoubleSide }), bowlG, 0, 0.09, 0);
-    cyl(bowlG, 0.06, 0.06, 0.01, 0xe0b05a, 0, 0.09, 0);
-    const mallet = mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.34, 8), mat(0xc98a5a), bowlG, 0.28, 0.12, 0.22);
-    mallet.rotation.set(0, 0.6, Math.PI / 2);
-    W.bowlPos = new THREE.Vector3(-4.5, y0 + 0.24, 1.7);
-    nav.block(-4.89, 1.31, -4.11, 2.09, 0.12);
+    // ソルフェジオファミリーの音叉（浄化スポット）。子みくろんがうしろに立って、ひとつずつ鳴らす
+    const FX = -4.2, FZ = 1.9;
+    const stand = furn('fork', FX, FZ);
+    box(stand, 1.12, 0.08, 0.44, 0xcdb9f5, 0, 0, 0);
+    W.forks = FORKS.map((f, i) => {
+        const x = (i - 1.5) * 0.26;
+        // 共鳴箱と、だれの音かわかる印
+        box(stand, 0.2, 0.13, 0.24, 0xf3d9bd, x, 0.08, 0);
+        forkMark(stand, f.mark, f.markColor, x, 0.145, 0.122);
+        const g = new THREE.Group();
+        g.position.set(x, 0.21, 0);
+        stand.add(g);
+        const fm = new THREE.MeshLambertMaterial({ color: f.color });
+        cyl(g, 0.014, 0.018, 0.07, fm, 0, 0, 0, 10);
+        mesh(new THREE.TorusGeometry(0.035, 0.011, 6, 14, Math.PI), fm, g, 0, 0.105, 0).rotation.z = Math.PI;
+        const tines = [-1, 1].map((s) => {
+            const p = new THREE.Group();
+            p.position.set(s * 0.035, 0.105, 0);
+            g.add(p);
+            cbox(p, 0.022, f.len, 0.022, fm, 0, f.len / 2, 0);
+            return p;
+        });
+        return {
+            ...f, tines, mat: fm, amp: 0,
+            base: new THREE.Vector3(FX + x, y0, FZ),
+            top: new THREE.Vector3(FX + x, y0 + 0.36 + f.len, FZ),
+        };
+    });
+    const mallet = new THREE.Group();
+    mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 8), mat(0xc98a5a), mallet, 0, 0, 0.11).rotation.x = Math.PI / 2;
+    ball(mallet, 0.04, 0xff8cc6, 0, 0, 0.24);
+    W.props.mallet = mallet;
+    W.returnMallet = () => {
+        stand.add(mallet);
+        mallet.position.set(-0.3, 0.12, 0.175);
+        mallet.rotation.set(0, Math.PI / 2, 0);
+    };
+    W.returnMallet();
+    W.strikeFork = (i) => { W.forks[i].amp = 1; };
+    nav.block(FX - 0.56, FZ - 0.22, FX + 0.56, FZ + 0.22, 0.12);
 
     function plant(x, z, s = 1) {
         const p = furn('plant', x, z);
@@ -521,7 +580,8 @@ export function buildHouse(W) {
         sofaNap: spot(-3.75, -2.45, -3.75, y0 + 0.5, -3.38, 0, 'sleep'),
         calendar: spot(-3.5, -2.45, -3.5, y0 + 0.5, -3.32, Math.PI, 'reach'),
         bookshelf: spot(-5.0, -2.2, -5.0, y0, -2.2, -Math.PI / 2, 'reach'),
-        bowl: spot(-4.5, 2.6, -4.5, y0, 2.42, Math.PI, 'bowl'),
+        // 音叉のうしろ。右手がちょうどその音叉に届くところ
+        fork: W.forks.map((f) => spot(f.base.x - 0.47, FZ - 0.54, f.base.x - 0.47, y0, FZ - 0.54, 0, 'fork')),
         window: spot(-5.25, 0.4, -5.25, y0, 0.4, -Math.PI / 2, 'look'),
         bed: spot(0.3, -1.45, 0.3, y0 + 0.46, -3.0, 0, 'sleep'),
         desk: spot(-0.05, 1.35, -0.05, y0 + 0.42, 0.62, Math.PI, 'type'),
@@ -534,7 +594,7 @@ export function buildHouse(W) {
         rugA: spot(-3.95, -0.45, -3.95, y0, -0.45, 0.5, 'sit'),
         rugB: spot(-2.95, -0.45, -2.95, y0, -0.45, -0.5, 'sit'),
     });
-    W.musicRing = { x: -4.5, z: 1.7, r: 1.05 };
+    W.musicRing = { x: FX, z: FZ, r: 0.95 };
 
     // ── 毎フレームの更新 ──
     let screenAcc = 0;
@@ -564,6 +624,15 @@ export function buildHouse(W) {
                 page.visible = false;
                 pagePivot.rotation.x = 0;
             }
+        }
+        // 鳴らした音叉は、ふるえながら少しずつ静かになる
+        for (const f of W.forks) {
+            if (f.amp <= 0) continue;
+            f.amp = Math.max(0, f.amp - dt / 2.8);
+            const w = Math.sin(ctx.tReal * 75) * 0.05 * f.amp;
+            f.tines[0].rotation.z = w;
+            f.tines[1].rotation.z = -w;
+            f.mat.emissive.setHex(f.color).multiplyScalar(0.55 * f.amp);
         }
         const m = ctx.state.min;
         minHand.rotation.z = -((m % 60) / 60) * Math.PI * 2;

@@ -1,9 +1,12 @@
 import * as THREE from 'three';
-import { mat, mesh, box, cyl, ball, blob, cherryPair, spot } from './build.js';
+import { mat, mesh, box, cyl, ball, blob, cherryPair, heartGeo, spot } from './build.js';
 import * as T from './textures.js';
 import { rand } from './util.js';
 
 export const FLOWER_COLORS = [0xff8cc6, 0xb9a2f0, 0xffffff, 0xffd56b, 0xff6b8f];
+
+// いちばん大きいみくろん姉（腕まで約1.6）のとなりでも重ならない間隔で、3席
+const BENCH = { x: 1.15, z: 4.95, len: 3.9, gap: 1.4 };
 
 function buildFlower(parent, x, y, z) {
     const g = new THREE.Group();
@@ -218,15 +221,18 @@ export function buildGarden(W) {
     nav.blockCircle(9.75, 3.75, 0.08, 0.2);
     W.onsenUsers = 0;
 
-    // ── ベンチ ──
-    const bench = furn('bench', 1.4, 6.25);
-    box(bench, 1.8, 0.07, 0.5, 0xf3d9bd, 0, 0.38, 0);
-    box(bench, 1.8, 0.36, 0.06, 0xf3d9bd, 0, 0.52, -0.24);
-    [-0.8, 0.8].forEach((x) => {
+    // ── ベンチ（おうちの前。3人ならんで座っても重ならない長さ）──
+    const bench = furn('bench', BENCH.x, BENCH.z);
+    box(bench, BENCH.len, 0.07, 0.5, 0xf3d9bd, 0, 0.38, 0);
+    box(bench, BENCH.len, 0.36, 0.06, 0xf3d9bd, 0, 0.52, -0.24);
+    [-1, 0, 1].forEach((s) => {
+        const x = s * (BENCH.len / 2 - 0.15);
         box(bench, 0.08, 0.38, 0.45, 0xd9b9a0, x, 0, 0);
         box(bench, 0.08, 0.5, 0.06, 0xd9b9a0, x, 0.38, -0.24);
     });
-    nav.block(0.5, 5.98, 2.3, 6.5);
+    mesh(heartGeo(0.18), mat(0xff8cc6), bench, 0, 0.72, -0.205, false);
+    const benchRect = [BENCH.x - BENCH.len / 2, BENCH.z - 0.27, BENCH.x + BENCH.len / 2, BENCH.z + 0.25];
+    nav.block(...benchRect);
 
     // ── 庭のランタン ──
     const lan = furn('lantern', 5.4, 7.2);
@@ -283,12 +289,16 @@ export function buildGarden(W) {
         onsen: spot(8.35, 4.0, 8.35, -0.2, 2.65, 0, 'soak'),
         onsenV1: spot(7.6, 3.95, 7.75, -0.2, 2.25, 0.35, 'soak'),
         onsenV2: spot(9.1, 3.95, 8.95, -0.2, 2.25, -0.35, 'soak'),
-        bench: [0.85, 1.4, 1.95].map((x) => spot(x, 7.05, x, 0.45, 6.3, 0, 'sit')),
+        bench: [-1, 0, 1].map((s) => {
+            const x = BENCH.x + s * BENCH.gap;
+            return spot(x, BENCH.z + 0.8, x, 0.45, BENCH.z + 0.05, 0, 'sit');
+        }),
     });
     W.strollPoints = [[2.8, 7.5], [-0.4, 7.7], [5.9, 5.3], [9.6, 6.6], [9.7, 0.2], [7.2, -3.4], [-5.4, 7.5], [-2.2, 7.6], [4.4, 8.1], [9.8, -3.6]];
     W.circle = { x: 3.4, z: 6.9, r: 1.3 };
     W.ballBounds = { x0: -6.2, x1: 10.5, z0: 4.55, z1: 8.5 };
-    W.ballObstacles = [[-4.8, 5.5, -1.2, 6.3], [0.5, 5.98, 2.3, 6.5], [5.25, 7.05, 5.55, 7.35], [6.8, 8.3, 7.0, 8.5]];
+    // ベンチは壁までつながっていることにする（うしろのすきまにボールが入りこまないように）
+    W.ballObstacles = [[-4.8, 5.5, -1.2, 6.3], [benchRect[0], 3.5, benchRect[2], benchRect[3]], [5.25, 7.05, 5.55, 7.35], [6.8, 8.3, 7.0, 8.5]];
 
     W.updaters.push((dt) => {
         const base = 0.16 + 0.32 * W.env.night + (W.onsenUsers > 0 ? 0.25 : 0);

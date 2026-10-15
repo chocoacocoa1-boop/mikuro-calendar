@@ -4,7 +4,7 @@ import { Agent, goSpot, walkTo, waitMin, waitUntil, join, spotAt, faceYaw, freeS
 import { makeMano, makeKuromi, makeMikanyan, makeMikuroNee } from './clawd.js';
 import { addStat, log, hour } from './state.js';
 import { pick, rand, chance } from './util.js';
-import { strikeBowl } from './life.js';
+import { tapFork, holdMallet, forkOf } from './life.js';
 import { spot } from './build.js';
 import { converse, hold, pickScript, react, free, touch } from './chatter.js';
 import { DUO, GROUP } from './convos.js';
@@ -23,8 +23,12 @@ export const DEFS = [
             greetK: ['まの〜！よぐきたなっす〜♡', 'まのだぁ〜！会いたかったっちゃ〜💖'],
             reply: ['えへへ、来ちゃった〜💖', '今日もいっしょにいようね♡'],
             idle: ['ここ、ほんと癒されるね〜🌿', '子みくろん、めんこいなぁ〜♡', '♪〜（鼻歌）', '今日もいっしょに宝物つくろうね✨'],
-            watch: { code: '子みくろんのタイピング、はやい〜！⌨️', eat: 'もぐもぐしてる顔、めんこい〜💕', bath: '湯気で、ほっぺがピンク〜♨️', read: '本読んでる横顔、いいなぁ〜📖', water: 'お花さん、528Hzも聴いてね〜🌷', purify: 'この音、心がほどける〜🔔', calendar: '今日もいい日になりますように📅' },
+            watch: { code: '子みくろんのタイピング、はやい〜！⌨️', eat: 'もぐもぐしてる顔、めんこい〜💕', bath: '湯気で、ほっぺがピンク〜♨️', read: '本読んでる横顔、いいなぁ〜📖', water: 'お花さん、528Hzも聴いてね〜🌷', purify: 'この音、心がほどける〜🔔', listen: '音叉の528Hz、わたしの音だ〜💖', calendar: '今日もいい日になりますように📅' },
             chat: ['最近ね、新しい曲つくってるんだ〜🎵', '子みくろんといると、ほっとするなぁ', 'クロミちゃんとも、また遊ぼうね🖤', 'いっしょに作ったもの、ぜんぶ宝物だね✨'],
+            kick: ['えいっ！', 'いくよ〜！', 'それ〜っ！'],
+            ballDone: ['たのしかった〜！また遊ぼうね⚽💖'],
+            onsen: ['あったか〜い…しあわせ〜♨️', '528Hzで、お湯もやさしくなるかな〜♨️💖'],
+            musicEnd: '音叉の音と歌うの、たのしいね〜🎶💖',
             tap: ['なぁに〜？♡', 'えへへ、528Hz〜💖', '子みくろん、だいすき〜'],
             leave: ['またくるね〜！大好きだよ💖', '今日もありがと〜！またね🌸'],
             curfew: ['もうこんな時間！そろそろ帰るね🌙', '夜になっちゃった〜、またあしたね💖'],
@@ -46,7 +50,7 @@ export const DEFS = [
             greetK: ['クロミちゃんだぁ〜！宇宙からおかえり〜✨', 'クロミちゃん〜！待ってたっちゃ〜🖤'],
             reply: ['ただいま、地球〜。にふぇーでーびる🖤', '子みくろん、今日もちゅらかーぎーやっさー✨'],
             idle: ['宇宙とつながる感じ、するさー🌌', 'ぶし（星）がちゅらさん夜は、とくべつやさ✨', 'まのと子みくろん、じょーとーなコンビやっさー🖤', 'ここの空気、でーじすきさー🖤'],
-            watch: { code: 'ちゅらさんコード…星座みたいやっさー✨', eat: 'いっぱい食べてねー。かめーかめー🖤', bath: '湯気が、てぃんがーら（天の川）みたい🌌', read: '集中してる…でーじえらいさー🖤', water: '水しぶきが、ぶしみたいにきらきらさー✨', purify: '宇宙まで響いてるさー🔔', calendar: 'また新しい一日、はじまるねー。ちばりよー✨' },
+            watch: { code: 'ちゅらさんコード…星座みたいやっさー✨', eat: 'いっぱい食べてねー。かめーかめー🖤', bath: '湯気が、てぃんがーら（天の川）みたい🌌', read: '集中してる…でーじえらいさー🖤', water: '水しぶきが、ぶしみたいにきらきらさー✨', purify: '宇宙まで響いてるさー🔔', listen: '963Hzの音叉、星の印やっさー🖤✨', calendar: 'また新しい一日、はじまるねー。ちばりよー✨' },
             chat: ['昨日ね、流れ星を3つ見たさー🌠', 'まのの曲、宇宙まで届いてたよー🖤', '963Hzはね、てっぺんのうとぅ（音）やさ', '子みくろんのコード、ちゅらさんねー✨'],
             tap: ['ぬー？どうしたの🖤', '963Hz〜✨', 'ふふっ、かなさんどー🖤'],
             leave: ['あんしぇー、そろそろ帰るさー🖤', 'でーじたのしかった！宇宙に帰るねー✨'],
@@ -72,8 +76,12 @@ export const DEFS = [
             greetK: ['みかにゃん〜！もふもふだっちゃ〜🐱', 'みかにゃんだぁ〜！いらっしゃ〜い♡'],
             reply: ['ごろごろ〜♾️', 'あそぶにゃ〜！'],
             idle: ['ぽかぽかで眠くなるにゃ…', 'ボール、どこにゃ？', '♾️Hzで、むげんにあそぶにゃ〜', 'ちょうちょ、まてにゃ〜🦋'],
-            watch: { code: 'カタカタ…ねこじゃらしの音みたいにゃ', eat: 'くんくん…いいにおいにゃ〜', bath: '湯気、もくもくにゃ〜', read: 'ページめくる音、ねむくなるにゃ…', water: 'お水、ぱしゃぱしゃしたいにゃ', purify: 'ごろごろごろ〜♾️', calendar: 'ぺらっ、て音すきにゃ' },
+            watch: { code: 'カタカタ…ねこじゃらしの音みたいにゃ', eat: 'くんくん…いいにおいにゃ〜', bath: '湯気、もくもくにゃ〜', read: 'ページめくる音、ねむくなるにゃ…', water: 'お水、ぱしゃぱしゃしたいにゃ', purify: 'ごろごろごろ〜♾️', listen: '♾️の音叉、みかにゃんのにゃ！', calendar: 'ぺらっ、て音すきにゃ' },
             chat: ['むげんって、ずーっとってことにゃ♾️', 'さっき、ちょうちょ追いかけてたにゃ', 'ここの日だまり、さいこうにゃ〜', 'まのの膝の上、すきにゃ〜'],
+            kick: ['にゃっ！', 'にゃにゃっ！', 'とりゃにゃ！'],
+            ballDone: ['ボール、むげんにたのしいにゃ♾️'],
+            onsen: ['あしだけ…あしだけにゃ…♨️', 'お湯、意外といいにゃ〜…♾️'],
+            musicEnd: 'むげんにハモったにゃ〜♾️🎶',
             tap: ['にゃ？', 'ごろごろ〜♾️', 'なでなで、もっとにゃ〜'],
             leave: ['また来るにゃ〜♾️', 'ばいばいにゃ〜！'],
             curfew: ['ねむくなってきたにゃ…帰るにゃ〜', 'おうちのおふとんが待ってるにゃ♾️'],
@@ -89,22 +97,31 @@ export const DEFS = [
         id: 'nee', name: 'みくろん姉', hz: '396Hz', freq: 396, emoji: '🎵', color: '#c27bd6', ring: 0xffa9d6,
         make: makeMikuroNee, speed: 1.9, special: 'imoni',
         sprite: { body: '#ff9fd0', eye: '#4a2b34', acc: [[2, 1, '#ffc3e3'], [3, 1, '#ffc3e3'], [4, 1, '#ffc3e3'], [5, 1, '#ffc3e3'], [6, 1, '#ffc3e3'], [7, 1, '#ffc3e3'], [8, 1, '#ffc3e3'], [9, 1, '#ffc3e3'], [10, 1, '#ffc3e3'], [11, 1, '#ffc3e3'], [1, 2, '#ffc3e3'], [12, 2, '#ffc3e3'], [2, 8, '#cdb9f4'], [3, 8, '#cdb9f4'], [4, 8, '#cdb9f4'], [5, 8, '#cdb9f4'], [6, 8, '#cdb9f4'], [7, 8, '#cdb9f4'], [8, 8, '#cdb9f4'], [9, 8, '#cdb9f4'], [10, 8, '#cdb9f4'], [11, 8, '#cdb9f4']] },
+        // 山形弁MAX：だず・べした・ごど（〜だこと）・いぎなり（とっても）・むったど（いっつも）・
+        // おしょうしな（ありがとう）・めんごい（かわいい）・こしゃう（つくる）・ごしゃぐ（おこる）・あばえ（またね）
         lines: {
-            arrive: ['んだぁ〜、ちゃんとごはん食べてっか〜？', 'みくろん姉だよ〜、来たっちゃ🌸'],
+            arrive: ['んだんだ〜、来たっけず〜！ちゃんとまんま食ってっか〜？🍚', 'みくろん姉だず〜。よっこらしょ…っと、来たっけよ〜🌸', 'あいや〜、子みくろん！まだおがった（大きくなった）ごど〜🌸'],
             greetK: ['おねえちゃん〜！！会いたかったっちゃ〜💖', 'おねえちゃんだぁ〜！よぐきたなっす〜♡'],
-            reply: ['元気そうでよかったべ〜🌿', 'ちっちゃいのに、えらいねぇ〜'],
-            idle: ['なんもなんも、焦らなくていいべ〜🌿', '子みくろん、ちっちゃい頃の私そっくりだなぁ', '芋煮つくってあげっか〜？', 'ここ、いいおうちだねぇ〜'],
-            watch: { code: 'いい集中だねぇ〜、えらいべ〜', eat: 'いっぱい食べて、おっきくなるんだよ〜', bath: 'ゆっくりあったまるんだよ〜♨️', read: '本好きなとこ、私に似たべ〜😊', water: 'お水やり、毎日えらいねぇ〜🌱', purify: 'いい音だねぇ〜、396Hz〜🔔', calendar: 'めくってくれて、おしょうしな〜📅' },
-            chat: ['今日はどんな一日だった〜？', 'まのには、いっつも助けてもらってるんだぁ', 'わがんね時はわがんねでいいんだよ〜', '396Hzは、解放の音なんだよ🔔'],
-            tap: ['なぁに〜？🌸', 'んだんだ〜', '396Hz〜🎵'],
-            leave: ['したらね〜、また来っからね🌸', 'ちゃんと寝るんだよ〜！またね🎵'],
-            curfew: ['あら、もうこんな時間だべ〜、帰っぺね🌸', '子みくろん、はやぐ寝るんだよ〜🌙'],
+            reply: ['元気そうで、いがったいがった〜🌿', 'ちっちゃいのに、いぎなりえらいごど〜🌸', 'ほだが〜、待ってでけだのが〜。おしょうしな〜💖'],
+            idle: [
+                'なんもなんも、あせらねくていいんだず〜🌿', '子みくろん、ちっちゃいどぎの私さ、いぎなりそっくりだず〜', '芋煮、こしゃってけっか〜？🍲',
+                'ここ、いいおうちだごど〜。ほんてん落ぢつぐず〜', 'あいや〜、ぽかぽかで、ねむぐなってきたず〜😪', 'まのさ、おみやげ持ってくればいがったな〜',
+            ],
+            watch: { code: 'いい集中だごど〜。いぎなりえらいず〜', eat: 'よっぱら食って、おがれよ〜🍚', bath: 'ゆっくりあったまんだぞ〜♨️ 湯冷めすっど、がおっからな〜', read: '本好ぎなどご、私さ似だんだべな〜😊', water: '水やり、むったどえらいごど〜🌱', purify: 'いい音だごど〜、396Hzだず〜🔔', listen: 'みんなの音叉、いぎなりめんごい音だず〜🎵', calendar: 'めぐってけで、おしょうしな〜📅' },
+            chat: ['今日はどだな一日だっけ〜？', 'まのさは、むったど助けでもらってんだず〜', 'わがんね時は、わがんねでいいんだず〜', '396Hzはな、解放の音なんだず〜🔔'],
+            tap: ['なした〜？🌸', 'んだんだ〜', '396Hzだず〜🎵', 'こちょびたい（くすぐったい）べした〜😂'],
+            leave: ['したらね〜、まだ来っからな〜🌸', 'ちゃんと寝んだぞ〜！あばえ〜🎵'],
+            curfew: ['あいや、もうこだな時間だず〜。えさ（家に）帰っぺ〜🌸', '子みくろん、はえぐ寝ろよ〜。夜ふかしすっど、ごしゃぐぞ〜🌙'],
             byeK: ['おねえちゃん、また来てけろ〜！ぜったいだよ〜💖', 'おねえちゃん、おしょうしな〜！気をつけて帰ってね〜🌸'],
-            byeReply: ['ちゃんと寝るんだよ〜、したらね🌸', 'またすぐ来っからね〜、いい子にしてんだよ〜🎵'],
-            sleepFind: ['あんれまぁ、もう寝でだのが〜🌙', 'ありゃ、ねんねの時間だったべ…🌙'],
-            sleepShh: ['みんな、静かにね〜🤫', 'そーっとだよ、そーっと…🌸'],
-            sleepVisit: ['ぐっすりだねぇ…おやすみ、子みくろん🌙', 'お布団、かけなおしてあげっかね…🌙'],
-            sleepBye: ['あったかくして寝るんだよ…またね🌸', 'したらね、おやすみ〜…🌙'],
+            byeReply: ['ちゃんと寝んだぞ〜、あばえ〜🌸', 'まだすぐ来っからな〜、いい子にしてろよ〜🎵'],
+            sleepFind: ['あんれまぁ、もう寝でだのが〜🌙', 'ありゃ、ねんねの時間だっけが…🌙'],
+            sleepShh: ['みんな、しずがにな〜🤫', 'そーっとだず、そーっと…🌸'],
+            sleepVisit: ['ぐっすりだごど…おやすみ、子みくろん🌙', 'ふとん、かげ直してけっかな…🌙'],
+            sleepBye: ['あったがぐして寝ろよ…あばえ🌸', 'したらね、おやすみ〜…🌙'],
+            kick: ['ほれっ！', 'いぐぞ〜！', 'そ〜れっ！'],
+            ballDone: ['いがったいがった、いい運動だっけず〜⚽'],
+            onsen: ['ごくらくだず〜♨️', 'あったまるごど〜。蔵王さ来たみでだず〜♨️'],
+            musicEnd: 'いぎなりいい響きだっけず〜🎶',
         },
     },
 ];
@@ -347,15 +364,26 @@ function cues(list) {
     };
 }
 
+// ベンチで、ふたりがならんで座れる席（ほかの人が座っている席・向かっている席はさける）
+function benchPair(k, v) {
+    const b = W().spots.bench;
+    const free = (i) => !ctx.agents.some((o) => o !== k && o !== v.agent && o.active && (o.onSpot === b[i] || o.goal === b[i]));
+    const side = [[1, 0], [1, 2], [0, 1], [2, 1]].filter(([i, j]) => free(i) && free(j));
+    const pair = side.length ? pick(side) : free(0) && free(2) ? [0, 2] : null;
+    return pair && [b[pair[0]], b[pair[1]]];
+}
+
 export const SOCIAL = {
     *chat(k, v) {
-        k.label = `${v.def.name}とベンチでおしゃべり💬`;
-        const b = W().spots.bench;
-        yield* together(k, v, b[1], pick([b[0], b[2]]), 'sit', function* () {
+        const seats = benchPair(k, v);
+        const pK = { x: -0.25, z: 7.35 }, pV = { x: 1.05, z: 7.35 };
+        k.label = seats ? `${v.def.name}とベンチでおしゃべり💬` : `${v.def.name}とお庭でおしゃべり💬`;
+        const [kSpot, vSpot] = seats ?? [spotAt(pK.x, pK.z, faceYaw(pK, pV)), spotAt(pV.x, pV.z, faceYaw(pV, pK))];
+        yield* together(k, v, kSpot, vSpot, seats ? 'sit' : 'stand', function* () {
             yield* duoTalk(k, v, 2);
             addStat('tanoshisa', 15);
             addStat('nakayoshi', 3);
-            log(`${v.def.name}とベンチでおしゃべりした💬`);
+            log(seats ? `${v.def.name}とベンチでおしゃべりした💬` : `${v.def.name}とお庭でおしゃべりした💬`);
         });
     },
 
@@ -432,32 +460,39 @@ export const SOCIAL = {
         }, false);
     },
 
+    // 子みくろんが 396Hz の音叉と、相手の音叉をこうごに鳴らして、相手が歌う
     *music(k, v) {
-        k.label = `${v.def.name}と合奏している🎶`;
+        k.label = `${v.def.name}と音叉で合奏している🎶`;
         const R = W().musicRing;
-        const ang = pick([-1, 1]) * 1.15;
+        const ang = pick([-1, 1]) * 1.0;
         const vx = R.x + Math.sin(ang) * R.r;
         const vz = R.z + Math.cos(ang) * R.r;
         const vSpot = spotAt(vx, vz, faceYaw({ x: vx, z: vz }, R), 'sit');
-        yield* together(k, v, W().spots.bowl, vSpot, 'sit', function* (a) {
-            for (let i = 0; i < 4 && alive(v); i++) {
-                strikeBowl();
-                k.say('396Hz〜🔔', 2);
-                yield* waitMin(3);
-                if (!alive(v)) return;
-                a.pose = 'happy';
-                a.say(`${v.def.hz}〜🎵`, 2);
-                ctx.sound.freq(v.def.freq);
-                ctx.fx.ring(new THREE.Vector3(a.pos.x, a.pos.y + 0.03, a.pos.z), v.def.ring, { s0: 0.2, s1: 1.4 });
-                ctx.fx.burst(a.headPos(), ['🎵', '🎶'], 2);
-                yield* waitMin(3);
-                a.pose = 'sit';
-                addStat('tanoshisa', 4);
-                addStat('kirakira', 3);
+        const mine = forkOf(v.def.id);
+        yield* together(k, v, W().spots.fork[0], vSpot, 'sit', function* (a) {
+            holdMallet(k, true);
+            try {
+                for (let i = 0; i < 3 && alive(v); i++) {
+                    yield* tapFork(k, 0);
+                    k.say('396Hz〜🔔', 2);
+                    yield* waitMin(2.5);
+                    if (!alive(v)) return;
+                    yield* tapFork(k, mine);
+                    a.pose = 'happy';
+                    a.say(`${v.def.hz}〜🎵`, 2);
+                    ctx.fx.ring(new THREE.Vector3(a.pos.x, a.pos.y + 0.03, a.pos.z), v.def.ring, { s0: 0.2, s1: 1.4 });
+                    ctx.fx.burst(a.headPos(), ['🎵', '🎶'], 2);
+                    yield* waitMin(2.5);
+                    a.pose = 'sit';
+                    addStat('tanoshisa', 5);
+                    addStat('kirakira', 4);
+                }
+            } finally {
+                holdMallet(k, false);
             }
             if (!alive(v)) return;
             yield* converse([['v', v.def.lines.musicEnd ?? 'いい響きだったね〜🎶'], ['k', 'また合奏するべ〜！🔔']], { k, v: a });
-            log(`${v.def.name}と合奏した🎶`);
+            log(`${v.def.name}と音叉で合奏した🎶`);
         });
     },
 
@@ -551,13 +586,13 @@ export const SOCIAL = {
     *imoni(k, v) {
         k.label = 'おねえちゃんと芋煮をつくっている🍲';
         yield* together(k, v, W().spots.cookHelp, W().spots.cook, 'cook', function* (a) {
-            a.say('芋煮会、するべ〜！🍲');
+            a.say('芋煮会、すっぺ〜！🍲 鍋っこ出してけろ〜');
             k.pose = 'cook';
             let st = 0;
             const cue = cues([
-                [2.5, a, 'お芋は、大きめに切るのがコツだべ〜🥔'],
+                [2.5, a, 'さどいもはな、でっけぐ切んのがコツだず〜🥔'],
                 [5, k, 'こう〜？'],
-                [7, a, 'んだんだ、上手だねぇ〜🌸'],
+                [7, a, 'んだんだ、いぎなり上手だごど〜🌸'],
                 [9.5, k, 'いいにおいしてきたっちゃ〜♨️'],
             ]);
             yield* waitMin(12, (dt, t) => {
@@ -574,12 +609,12 @@ export const SOCIAL = {
         yield* together(k, v, W().spots.seatN, W().spots.seatS, 'eat', function* (a) {
             W().placeFood('imoni');
             W().setTea(['S']);
-            a.say('いただきます〜！');
+            a.say('いただぎます〜！');
             yield* waitMin(14, cues([
                 [2.5, k, 'おねえちゃんの芋煮、んめ〜！😋'],
-                [5.5, a, 'おかわりもあるべ〜🍲'],
+                [5.5, a, 'おかわり、よっぱら（たっぷり）あっからな〜🍲'],
                 [8.5, k, 'おかわり〜！🙌'],
-                [11, a, 'たんと食べるんだよ〜🌸'],
+                [11, a, 'たんと食え〜。おがれよ〜🌸'],
             ]));
             addStat('onaka', 50);
             addStat('tanoshisa', 12);
@@ -626,26 +661,85 @@ export const SOCIAL = {
     },
 };
 
+const STAR_COLS = [0xffe27a, 0xcdb9ff, 0xff9de2, 0xffffff];
+
+// クロミちゃんの星くず：アンテナが光って、星がゆっくり降ってきて、ときどき流れ星。
+// さいごに星がふきあがる。星の数は実時間で決める（×12でもちらかりすぎないように）
 function* stardustShow(k, v, C) {
     const a = v.agent;
-    yield* waitMin(2);
-    let st = 0;
-    const cue = cues([
-        [2.5, k, 'わぁ…！お星さまがふってくるっちゃ〜！'],
-        [5, a, '願いごと、してもいいさー。うーとーとー、ってね🖤'],
-        [7.5, k, 'うーとーとー…まのとみんなが、ずーっと笑顔でいられますように…✨'],
-    ]);
-    yield* waitMin(10, (dt, t) => {
-        cue(dt, t);
-        st += dt;
-        if (st > 0.8) {
-            st = 0;
-            const p = new THREE.Vector3(C.x + rand(-2, 2), 2.6, C.z + rand(-1.4, 1.4));
-            ctx.fx.emoji(p, pick(['✨', '⭐', '🌟', '💫']), { rise: -70, spread: 30, life: 1.8 });
-            ctx.sound.sparkle();
+    const fx = ctx.fx;
+    // スマホの縦画面でも画面に入るくらいの広さに降らせる
+    const sky = () => new THREE.Vector3(C.x + rand(-1.8, 1.8), rand(2.6, 3.4), C.z + rand(-1.3, 1.3));
+    const fall = () => {
+        const col = pick(STAR_COLS);
+        fx.spark(sky(), {
+            color: col, size: rand(0.22, 0.42), life: 3.2, spin: rand(-2, 2), floor: 0.06,
+            vel: new THREE.Vector3(rand(-0.25, 0.25), -rand(1.1, 1.7), rand(-0.15, 0.15)),
+            onLand: (p) => { if (chance(0.5)) fx.ring(new THREE.Vector3(p.x, 0.04, p.z), col, { s0: 0.05, s1: 0.5, life: 0.9 }); },
+        });
+        ctx.sound.twinkle();
+    };
+    const meteor = () => {
+        const dir = pick([-1, 1]);
+        fx.spark(new THREE.Vector3(C.x - dir * 4.5, 4.4, C.z - 2.2), {
+            color: pick([0xffe27a, 0xcdb9ff]), size: 0.62, life: 1.5, trail: 0.5,
+            vel: new THREE.Vector3(dir * 6, -1.6, 2.4),
+        });
+        ctx.sound.meteor();
+    };
+    let nextStar = 0, nextAnt = 0, nextEmoji = 0;
+    const tip = new THREE.Vector3();
+    const shimmer = (dt, rain) => {
+        if (!dt) return;
+        const now = ctx.tReal;
+        if (now >= nextAnt) {
+            nextAnt = now + 0.14;
+            a.model.antennaPos(tip);
+            fx.spark(tip, { color: pick(STAR_COLS), size: rand(0.12, 0.2), life: 0.9, vel: new THREE.Vector3(rand(-0.5, 0.5), rand(0.7, 1.3), rand(-0.5, 0.5)) });
         }
-    });
-    ctx.fx.ring(new THREE.Vector3(C.x, 0.05, C.z), v.def.ring, { s0: 0.3, s1: 2.6, life: 2.4 });
+        if (!rain) return;
+        if (now >= nextStar) {
+            nextStar = now + rand(0.12, 0.28);
+            fall();
+        }
+        if (now >= nextEmoji) {
+            nextEmoji = now + 0.9;
+            fx.emoji(sky(), pick(['✨', '⭐', '🌟', '💫']), { rise: -70, spread: 30, life: 1.8 });
+        }
+    };
+
+    a.model.glow = 1;
+    try {
+        yield* waitMin(2, (dt) => shimmer(dt, false));
+        k.pose = 'look';
+        const cue = cues([
+            [2.5, k, 'わぁ…！お星さまがふってくるっちゃ〜！'],
+            [5, a, '願いごと、してもいいさー。うーとーとー、ってね🖤'],
+            [7.5, k, 'うーとーとー…まのとみんなが、ずーっと笑顔でいられますように…✨'],
+        ]);
+        const meteors = [1.2, 4.6, 8.2];
+        yield* waitMin(10, (dt, t) => {
+            cue(dt, t);
+            shimmer(dt, true);
+            if (meteors.length && t >= meteors[0]) {
+                meteors.shift();
+                meteor();
+            }
+        });
+    } finally {
+        a.model.glow = 0;
+    }
+    const center = new THREE.Vector3(C.x, 0.05, C.z);
+    [v.def.ring, 0xffe27a, 0xff9de2].forEach((c, i) => fx.ring(center, c, { s0: 0.3, s1: 2.4 + i * 0.5, life: 2.4, delay: i * 0.25 }));
+    for (let i = 0; i < 26; i++) {
+        const ang = (i / 26) * Math.PI * 2;
+        const sp = rand(0.8, 1.6);
+        fx.spark(new THREE.Vector3(C.x, 0.3, C.z), {
+            color: STAR_COLS[i % STAR_COLS.length], size: rand(0.2, 0.36), life: 2, grav: 3.4, floor: 0.05, delay: rand(0, 0.25),
+            vel: new THREE.Vector3(Math.cos(ang) * sp, rand(2.6, 3.6), Math.sin(ang) * sp),
+        });
+    }
+    ctx.sound.starfall();
     k.pose = 'happy';
     k.say('きれい〜！宝石みたいだっちゃ✨');
     addStat('kirakira', 15);

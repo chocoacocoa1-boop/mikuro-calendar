@@ -339,6 +339,30 @@ export function softDotTexture(inner = 'rgba(255,255,255,1)', outer = 'rgba(255,
     return tex(c);
 }
 
+// きらっと光る4つ角の星（まんなかは白、まわりはその色でぼんやり光る）。昼の空でも見えるように
+export function sparkleTexture(color) {
+    const c = makeCanvas(64, 64);
+    const g = c.getContext('2d');
+    const glow = g.createRadialGradient(32, 32, 0, 32, 32, 30);
+    glow.addColorStop(0, color);
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    g.globalAlpha = 0.55;
+    g.fillStyle = glow;
+    g.fillRect(0, 0, 64, 64);
+    g.globalAlpha = 1;
+    const core = g.createRadialGradient(32, 32, 0, 32, 32, 26);
+    core.addColorStop(0, '#ffffff');
+    core.addColorStop(0.35, '#ffffff');
+    core.addColorStop(1, color);
+    g.fillStyle = core;
+    g.beginPath();
+    [[32, 3], [36.5, 27.5], [61, 32], [36.5, 36.5], [32, 61], [27.5, 36.5], [3, 32], [27.5, 27.5]]
+        .forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+    g.closePath();
+    g.fill();
+    return tex(c);
+}
+
 export function ballTexture() {
     const c = makeCanvas(256, 128);
     const g = c.getContext('2d');
