@@ -3,6 +3,7 @@
 import { ctx } from './ctx.js';
 import { pick, rand, chance, fill, speechSec } from './util.js';
 import { hour } from './state.js';
+import { ART } from './lines.js';
 import {
     MONO, SLEEP_TALK, QUESTIONS, MEMO_LINES, DUO, PAIRS, GUEST_IDLE, GUEST_SLEEP, REACT, CHIME,
 } from './convos.js';
@@ -211,6 +212,8 @@ function memoryLines() {
     if (s.commits > 0) out.push(`コミット、${s.commits}回になったべ〜💪`);
     if (s.cherries > 0) out.push(`さくらんぼ、${s.cherries}個もとれたっちゃ〜🍒 食べきれるべか〜？`);
     if (s.drawings > 0) out.push(`まのが描いてくれた絵、${s.drawings}枚になったっちゃ〜🎨 宝物だべ〜`);
+    const art = ART[s.art[s.drawings - 1]];
+    if (art) out.push(`この前まのが描いてくれた${art.name}、お気に入りだっちゃ〜🖼️`);
     if (s.resonance > 0) out.push('みんなで共鳴したとき、ほんとにきれいだったなぁ〜✨');
     for (const [key, line] of Object.entries(MEMO_LINES)) {
         if (s.memo?.[key]) out.push(fill(line, s.memo));

@@ -2,6 +2,8 @@ import { ctx } from './ctx.js';
 import { clamp } from './util.js';
 
 const KEY = 'komikuron-ouchi-v1';
+// 日記は1週間ぶんだけとっておく（古い日から消えていく）
+const DIARY_DAYS = 7;
 let cleared = false;
 
 export function defaultState() {
@@ -15,6 +17,8 @@ export function defaultState() {
         cherries: 0,
         resonance: 0,
         drawings: 0,
+        // まのが描いてくれた絵の中身（何枚目に何を描いたか）。むかしの絵は入っていない
+        art: [],
         flowers: [1, 0, 2, 0, 1].map((g, c) => ({ g, c })),
         wateredDay: 0,
         calendarDay: 0,
@@ -63,12 +67,25 @@ export function clearState() {
     }
 }
 
-export function log(text) {
+export function log(text, again = false) {
     const s = ctx.state;
-    s.diary.unshift({ d: s.day, m: Math.floor(s.min), t: text });
-    if (s.diary.length > 80) s.diary.length = 80;
+    const e = { d: s.day, m: Math.floor(s.min), t: text };
+    // 同じ日にまた同じことがあったら、行をふやさずに回数をかぞえる（いちばん新しい時刻にうつす）
+    if (again) {
+        for (let i = 0; i < s.diary.length && s.diary[i].d === s.day; i++) {
+            if (s.diary[i].t !== text) continue;
+            e.n = (s.diary.splice(i, 1)[0].n || 1) + 1;
+            break;
+        }
+    }
+    s.diary.unshift(e);
+    const oldest = s.day - DIARY_DAYS + 1;
+    while (s.diary.length && s.diary[s.diary.length - 1].d < oldest) s.diary.pop();
     ctx.ui?.diaryDirty();
 }
+
+// なでなで・ボール・おしゃべりみたいに、1日に何度もあることはこっちで書く
+export const tally = (text) => log(text, true);
 
 export function addStat(k, v) {
     const st = ctx.state.stats;

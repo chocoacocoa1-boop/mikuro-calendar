@@ -21,8 +21,8 @@ import { damp, clamp, lerp, pick, wrapAngle } from './util.js';
 
 // ホーム視点：右手前の斜め上から、おうちと庭をまるごと
 // 中身を変えたら上げる（sw.js の CACHE_NAME の番号もいっしょに）
-const APP_VER = 7;
-const APP_VER_NAME = 'みんなの音叉と星くず版';
+const APP_VER = 8;
+const APP_VER_NAME = 'みんなの絵日記版';
 
 const HOME = { target: new THREE.Vector3(2.0, 0.6, 2.0), polar: 0.88, azim: 0.6 };
 // おうちがいっぱいに見えるように合わせる（庭の端は少し切れてもいい）
@@ -110,7 +110,7 @@ function boot() {
     W.setFlowers(s.flowers);
     W.setCherries(s.day >= s.cherryReadyDay);
     W.calendar.draw(Math.max(1, s.calendarDay));
-    W.setDrawings(s.drawings);
+    W.setDrawings(s.drawings, s.art);
     if (s.food) W.placeFood(s.food);
     if (life.isNight()) km.placeOnSpot(W.spots.bed);
     else km.place(-2.6, 0.6, 0.4);
@@ -269,7 +269,7 @@ function boot() {
                 }
                 if (o.userData.pick) {
                     if (!shown(o)) break;
-                    life.request(o.userData.pick);
+                    life.request(o.userData.pick, o.userData);
                     return;
                 }
             }
@@ -278,7 +278,7 @@ function boot() {
 
     ctx.ui = createUI({
         home, layout, follow: toggleFollow,
-        food: life.placeFood, ball: life.throwBall, lights: life.toggleLights, talk: life.talk,
+        food: life.placeFood, ball: life.throwBall, lights: life.toggleLights, talk: life.talk, drawing: life.showDrawing,
         invite: family.invite, leave: family.leave,
         reset() {
             clearState();

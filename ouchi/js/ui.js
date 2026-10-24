@@ -1,6 +1,7 @@
 import { ctx } from './ctx.js';
 import { clockText, partOfDay } from './util.js';
-import { CLAWD_SPRITE } from './textures.js';
+import { CLAWD_SPRITE, paintDrawing } from './textures.js';
+import { ART } from './lines.js';
 
 const STATS = [
     ['onaka', 'おなか', '#f07b7b'],
@@ -124,26 +125,79 @@ export function createUI(h) {
         }, 3500);
     });
 
+    // 日記：いちばん新しい日だけひらいておいて、前の日はたたむ（タップで開け閉め）
     const diaryEl = $('diary');
+    const opened = new Map();
     function renderDiary() {
         diaryEl.textContent = '';
-        let lastDay = null;
+        const days = [];
         for (const e of S().diary) {
-            if (e.d !== lastDay) {
-                lastDay = e.d;
+            const g = days[days.length - 1];
+            if (g?.d === e.d) g.list.push(e);
+            else days.push({ d: e.d, list: [e] });
+        }
+        days.forEach((g, i) => {
+            const open = opened.get(g.d) ?? i === 0;
+            const head = document.createElement('li');
+            head.className = 'day';
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.setAttribute('aria-expanded', String(open));
+            const fold = document.createElement('span');
+            fold.className = 'fold';
+            fold.textContent = open ? '▴' : `▾ ${g.list.length}こ`;
+            btn.append(`― ${g.d}日目 ―`, fold);
+            btn.addEventListener('click', () => {
+                opened.set(g.d, !open);
+                renderDiary();
+            });
+            head.appendChild(btn);
+            diaryEl.appendChild(head);
+            if (!open) return;
+            for (const e of g.list) {
                 const li = document.createElement('li');
-                li.className = 'day';
-                li.textContent = `― ${e.d}日目 ―`;
+                const t = document.createElement('span');
+                t.className = 't';
+                t.textContent = clockText(e.m);
+                const tx = document.createElement('span');
+                tx.textContent = e.t;
+                if (e.n > 1) {
+                    const n = document.createElement('b');
+                    n.className = 'times';
+                    n.textContent = `×${e.n}`;
+                    tx.append(n);
+                }
+                li.append(t, tx);
                 diaryEl.appendChild(li);
             }
-            const li = document.createElement('li');
-            const t = document.createElement('span');
-            t.className = 't';
-            t.textContent = clockText(e.m);
-            const tx = document.createElement('span');
-            tx.textContent = e.t;
-            li.append(t, tx);
-            diaryEl.appendChild(li);
+        });
+    }
+
+    // まのの絵のアルバム（かべに飾れるのは3枚だけなので、ぜんぶここにとっておく）
+    const albumTitle = $('album-title'), albumEl = $('album');
+    let albumKey = '';
+    function renderAlbum() {
+        const s = S();
+        const key = `${s.drawings}|${s.art.join()}`;
+        if (key === albumKey) return;
+        albumKey = key;
+        albumTitle.hidden = albumEl.hidden = !s.drawings;
+        albumTitle.textContent = `まのの絵（${s.drawings}枚）`;
+        albumEl.textContent = '';
+        for (let n = s.drawings - 1; n >= 0; n--) {
+            const art = ART[s.art[n]] ?? ART.classic;
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'pic';
+            b.setAttribute('aria-label', `${n + 1}枚目：${art.name}`);
+            const c = document.createElement('canvas');
+            c.width = c.height = 128;
+            paintDrawing(c.getContext('2d'), n, s.art[n]);
+            const no = document.createElement('span');
+            no.textContent = n + 1;
+            b.append(c, no);
+            b.addEventListener('click', () => h.drawing(n));
+            albumEl.appendChild(b);
         }
     }
 
@@ -209,6 +263,7 @@ export function createUI(h) {
                 dirty = false;
                 renderDiary();
             }
+            renderAlbum();
         },
     };
 }

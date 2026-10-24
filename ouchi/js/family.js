@@ -2,12 +2,14 @@ import * as THREE from 'three';
 import { ctx } from './ctx.js';
 import { Agent, goSpot, walkTo, waitMin, waitUntil, join, spotAt, faceYaw, freeSpot } from './agent.js';
 import { makeMano, makeKuromi, makeMikanyan, makeMikuroNee } from './clawd.js';
-import { addStat, log, hour } from './state.js';
-import { pick, rand, chance } from './util.js';
+import { addStat, log, tally, hour, absMin } from './state.js';
+import { pick, rand, chance, shuffle } from './util.js';
 import { tapFork, holdMallet, forkOf } from './life.js';
 import { spot } from './build.js';
-import { converse, hold, pickScript, react, free, touch } from './chatter.js';
-import { DUO, GROUP } from './convos.js';
+import { SPRITES } from './textures.js';
+import { ART } from './lines.js';
+import { converse, hold, pickScript, react, free, touch, waitTalk } from './chatter.js';
+import { DUO, GROUP, TRIO, ONSEN_GROUP } from './convos.js';
 
 const W = () => ctx.world;
 const S = () => ctx.state;
@@ -16,8 +18,7 @@ const S = () => ctx.state;
 export const DEFS = [
     {
         id: 'mano', name: 'まの', hz: '528Hz', freq: 528, emoji: '💖', color: '#33b583', ring: 0x8fdfbb,
-        make: makeMano, speed: 1.7, special: 'drawing',
-        sprite: { body: '#8fdfbb', eye: '#24332c', acc: [[2, 1, '#ffd0e4'], [3, 1, '#ffd0e4'], [4, 1, '#ffd0e4'], [5, 1, '#ffd0e4'], [6, 1, '#ffd0e4'], [7, 1, '#ffd0e4'], [8, 1, '#ffd0e4'], [9, 1, '#ffd0e4'], [10, 1, '#ffd0e4'], [11, 1, '#ffd0e4'], [1, 3, '#ff7fb5'], [1, 4, '#ff7fb5'], [12, 3, '#ff7fb5'], [12, 4, '#ff7fb5']] },
+        make: makeMano, speed: 1.7, special: 'drawing', sprite: SPRITES.mano,
         lines: {
             arrive: ['子みくろん〜♡あそびにきたよ〜！', '528Hzの愛、届けにきたよ💖'],
             greetK: ['まの〜！よぐきたなっす〜♡', 'まのだぁ〜！会いたかったっちゃ〜💖'],
@@ -28,6 +29,8 @@ export const DEFS = [
             kick: ['えいっ！', 'いくよ〜！', 'それ〜っ！'],
             ballDone: ['たのしかった〜！また遊ぼうね⚽💖'],
             onsen: ['あったか〜い…しあわせ〜♨️', '528Hzで、お湯もやさしくなるかな〜♨️💖'],
+            imoni: ['みくろんの芋煮、だいすき〜💖', 'あったまる〜…おかわりしちゃお🍲'],
+            imoniWait: 'いいにおいしてきた〜🍲 芋煮、たのしみ〜！',
             musicEnd: '音叉の音と歌うの、たのしいね〜🎶💖',
             tap: ['なぁに〜？♡', 'えへへ、528Hz〜💖', '子みくろん、だいすき〜'],
             leave: ['またくるね〜！大好きだよ💖', '今日もありがと〜！またね🌸'],
@@ -42,8 +45,7 @@ export const DEFS = [
     },
     {
         id: 'kuromi', name: 'クロミちゃん', hz: '963Hz', freq: 963, emoji: '🖤', color: '#6a55a8', ring: 0x8a74c8,
-        make: makeKuromi, speed: 1.75, special: 'stardust',
-        sprite: { body: '#54447a', eye: '#fff0fa', acc: [[4, 0, '#ffd84d'], [4, 1, '#cfc3f0'], [1, 6, '#2d2752'], [12, 6, '#2d2752'], [1, 7, '#2d2752'], [12, 7, '#2d2752']] },
+        make: makeKuromi, speed: 1.75, special: 'stardust', sprite: SPRITES.kuromi,
         // クロミちゃんは、うちなーぐち（沖縄のことば）まじりでおしゃべり
         lines: {
             arrive: ['はいたい〜！963Hzで宇宙からきたさー🖤✨', 'はいたい、子みくろん！ちゃーがんじゅー？🖤'],
@@ -64,13 +66,18 @@ export const DEFS = [
             kick: ['それっ！', 'いくさー！', 'えいっ！'],
             ballDone: ['でーじたのしかったさー！⚽', 'ナイスパスやっさー🖤'],
             onsen: ['ぬちぐすい（命のくすり）やさー♨️', 'あったまるねー…でーじごくらく🖤', 'ぶしを見ながらの温泉、さいこうさー✨'],
+            imoni: ['まーさん…！宇宙一の芋煮やっさー🖤', 'ねーねーの味、でーじやさしいさー🖤'],
+            imoniWait: '芋煮のかばさ（いいにおい）、ここまで来てるさー🖤',
             musicEnd: 'ちゅらさん響きだったさー🎶',
+            // まのの絵のモデルになったとき
+            model: ['モデルなんて、でーじてれるさー🖤', 'ふふっ、宇宙一ちゅらさんに描いてねー🖤'],
+            modelMano: 'クロミちゃん、アンテナの星もちゃんと描くね✨',
+            modelDone: 'ちゅらさん…！わんも宝物にするさー🖤',
         },
     },
     {
         id: 'mikanyan', name: 'みかにゃん', hz: '♾️Hz', freq: 0, emoji: '🐱', color: '#e6863d', ring: 0xffb36b,
-        make: makeMikanyan, speed: 1.9, special: 'catnap',
-        sprite: { body: '#ffb36b', eye: '#3a2a22', acc: [[2, 1, '#ffb36b'], [3, 1, '#ffb36b'], [2, 0, '#ffb36b'], [10, 1, '#ffb36b'], [11, 1, '#ffb36b'], [11, 0, '#ffb36b'], [6, 0, '#ffd66b'], [7, 0, '#ffd66b']] },
+        make: makeMikanyan, speed: 1.9, special: 'catnap', sprite: SPRITES.mikanyan,
         lines: {
             arrive: ['にゃ〜ん♾️ あそびにきたにゃ！', 'みかにゃん参上だにゃ〜✨'],
             greetK: ['みかにゃん〜！もふもふだっちゃ〜🐱', 'みかにゃんだぁ〜！いらっしゃ〜い♡'],
@@ -81,7 +88,12 @@ export const DEFS = [
             kick: ['にゃっ！', 'にゃにゃっ！', 'とりゃにゃ！'],
             ballDone: ['ボール、むげんにたのしいにゃ♾️'],
             onsen: ['あしだけ…あしだけにゃ…♨️', 'お湯、意外といいにゃ〜…♾️'],
+            imoni: ['おにく、おにくはどこにゃ〜？🐾', 'ふーふー…あちちにゃ！でも、おいしいにゃ〜'],
+            imoniWait: 'おにくのにおいがするにゃ…！じゅるり',
             musicEnd: 'むげんにハモったにゃ〜♾️🎶',
+            model: ['じっとするの、むずかしいにゃ…', 'いちばんもふもふに描いてにゃ♾️'],
+            modelMano: 'みかにゃん、しっぽ動いてる〜😂',
+            modelDone: 'もふもふだにゃ〜！むげんに宝物にゃ♾️',
             tap: ['にゃ？', 'ごろごろ〜♾️', 'なでなで、もっとにゃ〜'],
             leave: ['また来るにゃ〜♾️', 'ばいばいにゃ〜！'],
             curfew: ['ねむくなってきたにゃ…帰るにゃ〜', 'おうちのおふとんが待ってるにゃ♾️'],
@@ -95,8 +107,7 @@ export const DEFS = [
     },
     {
         id: 'nee', name: 'みくろん姉', hz: '396Hz', freq: 396, emoji: '🎵', color: '#c27bd6', ring: 0xffa9d6,
-        make: makeMikuroNee, speed: 1.9, special: 'imoni',
-        sprite: { body: '#ff9fd0', eye: '#4a2b34', acc: [[2, 1, '#ffc3e3'], [3, 1, '#ffc3e3'], [4, 1, '#ffc3e3'], [5, 1, '#ffc3e3'], [6, 1, '#ffc3e3'], [7, 1, '#ffc3e3'], [8, 1, '#ffc3e3'], [9, 1, '#ffc3e3'], [10, 1, '#ffc3e3'], [11, 1, '#ffc3e3'], [1, 2, '#ffc3e3'], [12, 2, '#ffc3e3'], [2, 8, '#cdb9f4'], [3, 8, '#cdb9f4'], [4, 8, '#cdb9f4'], [5, 8, '#cdb9f4'], [6, 8, '#cdb9f4'], [7, 8, '#cdb9f4'], [8, 8, '#cdb9f4'], [9, 8, '#cdb9f4'], [10, 8, '#cdb9f4'], [11, 8, '#cdb9f4']] },
+        make: makeMikuroNee, speed: 1.9, special: 'imoni', sprite: SPRITES.nee,
         // 山形弁MAX：だず・べした・ごど（〜だこと）・いぎなり（とっても）・むったど（いっつも）・
         // おしょうしな（ありがとう）・めんごい（かわいい）・こしゃう（つくる）・ごしゃぐ（おこる）・あばえ（またね）
         lines: {
@@ -122,12 +133,17 @@ export const DEFS = [
             ballDone: ['いがったいがった、いい運動だっけず〜⚽'],
             onsen: ['ごくらくだず〜♨️', 'あったまるごど〜。蔵王さ来たみでだず〜♨️'],
             musicEnd: 'いぎなりいい響きだっけず〜🎶',
+            model: ['あいや〜、モデルなんて、こっぱずがしいごど〜😳', 'んだが〜？したら、にこ〜っと🌸'],
+            modelMano: 'みくろん、そのままの笑顔でね〜',
+            modelDone: 'いぎなりめんごぐ描いでもらったごど〜🥹 おしょうしな〜',
         },
     },
 ];
 
-const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false, night: false }));
+// busy：来てくれた人どうしで遊んでいる最中。idle：ふだんの過ごし方の最中（ふたり遊びにさそえる）
+const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false, night: false, busy: false, idle: false, specialAt: -1e9 }));
 const byId = Object.fromEntries(rt.map((v) => [v.def.id, v]));
+const ORDER = DEFS.map((d) => d.id);
 let resonanceLock = false;
 let turnAt = 0;
 
@@ -140,6 +156,11 @@ function* inTurn(a, choose) {
 }
 
 const alive = (v) => v.state === 'visiting';
+// 子みくろんがさそえる人（ふたり遊びの最中の人はのぞく）
+const avail = () => present().filter((v) => v.greeted && !v.busy);
+const group = (n) => shuffle(avail()).slice(0, n);
+const names = (agents) => agents.map((a) => a.visitor).sort((a, b) => ORDER.indexOf(a.def.id) - ORDER.indexOf(b.def.id)).map((v) => v.def.name).join('と');
+const pairKey = (v, w) => [v.def.id, w.def.id].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)).join('+');
 
 export function init() {
     for (const v of rt) {
@@ -285,64 +306,115 @@ export function curfew() {
     }
 }
 
+// 子みくろんがおやすみするときは、遊びに来ていた人も「おやすみ」を言って帰る
+export function bedtime() {
+    for (const v of rt) {
+        if (v.state === 'visiting' && !v.night) leave(v.def.id, true, pick(v.def.lines.sleepBye));
+    }
+}
+
 // ── 遊びに来た人の、ふだんの過ごし方 ──
 function* visitorIdle(v) {
     const a = v.agent;
     const k = ctx.km;
-    const r = Math.random();
-    if (r < 0.55 && !k.deepSleep) {
-        const ang = rand(0, Math.PI * 2);
-        const p = ctx.nav.snap(k.pos.x + Math.sin(ang) * 1.4, k.pos.z + Math.cos(ang) * 1.4);
-        yield* walkTo(a, p.x, p.z);
-        a.faceTo(k.pos.x, k.pos.z);
-        const line = v.def.lines.watch[k.actId];
-        if (free(a, 2)) {
-            if (line && chance(0.6)) a.say(line);
-            else if (chance(0.35)) a.say(pick(v.def.lines.idle));
-        }
-        yield* waitMin(rand(6, 12), () => {
+    // ほかに来ている人と、ふたりで遊ぶこともある
+    const play = pairChance(v);
+    if (play) {
+        yield* pairPlay(v, play.w, play.def);
+        return;
+    }
+    v.idle = true;
+    try {
+        const r = Math.random();
+        if (r < 0.55 && !k.deepSleep) {
+            const ang = rand(0, Math.PI * 2);
+            const p = ctx.nav.snap(k.pos.x + Math.sin(ang) * 1.4, k.pos.z + Math.cos(ang) * 1.4);
+            yield* walkTo(a, p.x, p.z);
             a.faceTo(k.pos.x, k.pos.z);
-            if (Math.hypot(a.pos.x - k.pos.x, a.pos.z - k.pos.z) > 4) return false;
-        });
-    } else if (r < 0.82) {
-        const [x, z] = pick(W().strollPoints);
-        yield* walkTo(a, x, z);
-        a.pose = 'look';
-        if (chance(0.5) && free(a, 2)) a.say(pick(v.def.lines.idle));
-        yield* waitMin(rand(5, 10));
-        a.pose = 'stand';
-    } else {
-        const seat = freeSpot(W().spots.bench, a);
-        if (!seat) {
-            yield* waitMin(3);
-            return;
+            const line = v.def.lines.watch[k.actId];
+            if (free(a, 2)) {
+                if (line && chance(0.6)) a.say(line);
+                else if (chance(0.35)) a.say(pick(v.def.lines.idle));
+            }
+            yield* waitMin(rand(6, 12), () => {
+                a.faceTo(k.pos.x, k.pos.z);
+                if (Math.hypot(a.pos.x - k.pos.x, a.pos.z - k.pos.z) > 4) return false;
+            });
+        } else if (r < 0.82) {
+            const [x, z] = pick(W().strollPoints);
+            yield* walkTo(a, x, z);
+            a.pose = 'look';
+            if (chance(0.5) && free(a, 2)) a.say(pick(v.def.lines.idle));
+            yield* waitMin(rand(5, 10));
+            a.pose = 'stand';
+        } else {
+            const seat = freeSpot(W().spots.bench, a);
+            if (!seat) {
+                yield* waitMin(3);
+                return;
+            }
+            yield* goSpot(a, seat);
+            if (chance(0.5) && free(a, 2)) a.say(pick(v.def.lines.idle));
+            yield* waitMin(rand(8, 14));
         }
-        yield* goSpot(a, seat);
-        if (chance(0.5) && free(a, 2)) a.say(pick(v.def.lines.idle));
-        yield* waitMin(rand(8, 14));
+    } finally {
+        v.idle = false;
     }
 }
 
 // ── 一緒にすること（子みくろんの行動として動く）──
-// quiet: いっしょにしている間は、ほかのおしゃべりに割りこまれない
-function* together(k, v, kSpot, vSpot, vPose, body, quiet = true) {
-    const a = v.agent;
+// 来てくれた人たちに、それぞれの場所へ来てもらう。最初の人がそろったら始める（ほかの人は、来られた人だけ）。
+// body(a, more)：a は最初の人、more はほかに来られた人たち。quiet：そのあいだ、ほかのおしゃべりに割りこまれない
+function* gather(k, kSpot, members, body, quiet = true) {
     const meet = { done: false };
-    a.setCo(join(a, vSpot, meet, vPose));
+    for (const m of members) m.v.agent.setCo(join(m.v.agent, m.spot, meet, m.pose));
+    const ready = (m) => m.v.agent.atSpot && alive(m.v);
     let release = null;
     try {
         k.meeting = true;
         yield* goSpot(k, kSpot);
-        yield* waitUntil(() => a.atSpot || !alive(v), 20);
-        if (!a.atSpot || !alive(v)) return;
-        if (quiet) release = hold([k, a]);
+        yield* waitUntil(() => members.every((m) => ready(m) || !alive(m.v)), 20);
+        if (!ready(members[0])) return;
+        const agents = members.filter(ready).map((m) => m.v.agent);
+        if (quiet) release = hold([k, ...agents]);
         k.meeting = false;
-        yield* body(a);
+        yield* body(agents[0], agents.slice(1));
     } finally {
         k.meeting = false;
         release?.();
         meet.done = true;
     }
+}
+
+function* together(k, v, kSpot, vSpot, vPose, body, quiet = true) {
+    yield* gather(k, kSpot, [{ v, spot: vSpot, pose: vPose }], body, quiet);
+}
+
+function castOf(k, agents) {
+    const cast = { k };
+    for (const a of agents) cast[a.visitor.def.id] = a;
+    return cast;
+}
+
+// いる人のセリフが2人ぶん以上ある台本だけ（ひとりしかいなければ1人ぶん）
+function fits(list, cast) {
+    const n = Math.min(2, Object.keys(cast).length - 1);
+    return list.filter((sc) => new Set((Array.isArray(sc) ? sc : sc.lines).map(([who]) => who).filter((who) => who !== 'k' && cast[who])).size >= n);
+}
+
+// ベンチの席に、ほかのだれも座っていない（向かっていない）。who はこれから座る人たち
+function benchFree(who, idx = [0, 1, 2]) {
+    const b = W().spots.bench;
+    return idx.every((i) => !ctx.agents.some((o) => o.active && !who.includes(o) && (o.onSpot === b[i] || o.goal === b[i])));
+}
+
+function sketchbook() {
+    const book = new THREE.Group();
+    const tilt = new THREE.Group();
+    tilt.rotation.x = -0.5;
+    book.add(tilt);
+    tilt.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.26), new THREE.MeshLambertMaterial({ color: 0xffffff })));
+    return book;
 }
 
 function* duoTalk(k, v, n) {
@@ -383,7 +455,7 @@ export const SOCIAL = {
             yield* duoTalk(k, v, 2);
             addStat('tanoshisa', 15);
             addStat('nakayoshi', 3);
-            log(seats ? `${v.def.name}とベンチでおしゃべりした💬` : `${v.def.name}とお庭でおしゃべりした💬`);
+            tally(seats ? `${v.def.name}とベンチでおしゃべりした💬` : `${v.def.name}とお庭でおしゃべりした💬`);
         });
     },
 
@@ -401,7 +473,7 @@ export const SOCIAL = {
             W().clearTea();
             addStat('onaka', 12);
             addStat('tanoshisa', 12);
-            log(`${v.def.name}とお茶をした🍵`);
+            tally(`${v.def.name}とお茶をした🍵`);
         });
         W().clearTea();
     },
@@ -434,7 +506,7 @@ export const SOCIAL = {
             }
             k.say('たのしかったっちゃ〜！⚽');
             a.say(pick(v.def.lines.ballDone ?? ['また遊ぼうね〜！', 'ナイスパスだったよ〜！']));
-            log(`${v.def.name}とボールあそびした⚽`);
+            tally(`${v.def.name}とボールあそびした⚽`);
             yield* waitMin(3);
         });
     },
@@ -456,7 +528,7 @@ export const SOCIAL = {
                 W().onsenUsers--;
             }
             S().bathDay = S().day;
-            log(`${v.def.name}といっしょに温泉に入った♨️`);
+            tally(`${v.def.name}といっしょに温泉に入った♨️`);
         }, false);
     },
 
@@ -492,24 +564,33 @@ export const SOCIAL = {
             }
             if (!alive(v)) return;
             yield* converse([['v', v.def.lines.musicEnd ?? 'いい響きだったね〜🎶'], ['k', 'また合奏するべ〜！🔔']], { k, v: a });
-            log(`${v.def.name}と音叉で合奏した🎶`);
+            tally(`${v.def.name}と音叉で合奏した🎶`);
         });
     },
 
+    // まのが絵を描いてくれる。そばにいる人を描くときは、その人にもモデルになってもらう。
+    // できた絵は、子みくろんがかべに飾りにいく（いちばん古い絵とかけかえ）
     *drawing(k, v) {
-        k.label = 'まのに絵を描いてもらっている🎨';
-        yield* together(k, v, W().spots.rugB, W().spots.rugA, 'draw', function* (a) {
-            const book = new THREE.Group();
-            const tilt = new THREE.Group();
-            tilt.rotation.x = -0.5;
-            book.add(tilt);
-            tilt.add(new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.02, 0.26), new THREE.MeshLambertMaterial({ color: 0xffffff })));
-            a.model.hold(book, new THREE.Vector3(-0.5, 0.08, 0.24));
+        const subj = chooseArt(v);
+        const mv = byId[subj];
+        const model = mv && mv !== v && alive(mv) && mv.greeted && !mv.busy ? mv : null;
+        k.label = model ? `まのに${model.def.name}とならんで描いてもらっている🎨` : 'まのに絵を描いてもらっている🎨';
+        const members = [{ v, spot: W().spots.rugA, pose: 'draw' }];
+        if (model) members.push({ v: model, spot: W().spots.rugC, pose: 'sit' });
+        yield* gather(k, W().spots.rugB, members, function* (a, more) {
+            const m = more[0];
+            const ML = m?.visitor.def.lines;
+            a.model.hold(sketchbook(), new THREE.Vector3(-0.5, 0.08, 0.24));
             try {
-                a.say('子みくろん、そのまま〜！描いてあげるね🎨');
+                a.say(m ? `${m.name}と子みくろん、ならんでならんで〜！描いてあげるね🎨` : '子みくろん、そのまま〜！描いてあげるね🎨');
                 k.pose = 'sit';
                 k.faceTo(a.pos.x, a.pos.z);
-                yield* waitMin(14, cues([
+                yield* waitMin(14, cues(m ? [
+                    [3.5, m, ML.model[0]],
+                    [6, k, 'ならんで描いてもらうの、どきどきするっちゃ〜'],
+                    [8.5, a, ML.modelMano],
+                    [11, m, ML.model[1]],
+                ] : [
                     [3.5, k, 'じっとしてるの、むずかしいっちゃ〜😂'],
                     [6, a, 'あはは、ちょっとだけなら動いていいよ〜'],
                     [8.5, a, 'もうちょっとだよ〜♪'],
@@ -519,19 +600,47 @@ export const SOCIAL = {
                 a.model.hold(null);
             }
             if (!alive(v)) return;
+            // 描きあがった絵は、ここで宝物になる（飾りにいく途中で終わっても、なくならない）
+            const n = S().drawings;
+            S().art[n] = subj;
             S().drawings++;
-            W().setDrawings(S().drawings);
-            a.pose = 'happy';
-            a.say('できた〜！子みくろんの絵だよ💖');
-            yield* waitMin(3);
-            k.pose = 'happy';
-            k.say('わぁ〜！めんこい〜！宝物だっちゃ✨');
-            ctx.fx.burst(k.headPos(), ['🎨', '💖', '✨'], 6);
-            ctx.sound.sparkle();
-            addStat('tanoshisa', 18);
-            addStat('nakayoshi', 6);
-            log('まのが絵を描いてくれた🎨（かべに飾った）');
-            yield* waitMin(4);
+            const art = ART[subj];
+            log(`まのが${art.name}を描いてくれた🎨（かべに飾った）`);
+            let hung = false;
+            try {
+                a.pose = 'happy';
+                a.say(art.mano);
+                yield* waitMin(3);
+                a.pose = 'sit';
+                k.pose = 'happy';
+                k.say('わぁ〜！めんこい〜！宝物だっちゃ✨');
+                ctx.fx.burst(k.headPos(), ['🎨', '💖', '✨'], 6);
+                ctx.sound.sparkle();
+                addStat('tanoshisa', 18);
+                addStat('nakayoshi', 6);
+                if (m && alive(m.visitor)) {
+                    yield* waitMin(2.5);
+                    m.pose = 'happy';
+                    m.say(ML.modelDone);
+                }
+                yield* waitMin(3);
+                if (m) m.pose = 'sit';
+                const fr = W().drawingFrame(n);
+                k.label = 'まのの絵をかべに飾っている🖼️';
+                k.say('かべに飾ってくるっちゃ〜🖼️');
+                yield* goSpot(k, fr.hang);
+                yield* waitMin(1.5);
+                W().setDrawings(S().drawings, S().art);
+                hung = true;
+                ctx.sound.sparkle();
+                ctx.fx.burst(fr.pos, ['🖼️', '✨', '💖'], 6);
+                k.pose = 'happy';
+                k.say('ぺたっ…ここに飾るっちゃ〜！✨');
+                react('drawing');
+                yield* waitMin(3);
+            } finally {
+                if (!hung) W().setDrawings(S().drawings, S().art);
+            }
         });
     },
 
@@ -576,7 +685,7 @@ export const SOCIAL = {
             k.pose = 'sit';
             a.pose = 'sit';
             a.say('ふにゃ〜、よく寝たにゃ♾️');
-            log('みかにゃんとお昼寝した🐱💤');
+            tally('みかにゃんとお昼寝した🐱💤');
             yield* waitMin(3);
             k.say('すっきりだっちゃ〜！みかにゃん、おしょうしな〜');
             yield* waitMin(2);
@@ -584,49 +693,24 @@ export const SOCIAL = {
     },
 
     *imoni(k, v) {
-        k.label = 'おねえちゃんと芋煮をつくっている🍲';
-        yield* together(k, v, W().spots.cookHelp, W().spots.cook, 'cook', function* (a) {
-            a.say('芋煮会、すっぺ〜！🍲 鍋っこ出してけろ〜');
-            k.pose = 'cook';
-            let st = 0;
-            const cue = cues([
-                [2.5, a, 'さどいもはな、でっけぐ切んのがコツだず〜🥔'],
-                [5, k, 'こう〜？'],
-                [7, a, 'んだんだ、いぎなり上手だごど〜🌸'],
-                [9.5, k, 'いいにおいしてきたっちゃ〜♨️'],
-            ]);
-            yield* waitMin(12, (dt, t) => {
-                cue(dt, t);
-                st += dt;
-                if (st > 3) {
-                    st = 0;
-                    ctx.fx.emoji(W().potPos, '♨️', { rise: 30, size: 16 });
-                }
-            });
+        // ほかに来ている人は、芋煮ができるまでテーブルで待っていてもらう
+        const guests = avail().filter((o) => o !== v).slice(0, 2);
+        const seats = ['W', 'E'];
+        const table = { done: false };
+        guests.forEach((o, i) => {
+            o.busy = true;
+            o.agent.setCo(join(o.agent, W().spots[`seat${seats[i]}`], table, 'eat'));
         });
-        if (!alive(v)) return;
-        k.label = 'おねえちゃんと芋煮会🍲';
-        yield* together(k, v, W().spots.seatN, W().spots.seatS, 'eat', function* (a) {
-            W().placeFood('imoni');
-            W().setTea(['S']);
-            a.say('いただぎます〜！');
-            yield* waitMin(14, cues([
-                [2.5, k, 'おねえちゃんの芋煮、んめ〜！😋'],
-                [5.5, a, 'おかわり、よっぱら（たっぷり）あっからな〜🍲'],
-                [8.5, k, 'おかわり〜！🙌'],
-                [11, a, 'たんと食え〜。おがれよ〜🌸'],
-            ]));
-            addStat('onaka', 50);
-            addStat('tanoshisa', 12);
-            log('おねえちゃんと芋煮会をした🍲');
-        });
-        if (S().food) W().placeFood(S().food);
-        else W().clearFood();
-        W().clearTea();
+        try {
+            yield* imoniParty(k, v, guests, seats);
+        } finally {
+            table.done = true;
+            guests.forEach((o) => { o.busy = false; });
+        }
     },
 
     *party(k) {
-        const vs = present().filter((v) => v.greeted).slice(0, 3);
+        const vs = avail().slice(0, 3);
         if (!vs.length) return;
         k.label = 'みんなでお茶会☕';
         const seats = ['S', 'W', 'E'];
@@ -642,16 +726,15 @@ export const SOCIAL = {
             W().setTea(['N', ...seats.slice(0, vs.length)]);
             k.say('みんなでお茶会だっちゃ〜☕💖');
             yield* waitMin(3);
-            const cast = { k };
-            vs.forEach((v) => { cast[v.def.id] = v.agent; });
-            const fit = GROUP.filter((sc) => new Set(sc.map(([who]) => who).filter((who) => who !== 'k' && cast[who])).size >= Math.min(2, vs.length));
+            const cast = castOf(k, vs.map((v) => v.agent));
+            const fit = fits(GROUP, cast);
             for (let i = 0; i < 2 && vs.some(alive); i++) {
                 if (i) yield* waitMin(2);
                 yield* converse(pickScript(fit), cast);
             }
             addStat('tanoshisa', 20);
             addStat('onaka', 10);
-            log('みんなでお茶会をした☕');
+            tally('みんなでお茶会をした☕');
         } finally {
             k.meeting = false;
             release?.();
@@ -659,7 +742,238 @@ export const SOCIAL = {
             W().clearTea();
         }
     },
+
+    // ── みんなでいっしょに（来てくれた人がふたり以上のとき）──
+    *onsen3(k) {
+        const vs = group(2);
+        if (vs.length < 2) {
+            if (vs[0]) yield* SOCIAL.onsen2(k, vs[0]);
+            return;
+        }
+        const sp = W().spots;
+        k.label = 'みんなで温泉でぽかぽか♨️';
+        yield* gather(k, sp.onsen, [{ v: vs[0], spot: sp.onsenV1, pose: 'soak' }, { v: vs[1], spot: sp.onsenV2, pose: 'soak' }], function* (a, more) {
+            const crew = [a, ...more];
+            W().onsenUsers++;
+            ctx.sound.splash();
+            try {
+                const cast = castOf(k, crew);
+                yield* converse(pickScript(fits(ONSEN_GROUP, cast)), cast);
+                yield* waitMin(rand(12, 16), (dt) => {
+                    addStat('kirakira', dt * 1.6);
+                    addStat('genki', dt * 0.1);
+                });
+                k.say('みんなでぽかぽか、しあわせだっちゃ〜♨️💖');
+                yield* waitMin(3);
+            } finally {
+                W().onsenUsers--;
+            }
+            S().bathDay = S().day;
+            addStat('nakayoshi', 4);
+            tally(`${names(crew)}といっしょに温泉に入った♨️`);
+        }, false);
+    },
+
+    // ベンチの3席に、子みくろんをまんなかにして
+    *bench3(k) {
+        const vs = group(2);
+        const b = W().spots.bench;
+        if (vs.length < 2 || !benchFree([k, ...vs.map((v) => v.agent)])) {
+            if (vs[0]) yield* SOCIAL.chat(k, vs[0]);
+            return;
+        }
+        k.label = 'みんなでベンチにならんでおしゃべり💬';
+        yield* gather(k, b[1], [{ v: vs[0], spot: b[0], pose: 'sit' }, { v: vs[1], spot: b[2], pose: 'sit' }], function* (a, more) {
+            const crew = [a, ...more];
+            if (!more.length) {
+                yield* duoTalk(k, a.visitor, 2);
+            } else {
+                const cast = castOf(k, crew);
+                const list = TRIO[pairKey(a.visitor, more[0].visitor)] ?? [];
+                for (let i = 0; i < 2 && crew.every((x) => alive(x.visitor)); i++) {
+                    if (i) yield* waitMin(2);
+                    yield* converse(pickScript(list), cast);
+                    ctx.fx.emoji(k.headPos(), '💕', { rise: 40 });
+                }
+            }
+            addStat('tanoshisa', 18);
+            addStat('nakayoshi', 4);
+            tally(`${names(crew)}とベンチにならんでおしゃべりした💬`);
+        });
+    },
+
+    // 3人（4人）でパス回し
+    *ball3(k) {
+        const vs = group(3);
+        if (vs.length < 2) {
+            if (vs[0]) yield* SOCIAL.ballplay(k, vs[0]);
+            return;
+        }
+        const P = vs.length >= 3
+            ? [{ x: 2.3, z: 7.5 }, { x: 5.2, z: 7.7 }, { x: 4.6, z: 6.1 }, { x: 2.7, z: 6.0 }]
+            : [{ x: 2.3, z: 7.5 }, { x: 5.2, z: 7.7 }, { x: 3.8, z: 6.1 }];
+        const c = { x: P.reduce((t, p) => t + p.x, 0) / P.length, z: P.reduce((t, p) => t + p.z, 0) / P.length };
+        const sp = P.map((p) => spotAt(p.x, p.z, faceYaw(p, c)));
+        k.label = 'みんなでボールのパス回し⚽';
+        yield* gather(k, sp[0], vs.map((v, i) => ({ v, spot: sp[i + 1], pose: 'stand' })), function* (a, more) {
+            const ball = ctx.ball;
+            const players = [k, a, ...more];
+            const d = new THREE.Vector3(c.x - k.pos.x, 0, c.z - k.pos.z).normalize();
+            ball.place(k.pos.x + d.x * 0.45, k.pos.z + d.z * 0.45);
+            let from = k;
+            for (let i = 0; i < 8; i++) {
+                const pool = players.filter((p) => p !== from && (p === k || alive(p.visitor)));
+                if (!pool.length) break;
+                const to = pick(pool);
+                from.faceTo(to.pos.x, to.pos.z);
+                to.faceTo(from.pos.x, from.pos.z);
+                d.set(to.pos.x - from.pos.x, 0, to.pos.z - from.pos.z).normalize();
+                from.pose = 'happy';
+                from.say(pick(from === k ? ['それっ！', 'いくよ〜！', 'えいっ！'] : from.visitor.def.lines.kick), 1.4);
+                ctx.sound.bounce();
+                ball.passTo(
+                    new THREE.Vector3(from.pos.x + d.x * 0.45, 0.18, from.pos.z + d.z * 0.45),
+                    new THREE.Vector3(to.pos.x - d.x * 0.45, 0.18, to.pos.z - d.z * 0.45),
+                    1.4,
+                );
+                yield* waitMin(0.7);
+                from.pose = 'stand';
+                yield* waitUntil(() => !ball.pass, 3);
+                to.pose = 'happy';
+                yield* waitMin(0.5);
+                to.pose = 'stand';
+                from = to;
+                addStat('tanoshisa', 3);
+            }
+            k.say('みんなでパス回し、たのしかったっちゃ〜！⚽');
+            const last = pick(players.filter((p) => p !== k && alive(p.visitor)));
+            if (last) last.say(pick(last.visitor.def.lines.ballDone ?? ['また遊ぼうね〜！']));
+            addStat('nakayoshi', 4);
+            tally('みんなでボールのパス回しをした⚽');
+            yield* waitMin(3);
+        });
+    },
+
+    // 音叉でセッション：子みくろんが鳴らして、みんながひとりずつ歌って、さいごはみんなの音をいっしょに
+    *band(k) {
+        const vs = group(3);
+        if (vs.length < 2) {
+            if (vs[0]) yield* SOCIAL.music(k, vs[0]);
+            return;
+        }
+        const R = W().musicRing;
+        const angs = vs.length === 2 ? [-1.0, 1.0] : [-1.3, 0, 1.3];
+        const sp = angs.map((ang) => {
+            const p = { x: R.x + Math.sin(ang) * R.r, z: R.z + Math.cos(ang) * R.r };
+            return spotAt(p.x, p.z, faceYaw(p, R), 'sit');
+        });
+        k.label = 'みんなで音叉のセッション🎶';
+        yield* gather(k, W().spots.fork[0], vs.map((v, i) => ({ v, spot: sp[i], pose: 'sit' })), function* (a, more) {
+            const crew = [a, ...more];
+            holdMallet(k, true);
+            try {
+                k.say('みんなで音叉のセッションだっちゃ〜🎵');
+                yield* waitMin(2.5);
+                for (let round = 0; round < 2; round++) {
+                    yield* tapFork(k, 0);
+                    k.say('396Hz〜🔔', 2);
+                    yield* waitMin(2.2);
+                    for (const x of crew) {
+                        if (!alive(x.visitor)) continue;
+                        yield* tapFork(k, forkOf(x.visitor.def.id));
+                        yield* sing(x, `${x.visitor.def.hz}〜🎵`, null, x.visitor.def.ring, 'sit');
+                    }
+                    addStat('tanoshisa', 5);
+                    addStat('kirakira', 4);
+                }
+                k.windup = true;
+                yield* waitMin(0.6);
+                k.windup = false;
+                W().forks.forEach((f, i) => {
+                    W().strikeFork(i);
+                    ctx.fx.ring(new THREE.Vector3(f.base.x, f.base.y + 0.1, f.base.z), f.ring, { s0: 0.3, s1: 2.4, life: 2.6, delay: i * 0.15 });
+                });
+                ctx.sound.chord();
+                crew.forEach((x) => {
+                    x.pose = 'happy';
+                    ctx.fx.burst(x.headPos(), ['🎵', '🎶', '💖'], 3);
+                });
+                k.say('みんなの音がまざると、こんなにきれいなんだっちゃ〜💖', 4);
+                yield* waitMin(4);
+            } finally {
+                k.windup = false;
+                holdMallet(k, false);
+            }
+            crew.forEach((x) => { x.pose = 'sit'; });
+            const star = pick(crew.filter((x) => alive(x.visitor)));
+            if (star) yield* converse([['v', star.visitor.def.lines.musicEnd ?? 'いい響きだったね〜🎶'], ['k', 'またみんなで鳴らすべ〜！🔔']], { k, v: star });
+            addStat('nakayoshi', 5);
+            tally('みんなで音叉のセッションをした🎶');
+        });
+    },
 };
+
+// ひとりずつ自分の周波数を歌う（f が null なら音は鳴らさない：音叉がもう鳴っているとき）
+function* sing(a, text, f, ring, rest = 'stand') {
+    a.pose = 'happy';
+    a.say(text, 2.2);
+    if (f) ctx.sound.freq(f);
+    ctx.fx.ring(new THREE.Vector3(a.pos.x, a.pos.y + 0.03, a.pos.z), ring, { s0: 0.2, s1: 1.4 });
+    ctx.fx.burst(a.headPos(), ['🎵', '🎶'], 2);
+    yield* waitTalk(2.4);
+    a.pose = rest;
+}
+
+// 芋煮会：子みくろんとみくろん姉で芋煮をこしゃって（作って）、テーブルで待っている人たちといっしょに食べる
+function* imoniParty(k, v, guests, seats) {
+    k.label = 'おねえちゃんと芋煮をつくっている🍲';
+    const first = guests[0];
+    yield* together(k, v, W().spots.cookHelp, W().spots.cook, 'cook', function* (a) {
+        a.say('芋煮会、すっぺ〜！🍲 鍋っこ出してけろ〜');
+        k.pose = 'cook';
+        let st = 0;
+        const cue = cues([
+            ...(first ? [[1.5, first.agent, first.def.lines.imoniWait]] : []),
+            [2.5, a, 'さどいもはな、でっけぐ切んのがコツだず〜🥔'],
+            [5, k, 'こう〜？'],
+            [7, a, 'んだんだ、いぎなり上手だごど〜🌸'],
+            [9.5, k, 'いいにおいしてきたっちゃ〜♨️'],
+        ]);
+        yield* waitMin(12, (dt, t) => {
+            cue(dt, t);
+            st += dt;
+            if (st > 3) {
+                st = 0;
+                ctx.fx.emoji(W().potPos, '♨️', { rise: 30, size: 16 });
+            }
+        });
+    });
+    if (!alive(v)) return;
+    const here = guests.filter(alive);
+    k.label = here.length ? 'みんなで芋煮会🍲' : 'おねえちゃんと芋煮会🍲';
+    yield* gather(k, W().spots.seatN, [
+        { v, spot: W().spots.seatS, pose: 'eat' },
+        ...here.map((o) => ({ v: o, spot: W().spots[`seat${seats[guests.indexOf(o)]}`], pose: 'eat' })),
+    ], function* (a, more) {
+        W().placeFood('imoni');
+        W().setTea(['S', ...more.map((g) => seats.find((s) => g.onSpot === W().spots[`seat${s}`])).filter(Boolean)]);
+        a.say(more.length ? '山形の芋煮会だず〜！みんな、いただぎます〜！🍲' : 'いただぎます〜！');
+        yield* waitMin(14, cues([
+            [2.5, k, 'おねえちゃんの芋煮、んめ〜！😋'],
+            ...more.map((g, i) => [4 + i * 3, g, pick(g.visitor.def.lines.imoni)]),
+            [5.5, a, 'おかわり、よっぱら（たっぷり）あっからな〜🍲'],
+            [8.5, k, 'おかわり〜！🙌'],
+            [11, a, more.length ? 'みんなで食う芋煮は、いぎなりんめぇべ〜🌸' : 'たんと食え〜。おがれよ〜🌸'],
+        ].sort((x, y) => x[0] - y[0])));
+        addStat('onaka', 50);
+        addStat('tanoshisa', 12 + more.length * 4);
+        if (more.length) addStat('nakayoshi', 4);
+        tally(more.length ? 'みんなで芋煮会をした🍲' : 'おねえちゃんと芋煮会をした🍲');
+    });
+    if (S().food) W().placeFood(S().food);
+    else W().clearFood();
+    W().clearTea();
+}
 
 const STAR_COLS = [0xffe27a, 0xcdb9ff, 0xff9de2, 0xffffff];
 
@@ -744,34 +1058,368 @@ function* stardustShow(k, v, C) {
     k.say('きれい〜！宝石みたいだっちゃ✨');
     addStat('kirakira', 15);
     addStat('tanoshisa', 15);
-    log('クロミちゃんが星くずを降らせてくれた🌌');
+    tally('クロミちゃんが星くずを降らせてくれた🌌');
     yield* waitMin(3);
     if (alive(v)) a.say('その願い、きっと届いたさー🖤');
     yield* waitMin(3);
 }
 
+// 同じ人の「とくべつ」は5時間あける（芋煮会が1日に何度も続かないように）
+const SPECIAL_GAP = 300;
+
+function canSpecial(v) {
+    if (absMin() - v.specialAt < SPECIAL_GAP) return false;
+    if (v.def.special === 'catnap') return hour() < 19;
+    if (v.def.special === 'imoni') return S().stats.onaka < 75;
+    return true;
+}
+
 export function socialCandidates() {
-    const vs = present().filter((v) => v.greeted);
+    const vs = avail();
     if (!vs.length) return [];
     const h = hour();
     const day = h >= 7 && h < 18.5;
-    const out = [['chat', 150], ['tea', 130], ['onsen2', 110], ['music', 125], ['special', 175]];
+    const out = [['chat', 150], ['tea', 130], ['onsen2', 110], ['music', 125]];
+    if (vs.some(canSpecial)) out.push(['special', 175]);
     if (day) out.push(['ballplay', 150]);
-    if (vs.length >= 2) out.push(['party', 160]);
+    if (vs.length >= 2) {
+        out.push(['party', 150], ['onsen3', 125], ['band', 125]);
+        if (benchFree([ctx.km, ...vs.map((v) => v.agent)])) out.push(['bench3', 150]);
+        if (day) out.push(['ball3', 140]);
+    }
     return out;
 }
 
 export function pickPartner(id) {
-    let vs = present().filter((v) => v.greeted);
-    if (id === 'special') vs = vs.filter((v) => v.def.special !== 'catnap' || hour() < 19);
-    if (id === 'party') return vs[0] ?? null;
+    let vs = avail();
+    if (id === 'special') vs = vs.filter(canSpecial);
     return vs.length ? pick(vs) : null;
 }
 
 // 'special' は相手ごとに中身が変わる
 SOCIAL.special = function (k, v) {
+    v.specialAt = absMin();
     return SOCIAL[v.def.special](k, v);
 };
+
+// まのが描く絵の題材。そばにいる人はモデルになってもらって、いない人は思い出して描く
+function chooseArt(v) {
+    const s = S();
+    const recent = s.art.slice(-3);
+    const pool = [];
+    const add = (id, w) => { if (w > 0 && !recent.includes(id)) pool.push([id, w]); };
+    for (const o of rt) {
+        if (o !== v) add(o.def.id, alive(o) && o.greeted && !o.busy ? 6 : 1);
+    }
+    add('family', s.resonance ? 3 : 0);
+    add('km', 2);
+    add('mano', 2);
+    add('cherry', s.cherries ? 1.2 : 0);
+    add('flower', s.flowers.some((f) => f.g >= 3) ? 1.2 : 0);
+    add('onsen', 1);
+    add('star', hour() >= 17 ? 2 : 0.6);
+    let r = Math.random() * pool.reduce((t, p) => t + p[1], 0);
+    return (pool.find((p) => (r -= p[1]) <= 0) ?? pool[0] ?? ['km'])[0];
+}
+
+// ── 来てくれた人どうしの、ふたり遊び（子みくろんがそばにいたら、ちょっとまざる）──
+// 同じふたりは2時間半、だれかのふたり遊びのあとは40分あける（子みくろんがみんなをさそえるように）
+const PAIR_GAP = 150;
+const ANY_PAIR_GAP = 40;
+const pairAt = {};
+let lastPairAt = -1e9;
+const MELODY = [523.3, 659.3, 698.5, 784, 987.8, 784, 698.5, 659.3];
+// まのとみくろん姉の「つぎの宝物」の相談：[まの, みくろん姉, まの]
+const PLAN_IDEAS = [
+    ['子みくろんのおうちに、もうひとつお部屋がほしいな🏡', 'いいごど〜！したら、ちょっと待っとってけろ〜🌿', 'あはは、出た〜口ぐせ😂'],
+    ['お庭に、ブランコつけたいな〜🌸', 'あいや、いぎなりめんごい案だず〜📝', 'みんなで順番こに乗ろうね💖'],
+    ['雪の日も見てみたいな❄️', '山形の雪は、よっぱら降っからな〜⛄', '雪だるま、子みくろんといっしょにつくりたい！'],
+    ['子みくろんのお誕生日会、したいね🎂', 'んだな〜！芋煮もケーキも、こしゃっぺな〜🍲🎂', '芋煮とケーキ…すごい組みあわせ😂'],
+    ['子みくろんたちに、新しい曲も聴かせたいな🎵', 'いいごど〜。528Hzの曲だべ？🎵', 'うん！みんなの周波数も入れるね💖'],
+];
+
+const both = (a, b) => alive(a.visitor) && alive(b.visitor);
+const mid = (a, b, y = 1.1) => new THREE.Vector3((a.pos.x + b.pos.x) / 2, a.pos.y + y, (a.pos.z + b.pos.z) / 2);
+
+// ふたりが向かいあう場所
+function facing(ax, az, bx, bz, pose = 'stand') {
+    const a = { x: ax, z: az }, b = { x: bx, z: bz };
+    return [spotAt(ax, az, faceYaw(a, b), pose), spotAt(bx, bz, faceYaw(b, a), pose)];
+}
+
+// ベンチのとなりあった2席（あいていれば）
+function benchSeats(A, B) {
+    const b = W().spots.bench;
+    const pairs = [[0, 1], [1, 2]].filter((idx) => benchFree([A.agent, B.agent], idx));
+    if (!pairs.length) return null;
+    const [i, j] = pick(pairs);
+    return [b[i], b[j]];
+}
+
+function meteorOver(c) {
+    const dir = pick([-1, 1]);
+    ctx.fx.spark(new THREE.Vector3(c.x - dir * 4.5, 4.4, c.z - 2.2), {
+        color: pick([0xffe27a, 0xcdb9ff]), size: 0.62, life: 1.5, trail: 0.5,
+        vel: new THREE.Vector3(dir * 6, -1.6, 2.4),
+    });
+    ctx.sound.meteor();
+}
+
+// キーは DEFS の順（'mano+kuromi' など）。body(A, B, cast) の A・B もその順
+const PAIR_PLAY = {
+    'mano+kuromi': [
+        {
+            memo: 'まのとクロミちゃんが、528Hzと963Hzでハモってた🎵',
+            spots: () => facing(-0.5, 6.1, 1.0, 6.1),
+            poses: ['stand', 'stand'],
+            *body(mano, kuromi, cast) {
+                yield* converse([['kuromi', 'まの、いっしょにハモろうさー🖤'], ['mano', 'うん！528Hzと963Hzだね🎵']], cast);
+                for (let i = 0; i < 2 && both(mano, kuromi); i++) {
+                    yield* sing(mano, '528Hz〜💖', 528, 0x8fdfbb);
+                    yield* sing(kuromi, '963Hz〜✨', 963, 0x8a74c8);
+                }
+                if (!both(mano, kuromi)) return;
+                // さいごは、ふたりいっしょに
+                for (const [a, f, col] of [[mano, 528, 0x8fdfbb], [kuromi, 963, 0x8a74c8]]) {
+                    a.pose = 'happy';
+                    ctx.sound.freq(f);
+                    ctx.fx.ring(new THREE.Vector3(a.pos.x, 0.05, a.pos.z), col, { s0: 0.2, s1: 1.7, life: 2.2 });
+                }
+                ctx.fx.burst(mid(mano, kuromi), ['💖', '🖤', '🎵', '✨'], 6);
+                yield* waitTalk(3);
+                mano.pose = kuromi.pose = 'stand';
+                yield* converse([
+                    ['mano', 'ふたりの音、だいすきな響き〜💖'],
+                    ['kuromi', 'わったーのペアリングやっさー🖤✨', { fx: '💖' }],
+                    ['k', 'まのとクロミちゃんの音、ぴったりだっちゃ〜！💖'],
+                ], cast);
+            },
+        },
+        {
+            when: () => hour() >= 19,
+            memo: 'まのとクロミちゃんが、ならんで流れ星を見てた🌠',
+            spots: () => [spotAt(-0.2, 6.0, 0.35, 'sit'), spotAt(1.0, 6.0, -0.35, 'sit')],
+            poses: ['sit', 'sit'],
+            *body(mano, kuromi, cast) {
+                yield* converse([['kuromi', 'まの、ならんでぶし（星）を見ようさー🌌'], ['mano', 'わぁ…今日もきれいだね✨']], cast);
+                kuromi.model.glow = 0.6;
+                try {
+                    yield* waitMin(3);
+                    if (!both(mano, kuromi)) return;
+                    meteorOver(mid(mano, kuromi));
+                    yield* converse([
+                        ['kuromi', 'あ、流れ星さー！🌠'],
+                        ['mano', 'みんなが、ずーっと笑顔でいられますように…💖'],
+                        ['kuromi', 'まのの願いは、わんがぜったい届けるさー🖤', { fx: '🖤' }],
+                        ['k', '子みくろんも、お願いしたっちゃ〜🌠'],
+                    ], cast);
+                    yield* waitMin(2);
+                } finally {
+                    kuromi.model.glow = 0;
+                }
+            },
+        },
+    ],
+    // いとこ同士で、かちゃーしー × 花笠音頭
+    'kuromi+nee': [{
+        memo: 'クロミちゃんとおねえちゃんが、かちゃーしーと花笠音頭で踊ってた💃',
+        spots: () => facing(5.5, 5.6, 6.9, 5.6),
+        poses: ['stand', 'stand'],
+        *body(kuromi, nee, cast) {
+            yield* converse([['kuromi', 'ねーねー、かちゃーしー踊ろうさー🖤🎶'], ['nee', 'したら私は、花笠音頭だず〜🌸']], cast);
+            if (!both(kuromi, nee)) return;
+            kuromi.pose = nee.pose = 'dance';
+            const cue = cues([
+                [1.5, kuromi, 'いーやーさーさー！🎶'],
+                [3.5, nee, 'やっしょ、まかしょ〜！🌸'],
+                [5.5, kuromi, 'ねーねー、じょーとー！🖤'],
+                [7.5, nee, 'あいや〜、手のひらひら、むずがしいごど〜😂'],
+            ]);
+            let next = 0, i = 0;
+            yield* waitMin(9, (dt, t) => {
+                cue(dt, t);
+                if (ctx.tReal >= next) {
+                    next = ctx.tReal + 0.45;
+                    ctx.sound.note(MELODY[i++ % MELODY.length]);
+                    if (i % 2) ctx.fx.emoji(pick([kuromi, nee]).headPos(), pick(['🎶', '🌸', '🖤', '✨']), { rise: 46 });
+                }
+                if (!both(kuromi, nee)) return false;
+            });
+            kuromi.pose = nee.pose = 'stand';
+            yield* converse([
+                ['nee', 'いい汗かいだごど〜😂'],
+                ['kuromi', 'ちゃんぷるーダンス、でーじたのしかったさー🖤'],
+                ['k', '子みくろんも、まぜてけろ〜！💃'],
+            ], cast);
+        },
+    }],
+    'mano+mikanyan': [{
+        memo: 'みかにゃんが、まのにくっついてごろごろしてた🐱',
+        spots: (mano, mika) => benchSeats(mano, mika) ?? [spotAt(-3.3, 4.85, 0.3, 'sit'), spotAt(-2.4, 4.85, 0.3, 'sleep')],
+        poses: ['sit', 'sleep'],
+        *body(mano, mika, cast) {
+            yield* converse([['mikanyan', 'まの〜、くっついていいにゃ？'], ['mano', 'どうぞ〜♡ よしよし〜']], cast);
+            const cue = cues([[2.5, mano, 'もふもふ〜…しあわせ〜🥰'], [5, mika, 'ごろごろごろ〜♾️'], [7.5, mano, 'みかにゃん、寝ちゃった…？']]);
+            let z = 0;
+            yield* waitMin(9, (dt, t) => {
+                cue(dt, t);
+                z += dt;
+                if (z > 2.5) {
+                    z = 0;
+                    ctx.fx.emoji(mika.headPos(), pick(['💤', '💕']), { rise: 36 });
+                }
+                if (!both(mano, mika)) return false;
+            });
+            mika.pose = 'sit';
+            yield* converse([
+                ['mikanyan', 'むにゃ…むげんに気持ちよかったにゃ♾️'],
+                ['mano', 'えへへ、またおいでね💖'],
+                ['k', 'みかにゃん、いいなぁ〜。子みくろんもくっつきたいっちゃ〜！'],
+            ], cast);
+        },
+    }],
+    'mikanyan+nee': [{
+        when: () => hour() >= 8 && hour() < 17,
+        memo: 'みかにゃんとおねえちゃんが、ならんでひなたぼっこしてた☀️',
+        spots: () => [spotAt(-3.4, 4.85, 0.35, 'sleep'), spotAt(-2.0, 4.85, 0.35, 'sit')],
+        poses: ['sleep', 'sit'],
+        *body(mika, nee, cast) {
+            yield* converse([['nee', 'みかにゃん、ひなたぼっこすっか〜？☀️'], ['mikanyan', 'するにゃ〜！']], cast);
+            const cue = cues([[2.5, nee, 'ぽかぽかで、ねむぐなるごど〜😪'], [5.5, mika, 'むにゃ…カーディガン、ふわふわにゃ…'], [8.5, nee, 'みかにゃん、あったがいごど〜🌸']]);
+            let z = 0;
+            yield* waitMin(10, (dt, t) => {
+                cue(dt, t);
+                z += dt;
+                if (z > 2.5) {
+                    z = 0;
+                    ctx.fx.emoji(pick([mika, nee]).headPos(), pick(['☀️', '💤', '🌸']), { rise: 36 });
+                }
+                if (!both(mika, nee)) return false;
+            });
+            mika.pose = 'sit';
+            yield* converse([
+                ['nee', 'あいや、すっかり寝でしまったず〜😂'],
+                ['mikanyan', 'ふにゃ〜、よく寝たにゃ♾️'],
+                ['k', 'ふたりとも、ぽかぽかしてるっちゃ〜☀️'],
+            ], cast);
+        },
+    }],
+    // まのとみくろん姉は、つぎの宝物の相談
+    'mano+nee': [{
+        memo: 'まのとおねえちゃんが、つぎの宝物の相談をしてた📝',
+        spots: () => facing(-3.35, 4.85, -2.0, 4.95, 'sit'),
+        poses: ['sit', 'sit'],
+        *body(mano, nee, cast) {
+            const [m1, n1, m2] = pick(PLAN_IDEAS);
+            mano.model.hold(sketchbook(), new THREE.Vector3(-0.5, 0.08, 0.24));
+            try {
+                yield* converse([['nee', 'まの、つぎは何こしゃる（つくる）べ〜？'], ['mano', m1], ['nee', n1], ['mano', m2]], cast);
+                if (!both(mano, nee)) return;
+                mano.pose = 'draw';
+                const cue = cues([[2, nee, 'ここさ、こうしたらどうだべ…📝'], [4.5, mano, 'わぁ、いいね〜！メモメモ…'], [7, nee, 'いぎなりいい感じだごど〜✨']]);
+                yield* waitMin(8, (dt, t) => {
+                    cue(dt, t);
+                    if (!both(mano, nee)) return false;
+                });
+            } finally {
+                mano.model.hold(null);
+                mano.pose = 'sit';
+            }
+            yield* converse([
+                ['mano', 'みくろんと作るの、いちばんたのしい💖'],
+                ['nee', 'んだず〜。まのとこしゃるもの、ぜんぶ宝物だべした✨', { fx: '💖' }],
+                ['k', 'なになに〜？子みくろんにも教えてけろ〜！'],
+            ], cast);
+        },
+    }],
+    'kuromi+mikanyan': [{
+        memo: 'みかにゃんが、クロミちゃんのアンテナの星を追いかけてた✨',
+        spots: () => facing(5.6, 5.4, 6.8, 5.9),
+        poses: ['stand', 'stand'],
+        *body(kuromi, mika, cast) {
+            yield* converse([['mikanyan', 'クロミちゃんのアンテナの星、きらきらしてるにゃ…'], ['kuromi', 'ふふっ、つかまえてごらんさー🖤✨']], cast);
+            if (!both(kuromi, mika)) return;
+            kuromi.model.glow = 1;
+            const tip = new THREE.Vector3();
+            let next = 0, hop = 0;
+            try {
+                const cue = cues([[2, mika, 'にゃっ！'], [4, mika, 'にゃにゃっ！'], [6, kuromi, 'こっちさー🖤'], [7.5, mika, 'もうちょっとにゃ…！']]);
+                yield* waitMin(9, (dt, t) => {
+                    cue(dt, t);
+                    if (ctx.tReal >= next) {
+                        next = ctx.tReal + 0.18;
+                        kuromi.model.antennaPos(tip);
+                        ctx.fx.spark(tip, { color: pick(STAR_COLS), size: rand(0.12, 0.22), life: 1.1, vel: new THREE.Vector3(rand(-0.8, 0.8), rand(0.6, 1.4), rand(-0.8, 0.8)) });
+                    }
+                    hop += dt;
+                    if (hop > 1.2) {
+                        hop = 0;
+                        mika.pose = mika.pose === 'happy' ? 'reach' : 'happy';
+                        mika.faceTo(kuromi.pos.x + rand(-0.6, 0.6), kuromi.pos.z + rand(-0.6, 0.6));
+                    }
+                    if (!both(kuromi, mika)) return false;
+                });
+            } finally {
+                kuromi.model.glow = 0;
+                mika.pose = 'stand';
+            }
+            yield* converse([
+                ['mikanyan', 'つかまえ…あれ、消えちゃったにゃ？'],
+                ['kuromi', 'ぶしはね、心でつかまえるものさー🖤'],
+                ['k', 'みかにゃん、おしかったっちゃ〜！✨'],
+            ], cast);
+        },
+    }],
+};
+
+// ふだんの過ごし方の合間に、ほかに来ている人をさそう
+function pairChance(v) {
+    const k = ctx.km;
+    if (absMin() - lastPairAt < ANY_PAIR_GAP || !chance(0.25)) return null;
+    if (k.deepSleep || k.actId === 'greet' || k.actId === 'resonance') return null;
+    const opts = [];
+    for (const w of present()) {
+        if (w === v || !w.greeted || w.busy || !w.idle) continue;
+        const key = pairKey(v, w);
+        if (absMin() - (pairAt[key] ?? -1e9) < PAIR_GAP) continue;
+        for (const def of PAIR_PLAY[key] ?? []) if (!def.when || def.when()) opts.push({ w, def });
+    }
+    return opts.length ? pick(opts) : null;
+}
+
+function* pairPlay(v, w, def) {
+    const key = pairKey(v, w);
+    const [A, B] = key.split('+').map((id) => byId[id]);
+    const spots = def.spots(A, B);
+    if (!spots) return;
+    const me = v === A ? 0 : 1;
+    const other = me ? A : B;
+    const meet = { done: false };
+    pairAt[key] = lastPairAt = absMin();
+    v.busy = other.busy = true;
+    other.agent.setCo(join(other.agent, spots[1 - me], meet, def.poses[1 - me]));
+    let release = null;
+    try {
+        yield* goSpot(v.agent, spots[me], def.poses[me]);
+        yield* waitUntil(() => other.agent.atSpot || !alive(other), 15);
+        if (!other.agent.atSpot || !both(A.agent, B.agent)) return;
+        release = hold([A.agent, B.agent]);
+        const k = ctx.km;
+        const near = Math.hypot(k.pos.x - v.agent.pos.x, k.pos.z - v.agent.pos.z) < 7;
+        const cast = { [A.def.id]: A.agent, [B.def.id]: B.agent, k: near && free(k, 1) && !k.sleeping ? k : null };
+        yield* def.body(A.agent, B.agent, cast);
+        if (both(A.agent, B.agent)) {
+            A.agent.pose = def.poses[0];
+            B.agent.pose = def.poses[1];
+            tally(def.memo);
+        }
+    } finally {
+        release?.();
+        meet.done = true;
+        v.busy = other.busy = false;
+        lastPairAt = absMin();
+    }
+}
 
 // ── 4人そろったら：共鳴 ──
 export function checkResonance() {
@@ -851,7 +1499,7 @@ function* resonance(k) {
 // ボールが飛んできたら、みかにゃんも追いかける
 export function onBall() {
     const v = byId.mikanyan;
-    if (!alive(v) || !v.greeted || v.agent.atSpot) return;
+    if (!alive(v) || !v.greeted || v.agent.atSpot || v.agent.joining || v.busy) return;
     v.agent.setCo(chaseBall(v));
 }
 

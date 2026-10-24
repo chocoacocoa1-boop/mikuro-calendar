@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
-import { L, TALK, TALK_DEFAULT, TALK_ASK } from './lines.js';
+import { L, TALK, TALK_DEFAULT, TALK_ASK, ART } from './lines.js';
 import { DISHES, FORKS } from './house.js';
 import { goSpot, leaveSpot, walkTo, waitMin, waitUntil, freeSpot, indoors } from './agent.js';
-import { addStat, log, hour, absMin } from './state.js';
+import { addStat, log, tally, hour, absMin } from './state.js';
 import { pick, rand, randInt, chance, fill, shuffle, clockText, speechSec } from './util.js';
 import { free, react, touch, answer, chime, hush, hold } from './chatter.js';
 
@@ -83,6 +83,8 @@ function* actSleep(k) {
     W().setBedCover(true);
     S().lights = false;
     if (S().diary[0]?.t !== 'おやすみなさい🌙') log('おやすみなさい🌙');
+    // 夜おそくに遊びに来ていた人も、おやすみの時間にはおうちへ帰る
+    ctx.family.bedtime();
     let z = 0;
     try {
         while (isNight()) {
@@ -104,10 +106,12 @@ function* actSleep(k) {
 }
 
 function* actNap(k) {
+    // 夕方からのお昼寝は「うたた寝」
+    const late = hour() >= 17;
     k.label = 'ソファへ向かっている';
     say(k, L.nap);
     yield* goSpot(k, W().spots.sofaNap);
-    k.label = 'ソファでお昼寝中💤';
+    k.label = late ? 'ソファでうたた寝中💤' : 'ソファでお昼寝中💤';
     k.sleeping = true;
     let z = 0;
     try {
@@ -125,7 +129,7 @@ function* actNap(k) {
     }
     k.pose = 'sit';
     say(k, L.napWake);
-    log('お昼寝した💤');
+    tally(late ? 'ソファでうたた寝した💤' : 'お昼寝した💤');
     yield* waitMin(3);
 }
 
@@ -189,7 +193,7 @@ function* actEat(k) {
     if (placed) addStat('nakayoshi', 4);
     k.pose = 'happy';
     say(k, L.eatDone, { dish: dish.name });
-    log(placed ? `まのが置いてくれた${dish.name}を食べた😋` : `ごはんを食べた（${dish.name}）`);
+    tally(placed ? `まのが置いてくれた${dish.name}を食べた😋` : `ごはんを食べた（${dish.name}）`);
     yield* waitMin(3);
 }
 
@@ -224,7 +228,7 @@ function* actCode(k) {
     } finally {
         W().screen.setMode('idle');
     }
-    log('コードを書いた💻');
+    tally('コードを書いた💻');
     k.pose = 'sit';
     yield* waitMin(2);
 }
@@ -323,7 +327,7 @@ function* actBath(k) {
     }
     S().bathDay = S().day;
     say(k, L.bathDone);
-    log('温泉に入った♨️');
+    tally('温泉に入った♨️');
     yield* leaveSpot(k);
     ctx.sound.splash();
     sparkle(k, ['✨', '💎']);
@@ -352,7 +356,7 @@ function* actRead(k) {
     } finally {
         k.model.hold(null);
     }
-    log('本を読んだ📖');
+    tally('本を読んだ📖');
     yield* waitMin(2);
 }
 
@@ -377,7 +381,7 @@ function* actPurify(k) {
     } finally {
         holdMallet(k, false);
     }
-    log('396Hzで浄化した🔔');
+    tally('396Hzで浄化した🔔');
     sparkle(k, ['✨', '🔔', '💖'], 5);
     yield* waitMin(2);
 }
@@ -424,7 +428,7 @@ function* actListen(k) {
         addStat('nakayoshi', 6);
         addStat('kirakira', 6);
         addStat('tanoshisa', 6);
-        log('音叉でみんなの周波数を聴いた🎵');
+        tally('音叉でみんなの周波数を聴いた🎵');
         yield* waitMin(4);
     } finally {
         k.windup = false;
@@ -441,7 +445,7 @@ function* actWindow(k) {
     const h = hour();
     say(k, h >= 16.8 && h < 19 ? L.windowEve : W().env.night > 0.5 ? L.windowNight : L.windowDay);
     yield* waitMin(rand(6, 10), (dt) => addStat('tanoshisa', dt * 0.15));
-    log('窓の外をながめた');
+    tally('窓の外をながめた');
 }
 
 function* actStroll(k) {
@@ -453,7 +457,7 @@ function* actStroll(k) {
         yield* waitMin(rand(3, 6), (dt) => addStat('tanoshisa', dt * 0.2));
         k.pose = 'stand';
     }
-    log('おさんぽした🌿');
+    tally('おさんぽした🌿');
 }
 
 function* actBench(k) {
@@ -467,7 +471,7 @@ function* actBench(k) {
         addStat('tanoshisa', dt * 0.1);
     });
     if (chance(0.5)) murmur(k, L.stroll);
-    log('ベンチでひとやすみした');
+    tally('ベンチでひとやすみした');
 }
 
 function* actIdle(k) {
@@ -506,7 +510,7 @@ function* actBall(k) {
     }
     say(k, L.ballDone);
     addStat('nakayoshi', 3);
-    log('ボールであそんだ⚽');
+    tally('ボールであそんだ⚽');
     yield* waitMin(3);
 }
 
@@ -769,7 +773,7 @@ export function pet(k) {
     }
     if (absMin() - S().lastPetLog > 120) {
         S().lastPetLog = absMin();
-        log('まのがなでてくれた💕');
+        tally('まのがなでてくれた💕');
     }
 }
 
@@ -787,7 +791,7 @@ export function placeFood() {
     W().placeFood(dish.id);
     ctx.sound.pop();
     ctx.fx.toast(`テーブルに${dish.name}を置いたよ🍽️`);
-    log(`まのが${dish.name}を置いてくれた🍽️`);
+    tally(`まのが${dish.name}を置いてくれた🍽️`);
     if (k.deepSleep) {
         ctx.fx.toast(`${dish.name}を置いたよ。起きたら食べるみたい💤`);
     } else if (canInterrupt(k) && k.actId !== 'eat') {
@@ -854,10 +858,25 @@ const REQ = {
     fork: 'listen', flowerbed: 'water', cherry: 'cherry', onsen: 'bath', calendar: 'calendar', bench: 'bench',
 };
 
-export function request(id) {
+// まのの絵の話（かべの絵やアルバムの絵をタップしたとき）
+export function showDrawing(n) {
+    const k = ctx.km;
+    const art = ART[S().art[n]] ?? ART.classic;
+    touch();
+    if (k.sleeping) {
+        ctx.fx.toast(`${n + 1}枚目「${art.name}」🖼️`);
+        return;
+    }
+    k.say(`${n + 1}枚目は…${art.talk}`);
+    k.petT = Math.max(k.petT, 0.5);
+    if (!k.onSpot && !k.moving) k.faceCamera();
+}
+
+export function request(id, data) {
     const k = ctx.km, s = S(), st = s.stats;
     touch();
     if (id === 'lamp' || id === 'lantern') { toggleLights(); return; }
+    if (id === 'drawing') { showDrawing(Math.max(0, data?.n ?? 0)); return; }
     if (k.deepSleep) {
         ctx.fx.toast('子みくろんはぐっすり眠っている…💤');
         return;
@@ -865,7 +884,6 @@ export function request(id) {
     const talkOnly = {
         clock: `いま${clockText(s.min)}だべ〜🕰️`,
         sign: 'こみくろんのおうちへ、ようこそだっちゃ〜🏡',
-        drawing: 'まのが描いてくれた絵、宝物だっちゃ💎',
         plant: '葉っぱ、つやつやだべ〜🌿',
         gate: 'だれか遊びに来ないかなぁ〜',
     };
@@ -954,7 +972,7 @@ export function talk(text) {
         reply = ans.reply;
         ctx.fx.burst(k.headPos(), ['💖', '✨', '💬'], 4);
         addStat('nakayoshi', 3);
-        log(ans.store ? `まのの${MEMO_NAMES[ans.id]}は「${ans.a}」だって📝` : 'まのが今日のことを教えてくれた💬');
+        tally(ans.store ? `まのの${MEMO_NAMES[ans.id]}は「${ans.a}」だって📝` : 'まのが今日のことを教えてくれた💬');
     } else {
         const rule = TALK.find(([re]) => re.test(t));
         reply = talkSpecial(rule ? pick(rule[1]) : pick(/[?？]$/.test(t) ? TALK_ASK : TALK_DEFAULT));
@@ -984,6 +1002,6 @@ export function talk(text) {
     addStat('nakayoshi', 1.5);
     if (absMin() - s.lastTalkLog > 120) {
         s.lastTalkLog = absMin();
-        log('まのとおしゃべりした💬');
+        tally('まのとおしゃべりした💬');
     }
 }
