@@ -401,8 +401,12 @@ export function buildHouse(W) {
     const hourHand = mesh(hourGeo, mat(0x6b3a60), clockG, 0, 0, 0.035, false);
     const minHand = mesh(minGeo, mat(0xff6bae), clockG, 0, 0, 0.042, false);
 
-    // まのの絵を飾る額縁
-    const frames = [-4.75, -2.3, -1.6].map((x) => {
+    // まのの絵を飾る額縁。飾るときは、その額縁の前（ソファの上か床）に立つ
+    const frames = [
+        [-4.75, spot(-4.35, -2.45, -4.35, y0 + 0.5, -3.32, Math.PI, 'reach')],
+        [-2.3, spot(-2.65, -2.45, -2.65, y0 + 0.5, -3.32, Math.PI, 'reach')],
+        [-1.6, spot(-1.6, -3.38, -1.6, y0, -3.5, Math.PI, 'reach')],
+    ].map(([x, hang]) => {
         const f = new THREE.Group();
         f.position.set(x, y0 + 1.5, -4 + WT / 2 + 0.02);
         f.visible = false;
@@ -411,18 +415,26 @@ export function buildHouse(W) {
         W.pickables.push(f);
         cbox(f, 0.56, 0.56, 0.03, 0xffb3d4, 0, 0, 0);
         const pic = mesh(new THREE.PlaneGeometry(0.46, 0.46), new THREE.MeshLambertMaterial(), f, 0, 0, 0.017, false);
-        return { f, pic, n: -1 };
+        return { f, pic, hang, key: '' };
     });
-    W.setDrawings = (count) => {
+    // いちばん新しい3枚を飾る。n 枚目は n % 3 の額縁へ（新しい絵は、いちばん古い絵とかけかえる）
+    W.setDrawings = (count, art) => {
         frames.forEach((fr, i) => {
-            const show = i < count;
-            fr.f.visible = show;
-            if (show && fr.n !== i) {
-                fr.n = i;
-                fr.pic.material.map = T.drawingTexture(i);
-                fr.pic.material.needsUpdate = true;
-            }
+            const n = count > i ? i + Math.floor((count - 1 - i) / 3) * 3 : -1;
+            fr.f.visible = n >= 0;
+            fr.f.userData.n = n;
+            if (n < 0) return;
+            const key = `${n}:${art[n] ?? ''}`;
+            if (fr.key === key) return;
+            fr.key = key;
+            fr.pic.material.map?.dispose();
+            fr.pic.material.map = T.drawingTexture(n, art[n]);
+            fr.pic.material.needsUpdate = true;
         });
+    };
+    W.drawingFrame = (n) => {
+        const fr = frames[n % frames.length];
+        return { pos: fr.f.getWorldPosition(new THREE.Vector3()), hang: fr.hang };
     };
 
     // ── 寝室 ──
@@ -593,6 +605,8 @@ export function buildHouse(W) {
         cookHelp: spot(3.75, -2.75, 3.75, y0, -2.75, Math.PI, 'cook'),
         rugA: spot(-3.95, -0.45, -3.95, y0, -0.45, 0.5, 'sit'),
         rugB: spot(-2.95, -0.45, -2.95, y0, -0.45, -0.5, 'sit'),
+        // 絵のモデルさんの席（ホームの視点から見て、子みくろんのとなり）
+        rugC: spot(-2.15, -1.0, -2.15, y0, -1.0, -1.0, 'sit'),
     });
     W.musicRing = { x: FX, z: FZ, r: 0.95 };
 

@@ -30,6 +30,7 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        [hidden] { display: none !important; }
 
         html, body { height: 100%; overflow: hidden; }
 
@@ -392,11 +393,62 @@
         .diary .t { flex: none; color: var(--pink); font-variant-numeric: tabular-nums; }
         .diary .day {
             justify-content: center;
-            padding-top: 12px;
+            padding: 6px 0 0;
             border-bottom: none;
+        }
+        .diary .day button {
+            border: none;
+            background: none;
+            padding: 6px 12px;
             font-size: 12px;
+            font-weight: 700;
             letter-spacing: 0.2em;
             color: #b48aa6;
+        }
+        .diary .day .fold { margin-left: 2px; letter-spacing: 0.06em; color: var(--pink); }
+        .diary .times {
+            display: inline-block;
+            margin-left: 6px;
+            padding: 0 7px;
+            border-radius: 10px;
+            background: #ffe6f1;
+            color: var(--pink);
+            font-size: 12px;
+            line-height: 1.6;
+            vertical-align: 1px;
+        }
+
+        .album {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 2px 8px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .album .pic {
+            position: relative;
+            flex: none;
+            width: 66px;
+            height: 66px;
+            padding: 4px;
+            border-radius: 12px;
+            border: 2px solid #ffc4df;
+            background: #fff;
+            transition: transform 0.08s;
+        }
+        .album .pic:active { transform: scale(0.95); }
+        .album canvas { display: block; width: 100%; height: 100%; border-radius: 6px; }
+        .album .pic span {
+            position: absolute;
+            right: 2px;
+            bottom: 1px;
+            min-width: 17px;
+            padding: 0 4px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            font-size: 10.5px;
+            font-weight: 900;
+            color: var(--pink);
         }
 
         .reset {
@@ -505,6 +557,9 @@
                 <input id="talk-input" type="text" placeholder="こんにちは／すき／あそぼ…" maxlength="60" enterkeyhint="send">
                 <button type="submit">送る</button>
             </form>
+
+            <h3 id="album-title" hidden>まのの絵</h3>
+            <div class="album" id="album" hidden></div>
 
             <h3>子みくろんの日記</h3>
             <ol class="diary" id="diary"></ol>
