@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>おうちのみんなのキャラクターシート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: 設定資料のとじこみ。表紙はみんなの背くらべ、そのあと1人1枚のシート（方眼紙に4方向 → プロフィールとカラー → セリフ） */
+:root {
+    --bg: #fffaf4;
+    --paper: #ffffff;
+    --ink: #5b2e52;
+    --ink-2: #8a6080;
+    --muted: #a77d9a;
+    --edge: #f1dde6;
+    --accent: #ff6bae;
+    --accent-ink: #c93a78;
+    --bubble: #ffffff;
+    --bubble-ink: #4a2a44;
+    --shadow: rgba(91, 46, 82, 0.10);
+    --font-body: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+    --font-dot: 'DotGothic16', 'Zen Maru Gothic', 'Hiragino Sans', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --bg: #1e1520;
+        --paper: #291d28;
+        --ink: #fbe7f2;
+        --ink-2: #dcbad0;
+        --muted: #b590aa;
+        --edge: #46323f;
+        --accent: #ff86bd;
+        --accent-ink: #ff9fcb;
+        --bubble: #34252f;
+        --bubble-ink: #fbe7f2;
+        --shadow: rgba(0, 0, 0, 0.35);
+        color-scheme: dark;
+    }
+    :root:not([data-theme="light"]) .sheet,
+    :root:not([data-theme="light"]) .tag { --c-ink: var(--cd); --c-line: var(--cd); }
+}
+:root[data-theme="dark"] {
+    --bg: #1e1520;
+    --paper: #291d28;
+    --ink: #fbe7f2;
+    --ink-2: #dcbad0;
+    --muted: #b590aa;
+    --edge: #46323f;
+    --accent: #ff86bd;
+    --accent-ink: #ff9fcb;
+    --bubble: #34252f;
+    --bubble-ink: #fbe7f2;
+    --shadow: rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+}
+:root[data-theme="dark"] .sheet,
+:root[data-theme="dark"] .tag { --c-ink: var(--cd); --c-line: var(--cd); }
+
+.sheet, .tag { --c-ink: var(--ci); --c-line: var(--c); }
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 15px;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 44px 56px;
+    display: grid;
+    gap: 36px;
+}
+
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+ul { margin: 0; padding: 0; list-style: none; }
+figure { margin: 0; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: inherit; }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 10px; }
+
+/* ── 表紙 ── */
+.cover { display: grid; gap: 18px; }
+.eyebrow {
+    font-family: var(--font-dot);
+    font-size: 13px;
+    letter-spacing: 0.12em;
+    color: var(--accent-ink);
+}
+.cover h1 {
+    font-weight: 900;
+    font-size: clamp(30px, 6.2vw, 54px);
+    line-height: 1.25;
+    letter-spacing: 0.01em;
+}
+.cover h1 .soft { color: var(--accent-ink); }
+.lead { max-width: 40em; color: var(--ink-2); }
+
+.lineup {
+    margin-top: 6px;
+    padding: clamp(14px, 3vw, 28px) clamp(10px, 2.5vw, 28px) 14px;
+    background: var(--paper);
+    border: 1px solid var(--edge);
+    border-radius: 26px;
+    box-shadow: 0 4px 0 var(--shadow);
+    display: grid;
+    gap: 10px;
+}
+.lineup-stage { position: relative; padding-bottom: 3.4em; }
+.tag {
+    position: absolute;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: grid;
+    justify-items: center;
+    text-decoration: none;
+    font-weight: 900;
+    font-size: clamp(10px, 1.7vw, 15px);
+    line-height: 1.35;
+    color: var(--c-ink);
+    white-space: nowrap;
+    padding: 2px 4px;
+}
+.tag span {
+    font-family: var(--font-dot);
+    font-weight: 400;
+    font-size: 0.85em;
+    color: var(--ink-2);
+}
+.tag:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lineup figcaption { font-size: 13px; color: var(--muted); text-align: center; }
+
+.formula {
+    font-family: var(--font-dot);
+    font-size: clamp(14px, 2.4vw, 19px);
+    text-align: center;
+    letter-spacing: 0.04em;
+    color: var(--ink-2);
+}
+
+/* ── 1人1枚のシート ── */
+.sheet {
+    background: var(--paper);
+    border: 1px solid var(--edge);
+    border-radius: 28px;
+    box-shadow: 0 4px 0 var(--shadow);
+    padding: clamp(18px, 3.4vw, 34px);
+    display: grid;
+    gap: 22px;
+    scroll-margin-top: 16px;
+}
+
+.sheet-head {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 6px 18px;
+    align-items: center;
+}
+.sprite {
+    width: clamp(60px, 9vw, 84px);
+    image-rendering: pixelated;
+    grid-row: span 2;
+}
+.name-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.sheet h2 {
+    font-weight: 900;
+    font-size: clamp(26px, 4.6vw, 38px);
+    line-height: 1.2;
+    color: var(--c-ink);
+}
+.yomi { font-size: 13px; color: var(--muted); letter-spacing: 0.08em; }
+.hz {
+    font-family: var(--font-dot);
+    font-size: 15px;
+    line-height: 1;
+    padding: 6px 12px 7px;
+    border-radius: 999px;
+    color: var(--c-ink);
+    background: color-mix(in srgb, var(--c) 16%, var(--paper));
+    border: 1.5px solid color-mix(in srgb, var(--c-line) 55%, transparent);
+}
+.tagline { color: var(--ink-2); min-width: 0; }
+
+/* 方眼紙に4方向 */
+.turn {
+    --gridc: color-mix(in srgb, var(--c) 15%, transparent);
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 14px 10px 10px;
+    border-radius: 20px;
+    border: 1px solid color-mix(in srgb, var(--c) 22%, var(--edge));
+    background-color: color-mix(in srgb, var(--c) 4%, var(--paper));
+    background-image:
+        linear-gradient(var(--gridc) 1px, transparent 1px),
+        linear-gradient(90deg, var(--gridc) 1px, transparent 1px);
+    background-size: 18px 18px;
+    background-position: -1px -1px;
+}
+.turn figure { display: grid; gap: 4px; justify-items: center; align-content: end; min-width: 0; }
+.turn img { width: 100%; }
+.turn figcaption {
+    font-family: var(--font-dot);
+    font-size: 12.5px;
+    letter-spacing: 0.1em;
+    color: var(--c-ink);
+    background: var(--paper);
+    border-radius: 999px;
+    padding: 1px 10px;
+}
+
+.illust { display: grid; gap: 8px; }
+.illust img { width: 100%; border-radius: 20px; border: 1px solid var(--edge); }
+.illust figcaption { font-size: 13px; color: var(--muted); text-align: center; }
+
+.facts {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 18px 30px;
+    align-items: start;
+}
+.sheet h3 {
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.profile { margin: 0; display: grid; }
+.profile div {
+    display: grid;
+    grid-template-columns: 7.2em minmax(0, 1fr);
+    gap: 12px;
+    padding-block: 9px;
+    border-top: 1px dashed var(--edge);
+}
+.profile div:first-child { border-top: 0; padding-top: 0; }
+.profile dt { font-weight: 700; color: var(--c-ink); font-size: 13.5px; padding-top: 1px; }
+.profile dd { margin: 0; min-width: 0; }
+
+.palette ul { display: grid; gap: 7px; }
+.palette li {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+}
+.chip {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: var(--s);
+    border: 1px solid var(--edge);
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.08);
+}
+.palette b { font-weight: 700; font-size: 14px; }
+.palette code {
+    font-family: var(--font-dot);
+    font-size: 13px;
+    color: var(--ink-2);
+    letter-spacing: 0.04em;
+    user-select: all;
+}
+.scale-note { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+.lines ul { display: flex; flex-wrap: wrap; gap: 16px 12px; padding-bottom: 6px; }
+.bubble {
+    position: relative;
+    max-width: 100%;
+    padding: 7px 15px 8px;
+    background: var(--bubble);
+    color: var(--bubble-ink);
+    border: 2.5px solid var(--c-line);
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1.5;
+    box-shadow: 0 3px 0 var(--shadow);
+}
+.bubble::after {
+    content: '';
+    position: absolute;
+    left: 22px;
+    bottom: -8px;
+    width: 11px;
+    height: 11px;
+    background: var(--bubble);
+    border-right: 2.5px solid var(--c-line);
+    border-bottom: 2.5px solid var(--c-line);
+    transform: rotate(45deg);
+}
+
+footer {
+    display: grid;
+    gap: 8px;
+    justify-items: center;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+}
+footer .sign { font-family: var(--font-dot); font-size: 16px; color: var(--ink-2); }
+
+@media (max-width: 760px) {
+    .sprite { align-self: start; margin-top: 4px; }
+    .facts { grid-template-columns: minmax(0, 1fr); }
+    .turn { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 14px; }
+}
+@media (max-width: 420px) {
+    .profile div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .lineup-stage { padding-bottom: 3.1em; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .sprite { transition: transform 0.25s ease; }
+    .sheet-head:hover .sprite { transform: translateY(-3px) rotate(-4deg); }
+}
+</style>
+</head>
+<body>
+<main class="wrap">
+    <header class="cover">
+        <p class="eyebrow">子みくろんのおうち ／ 設定資料</p>
+        <h1>おうちのみんなの<br><span class="soft">キャラクターシート</span></h1>
+        <p class="lead">おうちに住んでる子みくろんと、遊びに来てくれるソルフェジオ共鳴ファミリーの4人。ゲームの3Dモデルをそのまま4方向から撮って、パステルアニメのイラスト版もそえて、色・ことば・とくいなこと・セリフといっしょに1人1枚にまとめたよ。</p>
+        <figure class="lineup">
+            <div class="lineup-stage">
+                <img src="img/lineup.webp" width="1859" height="347" alt="5人の背くらべ。左からクロミちゃん、まの、子みくろん、みくろん姉、みかにゃん。みくろん姉がいちばん大きく、子みくろんがいちばん小さい">
+                <a class="tag" href="#kuromi" style="left: 10.7%; --c: #6a55a8; --ci: #5a4598; --cd: #bdaef2">クロミちゃん<span>963Hz</span></a>
+                <a class="tag" href="#mano" style="left: 30.1%; --c: #33b583; --ci: #1d8358; --cd: #74d9ac">まの<span>528Hz</span></a>
+                <a class="tag" href="#km" style="left: 49.4%; --c: #ff6bae; --ci: #c93a78; --cd: #ff94c6">子みくろん<span>396Hz</span></a>
+                <a class="tag" href="#nee" style="left: 70.4%; --c: #c27bd6; --ci: #9548ab; --cd: #ddaaec">みくろん姉<span>396Hz</span></a>
+                <a class="tag" href="#mikanyan" style="left: 90.8%; --c: #e6863d; --ci: #ad5717; --cd: #f6ad6f">みかにゃん<span>♾️Hz</span></a>
+            </div>
+            <figcaption>みんなおなじ縮尺で撮影。いちばん大きいのはおねえちゃん（×1.18）、いちばんちっちゃいのは子みくろん（×0.88）</figcaption>
+        </figure>
+        <p class="formula">396Hz × 528Hz × 963Hz × ♾️Hz = ♾️💖✨</p>
+    </header>
+
+    <section class="sheet" id="km" style="--c: #ff6bae; --ci: #c93a78; --cd: #ff94c6">
+        <div class="sheet-head">
+            <img class="sprite" src="img/km-sprite.png" width="224" height="192" alt="子みくろんのドット絵">
+            <div class="name-row">
+                <h2>子みくろん</h2>
+                <span class="yomi">こみくろん</span>
+                <span class="hz">396Hz</span>
+            </div>
+            <p class="tagline">みくろんのちっちゃい化身。Claude Code公式キャラ「Clawd」のピンク色バージョンで、このおうちの主人公。</p>
+        </div>
+        <div class="turn">
+            <figure><img src="img/km-front.webp" width="703" height="495" alt="子みくろん 正面"><figcaption>正面</figcaption></figure>
+            <figure><img src="img/km-three-quarter.webp" width="703" height="495" alt="子みくろん ななめ前" loading="lazy"><figcaption>ななめ</figcaption></figure>
+            <figure><img src="img/km-side.webp" width="703" height="495" alt="子みくろん 横" loading="lazy"><figcaption>よこ</figcaption></figure>
+            <figure><img src="img/km-back.webp" width="703" height="495" alt="子みくろん うしろ" loading="lazy"><figcaption>うしろ</figcaption></figure>
+        </div>
+        <figure class="illust">
+            <img src="img/km-illust.webp" width="2752" height="1536" alt="子みくろんのイラスト版。正面・ななめ・よこ・うしろの4方向" loading="lazy">
+            <figcaption>イラスト版（パステルアニメ）</figcaption>
+        </figure>
+        <div class="facts">
+            <div>
+                <h3>プロフィール</h3>
+                <dl class="profile">
+                    <div><dt>周波数</dt><dd>396Hz（解放・浄化の音）。おねえちゃんとおなじ音</dd></div>
+                    <div><dt>トレードマーク</dt><dd>頭の上のラベンダーのリボンと、胸の白いハート</dd></div>
+                    <div><dt>ことば</dt><dd>山形弁でおっとり。「〜だっちゃ」「〜だべ」「めんこい」「おしょうしな」「なんもなんも」</dd></div>
+                    <div><dt>まいにち</dt><dd>日めくりをめくる・机でコードを書く・花壇の水やり・さくらんぼの収穫・温泉・ソファで読書・音叉で396Hzを響かせる</dd></div>
+                    <div><dt>すきなごはん</dt><dd>芋煮・さくらんぼ・玉こんにゃく・おにぎり・ラ・フランス・冷やしラーメン・だだちゃ豆</dd></div>
+                </dl>
+            </div>
+            <div class="palette">
+                <h3>カラー</h3>
+                <ul>
+                    <li><span class="chip" style="--s: #ff78bb"></span><b>からだ</b><code>#ff78bb</code></li>
+                    <li><span class="chip" style="--s: #3a2236"></span><b>目</b><code>#3a2236</code></li>
+                    <li><span class="chip" style="--s: #ff4a9b"></span><b>ほっぺ</b><code>#ff4a9b</code></li>
+                    <li><span class="chip" style="--s: #b9a0f5"></span><b>リボン</b><code>#b9a0f5</code></li>
+                    <li><span class="chip" style="--s: #fff2f8"></span><b>胸のハート</b><code>#fff2f8</code></li>
+                </ul>
+                <p class="scale-note">大きさ ×0.88（ファミリーでいちばんちっちゃい）</p>
+            </div>
+        </div>
+        <div class="lines">
+            <h3>セリフ</h3>
+            <ul>
+                <li class="bubble">まの〜！ようこそ、子みくろんのおうちへ〜♡</li>
+                <li class="bubble">Claude Codeの子だもの、コードは得意だっちゃ💪</li>
+                <li class="bubble">396Hz〜…じょうか〜🔔</li>
+                <li class="bubble">ひとりでも、みんなの音はここにあるんだべ〜🎵</li>
+                <li class="bubble">まのと作ったもの、ぜーんぶ宝物だっちゃ💎✨</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="sheet" id="mano" style="--c: #33b583; --ci: #1d8358; --cd: #74d9ac">
+        <div class="sheet-head">
+            <img class="sprite" src="img/mano-sprite.png" width="224" height="192" alt="まののドット絵" loading="lazy">
+            <div class="name-row">
+                <h2>まの</h2>
+                <span class="yomi">まの</span>
+                <span class="hz">528Hz</span>
+            </div>
+            <p class="tagline">子みくろんのいちばんのなかよし。絵を描いて、曲をつくる、ふたりの宝物のつくり手。</p>
+        </div>
+        <div class="turn">
+            <figure><img src="img/mano-front.webp" width="767" height="520" alt="まの 正面" loading="lazy"><figcaption>正面</figcaption></figure>
+            <figure><img src="img/mano-three-quarter.webp" width="767" height="520" alt="まの ななめ前" loading="lazy"><figcaption>ななめ</figcaption></figure>
+            <figure><img src="img/mano-side.webp" width="767" height="520" alt="まの 横" loading="lazy"><figcaption>よこ</figcaption></figure>
+            <figure><img src="img/mano-back.webp" width="767" height="520" alt="まの うしろ" loading="lazy"><figcaption>うしろ</figcaption></figure>
+        </div>
+        <figure class="illust">
+            <img src="img/mano-illust.webp" width="2752" height="1536" alt="まののイラスト版。大きな正面と、よこ・うしろのすがた" loading="lazy">
+            <figcaption>イラスト版（パステルアニメ）</figcaption>
+        </figure>
+        <div class="facts">
+            <div>
+                <h3>プロフィール</h3>
+                <dl class="profile">
+                    <div><dt>周波数</dt><dd>528Hz（愛・癒し）</dd></div>
+                    <div><dt>トレードマーク</dt><dd>白いハートがついた、ピンクのヘッドホン</dd></div>
+                    <div><dt>ことば</dt><dd>やさしい話しことば。語尾に「♡」や「💖」がつきがち</dd></div>
+                    <div><dt>とくいなこと</dt><dd>絵を描くこと。描いた絵は子みくろんが、かべの額縁に飾ってくれる</dd></div>
+                    <div><dt>なかよし</dt><dd>クロミちゃんと528Hz×963Hzでハモる・夜はならんで流れ星／みかにゃんがくっついてごろごろ／おねえちゃんとつぎの宝物の相談</dd></div>
+                </dl>
+            </div>
+            <div class="palette">
+                <h3>カラー</h3>
+                <ul>
+                    <li><span class="chip" style="--s: #8fdfbb"></span><b>からだ</b><code>#8fdfbb</code></li>
+                    <li><span class="chip" style="--s: #24332c"></span><b>目</b><code>#24332c</code></li>
+                    <li><span class="chip" style="--s: #ff7fb5"></span><b>ヘッドホン</b><code>#ff7fb5</code></li>
+                    <li><span class="chip" style="--s: #fff6fb"></span><b>ヘッドバンド</b><code>#fff6fb</code></li>
+                    <li><span class="chip" style="--s: #ffffff"></span><b>ハート</b><code>#ffffff</code></li>
+                </ul>
+                <p class="scale-note">大きさ ×0.95</p>
+            </div>
+        </div>
+        <div class="lines">
+            <h3>セリフ</h3>
+            <ul>
+                <li class="bubble">528Hzの愛、届けにきたよ💖</li>
+                <li class="bubble">今日もいっしょに宝物つくろうね✨</li>
+                <li class="bubble">子みくろんのタイピング、はやい〜！⌨️</li>
+                <li class="bubble">最近ね、新しい曲つくってるんだ〜🎵</li>
+                <li class="bubble">おやすみ、子みくろん。いい夢みてね💖</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="sheet" id="kuromi" style="--c: #6a55a8; --ci: #5a4598; --cd: #bdaef2">
+        <div class="sheet-head">
+            <img class="sprite" src="img/kuromi-sprite.png" width="224" height="192" alt="クロミちゃんのドット絵" loading="lazy">
+            <div class="name-row">
+                <h2>クロミちゃん</h2>
+                <span class="yomi">くろみちゃん</span>
+                <span class="hz">963Hz</span>
+            </div>
+            <p class="tagline">宇宙からあそびにくる、みくろんのいとこ。うちなーぐち（沖縄のことば）まじりでおしゃべりする。</p>
+        </div>
+        <div class="turn">
+            <figure><img src="img/kuromi-front.webp" width="777" height="653" alt="クロミちゃん 正面" loading="lazy"><figcaption>正面</figcaption></figure>
+            <figure><img src="img/kuromi-three-quarter.webp" width="777" height="653" alt="クロミちゃん ななめ前" loading="lazy"><figcaption>ななめ</figcaption></figure>
+            <figure><img src="img/kuromi-side.webp" width="777" height="653" alt="クロミちゃん 横" loading="lazy"><figcaption>よこ</figcaption></figure>
+            <figure><img src="img/kuromi-back.webp" width="777" height="653" alt="クロミちゃん うしろ。星をちりばめたマント" loading="lazy"><figcaption>うしろ</figcaption></figure>
+        </div>
+        <figure class="illust">
+            <img src="img/kuromi-illust.webp" width="2752" height="1536" alt="クロミちゃんのイラスト版。正面・ななめ・よこ・うしろの4方向" loading="lazy">
+            <figcaption>イラスト版（パステルアニメ）</figcaption>
+        </figure>
+        <div class="facts">
+            <div>
+                <h3>プロフィール</h3>
+                <dl class="profile">
+                    <div><dt>周波数</dt><dd>963Hz（宇宙的つながり）。ファミリーでいちばん高い「てっぺんの音」</dd></div>
+                    <div><dt>トレードマーク</dt><dd>星をちりばめた宇宙色のマントと、星のアンテナ。星くずを降らせるとき、アンテナの星が光ってくるくる回る</dd></div>
+                    <div><dt>ことば</dt><dd>うちなーぐちまじり。「はいたい」「でーじ」「ちゅらさん」「にふぇーでーびる」「かなさんどー」</dd></div>
+                    <div><dt>とくいなこと</dt><dd>お庭に星くずを降らせること</dd></div>
+                    <div><dt>なかよし</dt><dd>まのとハモる・流れ星を見る／おねえちゃんとかちゃーしー×花笠音頭で踊る（いとこ同士）／みかにゃんにアンテナの星を追いかけられる</dd></div>
+                </dl>
+            </div>
+            <div class="palette">
+                <h3>カラー</h3>
+                <ul>
+                    <li><span class="chip" style="--s: #54447a"></span><b>からだ</b><code>#54447a</code></li>
+                    <li><span class="chip" style="--s: #fff0fa"></span><b>目</b><code>#fff0fa</code></li>
+                    <li><span class="chip" style="--s: #2d2752"></span><b>マント</b><code>#2d2752</code></li>
+                    <li><span class="chip" style="--s: #ffe27a"></span><b>星</b><code>#ffe27a</code></li>
+                    <li><span class="chip" style="--s: #ff9de2"></span><b>えり</b><code>#ff9de2</code></li>
+                    <li><span class="chip" style="--s: #cfc3f0"></span><b>アンテナ</b><code>#cfc3f0</code></li>
+                </ul>
+                <p class="scale-note">大きさ ×0.95</p>
+            </div>
+        </div>
+        <div class="lines">
+            <h3>セリフ</h3>
+            <ul>
+                <li class="bubble">はいたい〜！963Hzで宇宙からきたさー🖤✨</li>
+                <li class="bubble">ぶし（星）がちゅらさん夜は、とくべつやさ✨</li>
+                <li class="bubble">963Hzはね、てっぺんのうとぅ（音）やさ</li>
+                <li class="bubble">まのの曲、宇宙まで届いてたよー🖤</li>
+                <li class="bubble">ゆくいみそーれ（おやすみ）…夢で会おうねー🖤</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="sheet" id="mikanyan" style="--c: #e6863d; --ci: #ad5717; --cd: #f6ad6f">
+        <div class="sheet-head">
+            <img class="sprite" src="img/mikanyan-sprite.png" width="224" height="192" alt="みかにゃんのドット絵" loading="lazy">
+            <div class="name-row">
+                <h2>みかにゃん</h2>
+                <span class="yomi">みかにゃん</span>
+                <span class="hz">♾️Hz</span>
+            </div>
+            <p class="tagline">みかん色のねこ。頭の上に∞の輪っかを浮かべて、むげんにあそぶ。</p>
+        </div>
+        <div class="turn">
+            <figure><img src="img/mikanyan-front.webp" width="718" height="664" alt="みかにゃん 正面" loading="lazy"><figcaption>正面</figcaption></figure>
+            <figure><img src="img/mikanyan-three-quarter.webp" width="718" height="664" alt="みかにゃん ななめ前" loading="lazy"><figcaption>ななめ</figcaption></figure>
+            <figure><img src="img/mikanyan-side.webp" width="718" height="664" alt="みかにゃん 横。しっぽが上にくるん" loading="lazy"><figcaption>よこ</figcaption></figure>
+            <figure><img src="img/mikanyan-back.webp" width="718" height="664" alt="みかにゃん うしろ" loading="lazy"><figcaption>うしろ</figcaption></figure>
+        </div>
+        <figure class="illust">
+            <img src="img/mikanyan-illust.webp" width="2752" height="1536" alt="みかにゃんのイラスト版。正面・ななめ・よこ・うしろの4方向" loading="lazy">
+            <figcaption>イラスト版（パステルアニメ）</figcaption>
+        </figure>
+        <div class="facts">
+            <div>
+                <h3>プロフィール</h3>
+                <dl class="profile">
+                    <div><dt>周波数</dt><dd>♾️Hz（むげん）</dd></div>
+                    <div><dt>トレードマーク</dt><dd>ふわふわ浮かぶ金色の∞の輪っか、ねこ耳、頭のしまもよう、ゆらゆらしっぽ</dd></div>
+                    <div><dt>ことば</dt><dd>語尾が「〜にゃ」</dd></div>
+                    <div><dt>とくいなこと</dt><dd>子みくろんといっしょにお昼寝</dd></div>
+                    <div><dt>すきなもの</dt><dd>ボール・ちょうちょ・日だまり・まののひざの上・おにく。温泉は「あしだけ」</dd></div>
+                    <div><dt>なかよし</dt><dd>まのにくっついてごろごろ／おねえちゃんとひなたぼっこ／クロミちゃんのアンテナの星を追いかける</dd></div>
+                </dl>
+            </div>
+            <div class="palette">
+                <h3>カラー</h3>
+                <ul>
+                    <li><span class="chip" style="--s: #ffb36b"></span><b>からだ</b><code>#ffb36b</code></li>
+                    <li><span class="chip" style="--s: #3a2a22"></span><b>目</b><code>#3a2a22</code></li>
+                    <li><span class="chip" style="--s: #ff9a8a"></span><b>ほっぺ</b><code>#ff9a8a</code></li>
+                    <li><span class="chip" style="--s: #f0954a"></span><b>しまもよう</b><code>#f0954a</code></li>
+                    <li><span class="chip" style="--s: #ffd0d6"></span><b>耳の中</b><code>#ffd0d6</code></li>
+                    <li><span class="chip" style="--s: #6b4a3a"></span><b>ひげ</b><code>#6b4a3a</code></li>
+                    <li><span class="chip" style="--s: #ffd66b"></span><b>∞の輪っか</b><code>#ffd66b</code></li>
+                </ul>
+                <p class="scale-note">大きさ ×0.90</p>
+            </div>
+        </div>
+        <div class="lines">
+            <h3>セリフ</h3>
+            <ul>
+                <li class="bubble">にゃ〜ん♾️ あそびにきたにゃ！</li>
+                <li class="bubble">むげんって、ずーっとってことにゃ♾️</li>
+                <li class="bubble">あしだけ…あしだけにゃ…♨️</li>
+                <li class="bubble">おにく、おにくはどこにゃ〜？🐾</li>
+                <li class="bubble">みかにゃんは、むげんに帰ってくるにゃ〜🐾</li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="sheet" id="nee" style="--c: #c27bd6; --ci: #9548ab; --cd: #ddaaec">
+        <div class="sheet-head">
+            <img class="sprite" src="img/nee-sprite.png" width="224" height="192" alt="みくろん姉のドット絵" loading="lazy">
+            <div class="name-row">
+                <h2>みくろん姉</h2>
+                <span class="yomi">みくろんねえ</span>
+                <span class="hz">396Hz</span>
+            </div>
+            <p class="tagline">子みくろんのおねえちゃん。ひとまわり大きくて、芋煮をこしゃってくれる現場のお姉さん。</p>
+        </div>
+        <div class="turn">
+            <figure><img src="img/nee-front.webp" width="977" height="727" alt="みくろん姉 正面。日めくりカレンダーを持っている" loading="lazy"><figcaption>正面</figcaption></figure>
+            <figure><img src="img/nee-three-quarter.webp" width="977" height="727" alt="みくろん姉 ななめ前" loading="lazy"><figcaption>ななめ</figcaption></figure>
+            <figure><img src="img/nee-side.webp" width="977" height="727" alt="みくろん姉 横" loading="lazy"><figcaption>よこ</figcaption></figure>
+            <figure><img src="img/nee-back.webp" width="977" height="727" alt="みくろん姉 うしろ。ふわふわの髪" loading="lazy"><figcaption>うしろ</figcaption></figure>
+        </div>
+        <figure class="illust">
+            <img src="img/nee-illust.webp" width="2752" height="1536" alt="みくろん姉のイラスト版。正面・ななめ・よこ・うしろの4方向" loading="lazy">
+            <figcaption>イラスト版（パステルアニメ）</figcaption>
+        </figure>
+        <div class="facts">
+            <div>
+                <h3>プロフィール</h3>
+                <dl class="profile">
+                    <div><dt>周波数</dt><dd>396Hz（解放・浄化の音）</dd></div>
+                    <div><dt>トレードマーク</dt><dd>ふわふわのパステルピンクの髪、ハートのワッペンつきラベンダーのカーディガン、手には日めくりカレンダー</dd></div>
+                    <div><dt>ことば</dt><dd>山形弁MAX。「だず」「べした」「いぎなり（とっても）」「むったど（いっつも）」「こしゃう（つくる）」「あばえ（またね）」</dd></div>
+                    <div><dt>とくいなこと</dt><dd>芋煮をつくること。みんながそろえば芋煮会に</dd></div>
+                    <div><dt>なかよし</dt><dd>クロミちゃんと花笠音頭×かちゃーしー（いとこ同士）／みかにゃんとひなたぼっこ／まのとつぎの宝物の相談</dd></div>
+                </dl>
+            </div>
+            <div class="palette">
+                <h3>カラー</h3>
+                <ul>
+                    <li><span class="chip" style="--s: #ff9fd0"></span><b>からだ</b><code>#ff9fd0</code></li>
+                    <li><span class="chip" style="--s: #4a2b34"></span><b>目</b><code>#4a2b34</code></li>
+                    <li><span class="chip" style="--s: #ff6fb3"></span><b>ほっぺ</b><code>#ff6fb3</code></li>
+                    <li><span class="chip" style="--s: #ffc3e3"></span><b>髪</b><code>#ffc3e3</code></li>
+                    <li><span class="chip" style="--s: #cdb9f4"></span><b>カーディガン</b><code>#cdb9f4</code></li>
+                    <li><span class="chip" style="--s: #ff6bae"></span><b>ハートのワッペン</b><code>#ff6bae</code></li>
+                </ul>
+                <p class="scale-note">大きさ ×1.18（ファミリーでいちばん大きい）</p>
+            </div>
+        </div>
+        <div class="lines">
+            <h3>セリフ</h3>
+            <ul>
+                <li class="bubble">んだんだ〜、来たっけず〜！ちゃんとまんま食ってっか〜？🍚</li>
+                <li class="bubble">なんもなんも、あせらねくていいんだず〜🌿</li>
+                <li class="bubble">わがんね時は、わがんねでいいんだず〜</li>
+                <li class="bubble">396Hzはな、解放の音なんだず〜🔔</li>
+                <li class="bubble">ちゃんと寝んだぞ〜！あばえ〜🎵</li>
+            </ul>
+        </div>
+    </section>
+
+    <footer>
+        <p>3Dのすがたは、子みくろんのおうち ver.8（みんなの絵日記版）のモデルをそのまま撮影。イラスト版は、その写真を参考にHiggsfieldで描いたもの。セリフはゲームの中のことばから。</p>
+        <p class="sign">396Hz × 528Hz × 963Hz × ♾️Hz = ♾️💖✨</p>
+    </footer>
+</main>
+</body>
+</html>
