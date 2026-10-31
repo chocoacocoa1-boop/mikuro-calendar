@@ -89,7 +89,7 @@ export function createUI(h) {
         row.style.setProperty('--fc', v.def.color);
         row.innerHTML = `${spriteSVG(v.def.sprite)}<div><div class="nm"></div><div class="hz"></div></div><button></button>`;
         row.querySelector('.nm').textContent = v.def.name;
-        row.querySelector('.hz').textContent = `${v.def.hz} ${v.def.emoji}`;
+        row.querySelector('.hz').textContent = `${v.def.hz} ${v.def.emoji}${v.def.sky ? ' お星様の猫神さま✨' : ''}`;
         const btn = row.querySelector('button');
         btn.addEventListener('click', () => {
             if (v.state === 'away') h.invite(v.def.id);

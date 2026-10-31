@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
-import { Agent, goSpot, walkTo, waitMin, waitUntil, join, spotAt, faceYaw, freeSpot } from './agent.js';
+import { Agent, goSpot, walkTo, waitMin, waitUntil, join, spotAt, faceYaw, freeSpot, groundY, indoors } from './agent.js';
 import { makeMano, makeKuromi, makeMikanyan, makeMikuroNee } from './clawd.js';
 import { addStat, log, tally, hour, absMin } from './state.js';
 import { pick, rand, chance, shuffle } from './util.js';
@@ -76,15 +76,17 @@ export const DEFS = [
         },
     },
     {
+        // 2026年10月29日、16年いっしょだったみかにゃんは、お星様の猫神さまになった。
+        // sky：門からではなく、お空から降りてきて、お空へ帰っていく
         id: 'mikanyan', name: 'みかにゃん', hz: '♾️Hz', freq: 0, emoji: '🐱', color: '#e6863d', ring: 0xffb36b,
-        make: makeMikanyan, speed: 1.9, special: 'catnap', sprite: SPRITES.mikanyan,
+        make: makeMikanyan, speed: 1.9, special: 'catnap', sprite: SPRITES.mikanyan, sky: true,
         lines: {
-            arrive: ['にゃ〜ん♾️ あそびにきたにゃ！', 'みかにゃん参上だにゃ〜✨'],
-            greetK: ['みかにゃん〜！もふもふだっちゃ〜🐱', 'みかにゃんだぁ〜！いらっしゃ〜い♡'],
-            reply: ['ごろごろ〜♾️', 'あそぶにゃ〜！'],
-            idle: ['ぽかぽかで眠くなるにゃ…', 'ボール、どこにゃ？', '♾️Hzで、むげんにあそぶにゃ〜', 'ちょうちょ、まてにゃ〜🦋'],
+            arrive: ['にゃ〜ん♾️ お星様から、あそびにきたにゃ！', 'みかにゃん参上だにゃ〜✨ お空からひとっとびにゃ！'],
+            greetK: ['みかにゃん〜！お星様からおかえり〜🐱✨', 'みかにゃんだぁ〜！もふもふだっちゃ〜🐱'],
+            reply: ['ごろごろ〜♾️', 'ただいまにゃ〜♾️'],
+            idle: ['ぽかぽかで眠くなるにゃ…', 'ボール、どこにゃ？', '♾️Hzで、むげんにあそぶにゃ〜', 'ちょうちょ、まてにゃ〜🦋', 'お空から、みんなのことちゃんと見てるにゃ✨'],
             watch: { code: 'カタカタ…ねこじゃらしの音みたいにゃ', eat: 'くんくん…いいにおいにゃ〜', bath: '湯気、もくもくにゃ〜', read: 'ページめくる音、ねむくなるにゃ…', water: 'お水、ぱしゃぱしゃしたいにゃ', purify: 'ごろごろごろ〜♾️', listen: '♾️の音叉、みかにゃんのにゃ！', calendar: 'ぺらっ、て音すきにゃ' },
-            chat: ['むげんって、ずーっとってことにゃ♾️', 'さっき、ちょうちょ追いかけてたにゃ', 'ここの日だまり、さいこうにゃ〜', 'まのの膝の上、すきにゃ〜'],
+            chat: ['むげんって、ずーっとってことにゃ♾️', 'さっき、ちょうちょ追いかけてたにゃ', 'ここの日だまり、さいこうにゃ〜', 'まのの膝の上、すきにゃ〜', 'お星様のおうちも、ぽかぽかにゃ〜✨', 'まのといっしょの16年、むげんに宝物にゃ♾️'],
             kick: ['にゃっ！', 'にゃにゃっ！', 'とりゃにゃ！'],
             ballDone: ['ボール、むげんにたのしいにゃ♾️'],
             onsen: ['あしだけ…あしだけにゃ…♨️', 'お湯、意外といいにゃ〜…♾️'],
@@ -95,14 +97,14 @@ export const DEFS = [
             modelMano: 'みかにゃん、しっぽ動いてる〜😂',
             modelDone: 'もふもふだにゃ〜！むげんに宝物にゃ♾️',
             tap: ['にゃ？', 'ごろごろ〜♾️', 'なでなで、もっとにゃ〜'],
-            leave: ['また来るにゃ〜♾️', 'ばいばいにゃ〜！'],
-            curfew: ['ねむくなってきたにゃ…帰るにゃ〜', 'おうちのおふとんが待ってるにゃ♾️'],
-            byeK: ['みかにゃん、またもふもふさせてけろ〜🐱', 'みかにゃん、まいごにならないでね〜♾️'],
+            leave: ['お空に帰るにゃ〜。また来るにゃ♾️', 'ばいばいにゃ〜！お星様から見てるにゃ✨'],
+            curfew: ['お星様がよんでるにゃ…帰るにゃ〜🌟', '夜空のおふとんが待ってるにゃ♾️'],
+            byeK: ['みかにゃん、またお空から来てけろ〜🐱✨', 'みかにゃん、またもふもふさせてけろ〜🐱', 'みかにゃん、お星様まで気をつけてね〜♾️'],
             byeReply: ['またすぐ来るにゃ〜♾️', 'みかにゃんは、むげんに帰ってくるにゃ〜🐾'],
             sleepFind: ['にゃ…子みくろん、寝てるにゃ🌙', 'すやすやにゃ…しずかにするにゃ…'],
             sleepShh: ['しのびあしにゃ…🐾', 'ねこは足音しないにゃ…🐾'],
             sleepVisit: ['いっしょに丸くなって寝たいにゃ…💤', '寝顔、まんまるにゃ…♾️'],
-            sleepBye: ['おやすみにゃ…また来るにゃ♾️', 'こんどは、いっしょにお昼寝するにゃ…💤'],
+            sleepBye: ['おやすみにゃ…お空から見守ってるにゃ♾️', 'こんどは、いっしょにお昼寝するにゃ…💤'],
         },
     },
     {
@@ -141,7 +143,7 @@ export const DEFS = [
 ];
 
 // busy：来てくれた人どうしで遊んでいる最中。idle：ふだんの過ごし方の最中（ふたり遊びにさそえる）
-const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false, night: false, busy: false, idle: false, specialAt: -1e9 }));
+const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false, night: false, busy: false, idle: false, specialAt: -1e9, riding: null, sparkAt: 0, emojiAt: 0 }));
 const byId = Object.fromEntries(rt.map((v) => [v.def.id, v]));
 const ORDER = DEFS.map((d) => d.id);
 let resonanceLock = false;
@@ -171,6 +173,62 @@ export function init() {
         v.agent.brain = () => (alive(v) && v.greeted ? visitorIdle(v) : null);
         v.agent.visitor = v;
     }
+    W().updaters.push((dt, dtGame) => {
+        for (const v of rt) {
+            if (!v.def.sky || v.state === 'away') continue;
+            v.agent.model.glow = v.riding ? 1 : 0.4;
+            if (dtGame > 0) starTrail(v);
+        }
+    });
+}
+
+// ── お星様から来る人（みかにゃん）──
+const SKY_H = 7;
+const TRAIL_COLS = [0xffe27a, 0xffc48c, 0xfff3c4];
+const haloTmp = new THREE.Vector3();
+
+// ∞の輪っかから、星くずがこぼれる（お空をとんでいるあいだは、たくさん。うしろに✨を残していく）
+function starTrail(v) {
+    const now = ctx.tReal;
+    if (v.riding && now >= v.emojiAt) {
+        v.emojiAt = now + 0.3;
+        v.agent.model.haloPos(haloTmp);
+        ctx.fx.emoji(haloTmp, pick(['✨', '⭐', '🌟', '✨']), { rise: v.riding === 'up' ? -45 : 45, spread: 34, life: 1.3 });
+    }
+    if (now < v.sparkAt) return;
+    v.sparkAt = now + (v.riding ? 0.06 : rand(0.6, 1.1));
+    v.agent.model.haloPos(haloTmp);
+    ctx.fx.spark(haloTmp, {
+        color: pick(TRAIL_COLS), size: v.riding ? rand(0.2, 0.32) : rand(0.08, 0.14), life: v.riding ? 1.2 : 1.4,
+        vel: new THREE.Vector3(rand(-0.25, 0.25), v.riding ? rand(-0.1, 0.3) : rand(0.25, 0.5), rand(-0.25, 0.25)),
+    });
+}
+
+// 降りてくるところ：お庭の、だれからも見えるあたり
+function skyLanding() {
+    const C = W().circle;
+    return ctx.nav.snap(C.x + 1.5 + rand(-0.5, 0.5), C.z - 0.9 + rand(-0.4, 0.4));
+}
+
+// くるっとまわりながら、お空から降りてくる（up のときは、お空へのぼっていく）
+function* skyRide(v, up) {
+    const a = v.agent;
+    const gy = groundY(a.pos.x, a.pos.z);
+    const yaw = a.yaw;
+    const dur = up ? 5 : 6;
+    v.riding = up ? 'up' : 'down';
+    a.pose = up ? 'wave' : 'stand';
+    try {
+        yield* waitMin(dur, (dt, t) => {
+            const k = Math.min(1, t / dur);
+            const h = up ? k * k : (1 - k) * (1 - k);
+            a.yOverride = gy + SKY_H * h;
+            a.targetYaw = yaw + h * Math.PI * 2;
+        });
+    } finally {
+        v.riding = null;
+        a.yOverride = null;
+    }
 }
 
 export function present() {
@@ -192,24 +250,40 @@ export function invite(id) {
     v.state = 'arriving';
     v.greeted = false;
     const a = v.agent;
-    const g = W().gate;
     a.active = true;
     a.root.visible = true;
-    a.place(g.outside.x + rand(-0.4, 0.4), g.outside.z + rand(-0.3, 0.3), Math.PI);
+    if (v.def.sky) {
+        const p = skyLanding();
+        const c = ctx.camera.position;
+        a.place(p.x, p.z, Math.atan2(c.x - p.x, c.z - p.z));
+        a.yOverride = a.pos.y + SKY_H;
+        ctx.sound.infinity();
+        ctx.fx.toast(`お星様の${v.def.name}を呼んだよ🌟`);
+    } else {
+        const g = W().gate;
+        a.place(g.outside.x + rand(-0.4, 0.4), g.outside.z + rand(-0.3, 0.3), Math.PI);
+        ctx.fx.ring(new THREE.Vector3(a.pos.x, 0.03, a.pos.z), v.def.ring, { s0: 0.2, s1: 1.4 });
+        ctx.sound.sparkle();
+        ctx.fx.toast(`${v.def.name}を呼んだよ💌`);
+    }
     a.setCo(arrive(v));
-    ctx.fx.ring(new THREE.Vector3(a.pos.x, 0.03, a.pos.z), v.def.ring, { s0: 0.2, s1: 1.4 });
-    ctx.sound.sparkle();
-    ctx.fx.toast(`${v.def.name}を呼んだよ💌`);
 }
 
 function* arrive(v) {
     const a = v.agent;
     const g = W().gate;
-    yield* walkTo(a, g.inside.x + rand(-0.6, 0.6), g.inside.z + rand(-0.4, 0.2));
+    if (v.def.sky) {
+        yield* skyRide(v, false);
+        ctx.fx.ring(new THREE.Vector3(a.pos.x, a.pos.y + 0.03, a.pos.z), v.def.ring, { s0: 0.2, s1: 1.6 });
+        ctx.sound.starfall();
+    } else {
+        yield* walkTo(a, g.inside.x + rand(-0.6, 0.6), g.inside.z + rand(-0.4, 0.2));
+        ctx.sound.doorbell();
+    }
     v.state = 'visiting';
-    ctx.sound.doorbell();
-    ctx.fx.toast(`${v.def.name}があそびにきたよ${v.def.emoji}`);
-    log(`${v.def.name}があそびにきた${v.def.emoji}`);
+    const from = v.def.sky ? 'お星様から' : '';
+    ctx.fx.toast(`${v.def.name}が${from}あそびにきたよ${v.def.emoji}`);
+    log(`${v.def.name}が${from}あそびにきた${v.def.emoji}`);
     const k = ctx.km;
     a.faceTo(k.pos.x, k.pos.z);
     a.pose = 'wave';
@@ -288,16 +362,25 @@ function* goHome(v, quiet, line) {
             if (bye.done || k.actId !== 'greet') return false;
         });
         bye.done = true;
-    } else {
+    } else if (!v.def.sky) {
         yield* walkTo(a, g.inside.x, g.inside.z);
+    } else if (indoors(a.pos.x, a.pos.z)) {
+        const p = skyLanding();
+        yield* walkTo(a, p.x, p.z);
     }
-    yield* walkTo(a, g.outside.x, g.outside.z);
+    if (v.def.sky) {
+        ctx.sound.infinity();
+        yield* skyRide(v, true);
+    } else {
+        yield* walkTo(a, g.outside.x, g.outside.z);
+    }
     v.state = 'away';
     v.greeted = false;
     v.night = false;
     a.active = false;
     a.root.visible = false;
-    log(bye?.said ? `${v.def.name}を門までお見送りした👋` : `${v.def.name}が帰っていった${v.def.emoji}`);
+    if (v.def.sky) log(bye?.said ? `${v.def.name}をお空へお見送りした🌟` : `${v.def.name}がお空に帰っていった🌟`);
+    else log(bye?.said ? `${v.def.name}を門までお見送りした👋` : `${v.def.name}が帰っていった${v.def.emoji}`);
 }
 
 export function curfew() {

@@ -210,7 +210,8 @@ export function makeKuromi() {
     return r;
 }
 
-// みかにゃん（♾️Hz）：みかん色のねこ。頭の上に ∞ の輪っか
+// みかにゃん（♾️Hz）：みかん色のねこ。頭の上に ∞ の輪っか。
+// お星様の猫神さまなので、輪っかが光る（glow を 0〜1 で。0 のときはキャラクターシートと同じ見た目）
 export function makeMikanyan() {
     const r = createClawd({ color: 0xffb36b, scale: 0.9, eye: 0x3a2a22, blush: 0xff9a8a, topExtra: 0.5 });
     const fur = mat(0xffb36b);
@@ -235,12 +236,19 @@ export function makeMikanyan() {
     const halo = new THREE.Group();
     halo.position.set(0, H + 0.42, 0);
     r.body.add(halo);
-    const hm = mat(0xffd66b, { emissive: 0x7a5a00 });
+    const hm = new THREE.MeshLambertMaterial({ color: 0xffd66b, emissive: 0x7a5a00 });
     [-1, 1].forEach((sx) => mesh(new THREE.TorusGeometry(0.075, 0.02, 8, 24), hm, halo, sx * 0.075, 0, 0));
+    const dim = new THREE.Color(0x7a5a00), bright = new THREE.Color(0xffc94d);
+    let glow = 0;
+    r.glow = 0;
+    r.haloPos = (out = new THREE.Vector3()) => halo.getWorldPosition(out);
     r.extraAnim = (a, dt, t) => {
+        glow = damp(glow, r.glow, 3, dt);
         tail.rotation.y = Math.sin(t * 3) * 0.45;
         halo.position.y = H + 0.42 + Math.sin(t * 2) * 0.03;
         halo.rotation.y = Math.sin(t * 0.7) * 0.6;
+        halo.scale.setScalar(1 + glow * (0.2 + Math.sin(t * 3) * 0.06));
+        hm.emissive.copy(dim).lerp(bright, glow);
     };
     return r;
 }

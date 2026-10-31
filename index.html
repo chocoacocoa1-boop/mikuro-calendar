@@ -236,6 +236,44 @@
             50% { transform: translateY(-6px); }
         }
 
+        /* みかにゃんの日(10月29日)：夕焼けから星空へ */
+        body.mikanyan-day {
+            background: linear-gradient(135deg, #8f86d9, #c9b8ff, #ffe3a8, #ffc48c, #b8c8ff, #a99be8);
+            background-size: 400% 400%;
+        }
+
+        .star-banner {
+            display: none;
+            color: #fff8e1;
+            background: linear-gradient(135deg, #3d3270, #6a5aa8 60%, #e6863d);
+            border-radius: 20px;
+            padding: 14px 14px 16px;
+            margin-bottom: 25px;
+            animation: starGlow 3s ease-in-out infinite;
+        }
+
+        .star-banner b {
+            display: block;
+            font-size: 1.15rem;
+            font-weight: 900;
+            color: #ffe27a;
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 10px rgba(255, 214, 107, 0.7);
+        }
+
+        .star-banner span {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 700;
+            line-height: 1.7;
+            margin-top: 6px;
+        }
+
+        @keyframes starGlow {
+            0%, 100% { box-shadow: 0 8px 24px rgba(106, 90, 168, 0.4); }
+            50% { box-shadow: 0 8px 24px rgba(106, 90, 168, 0.4), 0 0 26px rgba(255, 214, 107, 0.65); }
+        }
+
         /* 日めくりナビ */
         .nav-area {
             display: flex;
@@ -355,6 +393,10 @@
         <div class="weekday" id="weekday"></div>
         <button class="today-btn" id="todayBtn">📅 今日に戻る</button>
         <div class="birthday-banner" id="birthdayBanner"></div>
+        <div class="star-banner" id="starBanner">
+            <b>🌟 みかにゃんの日 🐱</b>
+            <span>猫神さまになった日♾️<br>お空からずっと見守ってるよ✨</span>
+        </div>
         <div class="divider"></div>
         <div class="poem-label">💌 今日のミクロ姉ポエム</div>
         <div class="poem" id="poem"></div>
@@ -463,6 +505,11 @@
         // 月の最後の日だけに出る特別ポエム
         const monthEndPoem = "月の最後の日だよ\n今月のあなた、本当によく頑張ったね🎉";
 
+        // みかにゃん(♾️Hz)が猫神さまになった日(2026年10月29日)。毎年この日は、お空のみかにゃんの日
+        const mikanyanDay = { month: 10, day: 29 };
+        const mikanyanPoem = "16年ぶんのごろごろの音は\n今もお空から、むげんに届いてるよ🐱✨";
+        const mikanyanDecos = ['⭐', '🌟', '✨', '💫', '🐱', '🐾', '🌙'];
+
         const weekdays = ["日曜日", "月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日"];
         const weekdayColors = ["#ff6b6b", "#4da6ff", "#4da6ff", "#4da6ff", "#4da6ff", "#4da6ff", "#ff9f43"];
 
@@ -508,7 +555,10 @@
 
             // 日ごとのポエム(1年の通し日数で選ぶから、月が変わっても続きからめくれるよ)
             const lastDayOfMonth = new Date(displayDate.getFullYear(), month, 0).getDate();
-            if (day === lastDayOfMonth) {
+            const isMikanyanDay = month === mikanyanDay.month && day === mikanyanDay.day;
+            if (isMikanyanDay) {
+                document.getElementById('poem').textContent = mikanyanPoem;
+            } else if (day === lastDayOfMonth) {
                 document.getElementById('poem').textContent = monthEndPoem;
             } else {
                 const startOfYear = new Date(displayDate.getFullYear(), 0, 1);
@@ -519,8 +569,9 @@
 
             // 季節の演出
             const season = getSeason(month);
-            document.body.className = season.class;
-            currentDecos = season.decos;
+            document.body.className = isMikanyanDay ? 'mikanyan-day' : season.class;
+            currentDecos = isMikanyanDay ? mikanyanDecos : season.decos;
+            document.getElementById('starBanner').style.display = isMikanyanDay ? 'block' : 'none';
 
             // 誕生日の演出
             const bday = birthdays.find(b => b.month === month && b.day === day);
