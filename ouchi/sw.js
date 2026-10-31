@@ -1,6 +1,6 @@
 // 子みくろんのおうち サービスワーカー
 // 中身を変えたら CACHE_NAME の番号を上げること（js/main.js の APP_VER もいっしょに）
-const CACHE_NAME = 'komikuron-ouchi-v8';
+const CACHE_NAME = 'komikuron-ouchi-v9';
 const ASSETS = [
     './',
     './index.html',

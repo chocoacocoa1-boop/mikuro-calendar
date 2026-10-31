@@ -1,7 +1,7 @@
 // ミクロ姉の日めくりカレンダー サービスワーカー
 // オフラインでも開けるように、必要なファイルをキャッシュするよ💾
 // キャッシュ名(CACHE_NAME)を変えると、次回アクセス時に全ファイルが更新されるよ
-const CACHE_NAME = 'mikuro-calendar-v4';
+const CACHE_NAME = 'mikuro-calendar-v5';
 const ASSETS = [
   './',
   './index.html',
