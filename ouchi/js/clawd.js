@@ -275,7 +275,7 @@ export function makeMikuroNee() {
     return r;
 }
 
-// マロン（ヨークシャーテリアミックス）：明るい栗色。ミントの首輪に、小さな星のチャーム。
+// マロン（ヨークシャーテリアミックスの女の子）：明るい栗色。頭にピンクのリボン、ミントの首輪に小さな星のチャーム。
 // createClawd とおなじ形（root・rig・body・top・animate）で、箱を組み立てて作る。+z が顔
 const DS = 0.85;
 
@@ -333,6 +333,13 @@ export function makeDog() {
         cbox(e, 0.045, 0.075, 0.01, mat(0xffc9d6), 0, 0.06, 0.025);
         return e;
     });
+    // 頭の上の毛をちょんとたばねて、ピンクのリボン（子みくろんのピンク）
+    cbox(head, 0.07, 0.075, 0.07, CHEST_L, 0, 0.255, 0.03);
+    cbox(head, 0.045, 0.05, 0.05, CHEST_L, 0, 0.3, 0.025);
+    const rib = mat(0xff6bae);
+    cbox(head, 0.048, 0.048, 0.045, mat(0xff4a9b), 0, 0.28, 0.07);
+    cbox(head, 0.1, 0.075, 0.03, rib, -0.065, 0.285, 0.065).rotation.z = 0.35;
+    cbox(head, 0.1, 0.075, 0.03, rib, 0.065, 0.285, 0.065).rotation.z = -0.35;
     const tongue = cbox(head, 0.04, 0.015, 0.05, mat(0xff8aa8), 0, -0.012, 0.2);
     tongue.visible = false;
 
