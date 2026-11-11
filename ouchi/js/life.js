@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { ctx } from './ctx.js';
-import { L, TALK, TALK_DEFAULT, TALK_ASK, ART } from './lines.js';
+import { L, TALK, TALK_DEFAULT, TALK_ASK, ART, DOG } from './lines.js';
 import { DISHES, FORKS } from './house.js';
 import { goSpot, leaveSpot, walkTo, waitMin, waitUntil, freeSpot, indoors } from './agent.js';
-import { addStat, log, tally, hour, absMin } from './state.js';
+import { addStat, log, tally, hour, absMin, loggedTonight } from './state.js';
 import { pick, rand, randInt, chance, fill, shuffle, clockText, speechSec } from './util.js';
 import { free, react, touch, answer, chime, hush, hold } from './chatter.js';
 
@@ -76,13 +76,15 @@ function* actSleep(k) {
     if (k.onSpot !== W().spots.bed) {
         k.label = 'ねむくなってきた…';
         say(k, L.sleepy);
+        // お泊まりの人はお泊まりベッドへ、マロンは寝床へ。寝るまえのおしゃべりをしてから
+        yield* ctx.family.tuckIn(k);
         yield* goSpot(k, W().spots.bed);
     }
     k.label = 'ベッドでぐっすり眠っている💤';
     k.sleeping = k.deepSleep = true;
     W().setBedCover(true);
     S().lights = false;
-    if (S().diary[0]?.t !== 'おやすみなさい🌙') log('おやすみなさい🌙');
+    if (!loggedTonight('おやすみなさい🌙')) log('おやすみなさい🌙');
     // 夜おそくに遊びに来ていた人も、おやすみの時間にはおうちへ帰る
     ctx.family.bedtime();
     let z = 0;
@@ -99,10 +101,14 @@ function* actSleep(k) {
         W().setBedCover(false);
     }
     k.pose = 'sit';
-    say(k, L.wake);
+    k.label = 'おはよう☀️';
+    const guest = ctx.family.staying();
+    say(k, guest ? L.wakeStay : L.wake, { name: guest?.def.name });
     ctx.sound.yawn();
     log(`おはよう（${S().day}日目）☀️`);
-    yield* waitMin(6);
+    yield* waitMin(3);
+    yield* ctx.family.goodMorning(k);
+    yield* waitMin(2);
 }
 
 function* actNap(k) {
@@ -545,9 +551,13 @@ function chooseActivity(k) {
     const c = [];
     const add = (id, score) => { if (score > 0) c.push({ id, score }); };
     if (s.calendarDay !== s.day) add('calendar', 800);
-    if (s.food) add('eat', 700);
-    const meal = (h >= 7 && h < 8.5) || (h >= 12 && h < 13) || (h >= 18 && h < 19.5);
-    add('eat', st.onaka < 40 ? 300 + (40 - st.onaka) * 5 : meal && st.onaka < 75 ? 240 : 0);
+    // お泊まりした朝は、いっしょに朝ごはん
+    if (ctx.family.breakfastDue()) add('breakfast', 760);
+    else {
+        if (s.food) add('eat', 700);
+        const meal = (h >= 7 && h < 8.5) || (h >= 12 && h < 13) || (h >= 18 && h < 19.5);
+        add('eat', st.onaka < 40 ? 300 + (40 - st.onaka) * 5 : meal && st.onaka < 75 ? 240 : 0);
+    }
     add('nap', st.genki < 25 ? 260 + (25 - st.genki) * 6 : 0);
     add('bath', st.kirakira < 35 ? 200 + (35 - st.kirakira) * 4 : h >= 19 && s.bathDay !== s.day ? 190 : 0);
     if (s.wateredDay !== s.day) add('water', h < 11 ? 220 : h < 18 ? 110 : 0);
@@ -562,6 +572,8 @@ function chooseActivity(k) {
     add('bench', h >= 8 && h < 18 ? 35 : 0);
     add('idle', 20);
     for (const [id, score] of ctx.family.socialCandidates()) add(id, score);
+    // マロンとすること（ごはん・おさんぽ・取ってこい・ブラッシング）
+    for (const [id, score] of ctx.dog.candidates()) add(id, score);
     for (const x of c) {
         x.score *= rand(0.75, 1.25);
         if (x.id === k.lastAct) x.score *= 0.25;
@@ -576,6 +588,7 @@ function makeGen(k, id, arg) {
     k.lastAct = id;
     k.actId = id;
     const fam = ctx.family;
+    if (ctx.dog.PLAY[id]) return ctx.dog.PLAY[id](k);
     if (fam.SOCIAL[id]) {
         const v = arg ?? fam.pickPartner(id);
         if (v) return fam.SOCIAL[id](k, v);
@@ -669,12 +682,12 @@ function* actSeeOff(k, v) {
     k.faceTo(a.pos.x, a.pos.z);
     a.faceTo(k.pos.x, k.pos.z);
     k.pose = 'happy';
-    k.say(pick(v.def.lines.byeK));
+    k.say(fill(pick((v.stayed && v.def.lines.stayByeK) || v.def.lines.byeK), { dog: DOG.name }));
     ctx.fx.burst(k.headPos(), ['💖', '✨', v.def.emoji], 5);
     ctx.sound.pet();
     yield* waitMin(3);
     a.pose = 'wave';
-    a.say(pick(v.def.lines.byeReply));
+    a.say(fill(pick((v.stayed && v.def.lines.stayByeReply) || v.def.lines.byeReply), { dog: DOG.name }));
     yield* waitMin(3);
     a.pose = 'stand';
     k.pose = 'wave';
@@ -725,6 +738,7 @@ export function sim(dt) {
         say(k, L.lightsOn);
     }
     if (cross(21.5 * 60)) ctx.family.curfew();
+    if (cross(10 * 60)) ctx.family.checkoutAll();
 
     const asleep = k.sleeping;
     addStat('onaka', -dt * (asleep ? 0.035 : 0.075));
@@ -736,6 +750,11 @@ export function sim(dt) {
     if (n && !asleep) {
         addStat('tanoshisa', dt * 0.12 * n);
         addStat('nakayoshi', dt * 0.03 * n);
+    }
+    // マロンがいるから、ひとりでもさみしくない
+    if (!asleep && s.dog.met) {
+        addStat('tanoshisa', dt * 0.03);
+        addStat('nakayoshi', dt * 0.008);
     }
     ctx.family.checkResonance();
 }
@@ -808,6 +827,7 @@ export function throwBall() {
     ctx.sound.pop();
     touch();
     ctx.family.onBall();
+    ctx.dog.onBall();
     if (k.deepSleep) {
         ctx.fx.toast('子みくろんはすやすや…ボールは庭でころころ〜💤');
         return;
@@ -824,6 +844,7 @@ export function toggleLights() {
     ctx.fx.toast(s.lights ? 'あかりをつけたよ💡' : 'あかりを消したよ🌙');
     touch();
     lightReact(ctx.km, s.lights);
+    if (!s.lights && W().env.night > 0.3) ctx.dog.startle();
 }
 
 let lightTaps = [];
@@ -854,6 +875,7 @@ function lightReact(k, on) {
 }
 
 const REQ = {
+    dogbowl: 'feed',
     bed: 'nap', sofa: 'read', bookshelf: 'read', desk: 'code', table: 'eat', fridge: 'eat', cook: 'eat',
     fork: 'listen', flowerbed: 'water', cherry: 'cherry', onsen: 'bath', calendar: 'calendar', bench: 'bench',
 };
@@ -881,7 +903,10 @@ export function request(id, data) {
         ctx.fx.toast('子みくろんはぐっすり眠っている…💤');
         return;
     }
+    const guest = ctx.family.staying();
     const talkOnly = {
+        guestbed: guest ? `今夜は${guest.def.name}が、ここで寝るんだっちゃ〜🌙` : 'お客さまのおふとんだっちゃ〜。だれか、泊まってってくれないかなぁ〜🌙',
+        dogbed: `${DOG.name}の寝床だべ〜。はじめての、おうちの中のふかふかだっちゃ〜🌰`,
         clock: `いま${clockText(s.min)}だべ〜🕰️`,
         sign: 'こみくろんのおうちへ、ようこそだっちゃ〜🏡',
         plant: '葉っぱ、つやつやだべ〜🌿',
@@ -905,6 +930,8 @@ export function request(id, data) {
         cherry: s.day < s.cherryReadyDay && 'まだ実がなってないべ〜、もうちょっと待ってけろ🍒',
         bath: st.kirakira >= 92 && 'さっき入ったばっかりだべ〜♨️',
         calendar: s.calendarDay === s.day && `今日は${s.day}日目だべ〜📅`,
+        feed: (!s.dog.met && `${DOG.name}、まだ どきどきしてるみたいだべ〜。先に ごあいさつするっちゃ〜🌰`)
+            || (!ctx.dog.mealDue() && `${DOG.name}のごはんは、さっきあげたばっかりだべ〜🍖`),
     }[act];
     if (refuse) {
         k.say(refuse);
@@ -997,6 +1024,7 @@ export function talk(text) {
         ctx.fx.ring(new THREE.Vector3(k.pos.x, k.pos.y + 0.05, k.pos.z), f.ring, { s0: 0.2, s1: 1.6, life: 2 });
     }
     if (/あそ[ぼぶ]|遊[ぼぶ]/.test(t)) ctx.fx.toast('「ボールを投げる」で遊べるよ⚽');
+    ctx.dog.hear(t);
     if (topic) chime(topic, speechSec(reply) * 0.8);
     ctx.sound.pet();
     addStat('nakayoshi', 1.5);

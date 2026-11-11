@@ -12,6 +12,7 @@ import { makeKoMikuron } from './clawd.js';
 import { loadState, saveState, clearState, log } from './state.js';
 import * as life from './life.js';
 import * as family from './family.js';
+import * as dog from './dog.js';
 import * as chatter from './chatter.js';
 import { createBall } from './ball.js';
 import { createUI } from './ui.js';
@@ -21,8 +22,8 @@ import { damp, clamp, lerp, pick, wrapAngle } from './util.js';
 
 // ホーム視点：右手前の斜め上から、おうちと庭をまるごと
 // 中身を変えたら上げる（sw.js の CACHE_NAME の番号もいっしょに）
-const APP_VER = 9;
-const APP_VER_NAME = '猫神さま版';
+const APP_VER = 10;
+const APP_VER_NAME = 'マロンとお泊まり版';
 
 const HOME = { target: new THREE.Vector3(2.0, 0.6, 2.0), polar: 0.88, azim: 0.6 };
 // おうちがいっぱいに見えるように合わせる（庭の端は少し切れてもいい）
@@ -86,7 +87,7 @@ function boot() {
         nav: new NavGrid(-10, -8, 14, 14, 0.25),
         spots: {}, pickables: [], updaters: [], lamps: [], props: {}, textRedraw: [],
     };
-    Object.assign(ctx, { scene, camera, renderer, controls, world: W, nav: W.nav, sound, life, family });
+    Object.assign(ctx, { scene, camera, renderer, controls, world: W, nav: W.nav, sound, life, family, dog });
     ctx.state = loadState();
     const s = ctx.state;
     const fresh = s.diary.length === 0;
@@ -105,7 +106,8 @@ function boot() {
     km.brain = life.brain;
     ctx.km = km;
     family.init();
-    ctx.agents = [km, ...family.rt.map((v) => v.agent)];
+    dog.init();
+    ctx.agents = [km, ...family.rt.map((v) => v.agent), dog.agent];
 
     W.setFlowers(s.flowers);
     W.setCherries(s.day >= s.cherryReadyDay);
@@ -114,6 +116,8 @@ function boot() {
     if (s.food) W.placeFood(s.food);
     if (life.isNight()) km.placeOnSpot(W.spots.bed);
     else km.place(-2.6, 0.6, 0.4);
+    // お泊まりの途中で閉じていたら、泊まっている人はそのまま
+    family.restore();
 
     // ── カメラ ──
     const tmpCam = new THREE.PerspectiveCamera();
@@ -264,6 +268,7 @@ function boot() {
                 const a = o.userData.agent;
                 if (a) {
                     if (a === km) life.pet(km);
+                    else if (a.isDog) dog.pet();
                     else family.tap(a.visitor);
                     return;
                 }
@@ -279,7 +284,7 @@ function boot() {
     ctx.ui = createUI({
         home, layout, follow: toggleFollow,
         food: life.placeFood, ball: life.throwBall, lights: life.toggleLights, talk: life.talk, drawing: life.showDrawing,
-        invite: family.invite, leave: family.leave,
+        invite: family.invite, leave: family.leave, stay: family.askStay, treat: dog.treat,
         reset() {
             clearState();
             location.reload();
@@ -360,7 +365,7 @@ function boot() {
         document.getElementById('loading').classList.add('hide');
     });
 
-    if (/[?&]debug\b/.test(location.search)) window.__ouchi = { ctx, life, family, chatter, home };
+    if (/[?&]debug\b/.test(location.search)) window.__ouchi = { ctx, life, family, dog, chatter, home };
 
     document.getElementById('ver').textContent = `子みくろんのおうち ver.${APP_VER}（${APP_VER_NAME}）`;
     if (!fresh && s.seenVer !== APP_VER) setTimeout(() => ctx.fx.toast(`おうちが新しくなったよ✨ ver.${APP_VER}（${APP_VER_NAME}）`, 5), 2500);
