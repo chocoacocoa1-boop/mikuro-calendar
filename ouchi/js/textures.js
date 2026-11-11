@@ -53,8 +53,22 @@ export function heartPath(g, x, y, size) {
     g.closePath();
 }
 
-export function drawSprite(g, x, y, px, color, eye = '#3a2236') {
-    CLAWD_SPRITE.forEach((row, j) => {
+// マロンのドット絵（顔。上の2マスに耳の先がのる）
+export const DOG_SPRITE = [
+    '..##......##..',
+    '..###....###..',
+    '..##########..',
+    '.############.',
+    '.###E####E###.',
+    '.############.',
+    '..##########..',
+    '...########...',
+    '....######....',
+    '..............',
+];
+
+export function drawSprite(g, x, y, px, color, eye = '#3a2236', shape = CLAWD_SPRITE) {
+    shape.forEach((row, j) => {
         for (let i = 0; i < row.length; i++) {
             const ch = row[i];
             if (ch === '.') continue;
@@ -77,10 +91,16 @@ export const SPRITES = {
     kuromi: { body: '#54447a', eye: '#fff0fa', acc: [[4, 0, '#ffd84d'], [4, 1, '#cfc3f0'], [1, 6, '#2d2752'], [12, 6, '#2d2752'], [1, 7, '#2d2752'], [12, 7, '#2d2752']] },
     mikanyan: { body: '#ffb36b', eye: '#3a2a22', acc: [[2, 1, '#ffb36b'], [3, 1, '#ffb36b'], [2, 0, '#ffb36b'], [10, 1, '#ffb36b'], [11, 1, '#ffb36b'], [11, 0, '#ffb36b'], [6, 0, '#ffd66b'], [7, 0, '#ffd66b']] },
     nee: { body: '#ff9fd0', eye: '#4a2b34', acc: [...row(1, 2, 11, '#ffc3e3'), [1, 2, '#ffc3e3'], [12, 2, '#ffc3e3'], ...row(8, 2, 11, '#cdb9f4')] },
+    dog: {
+        shape: DOG_SPRITE, body: '#c8854a', eye: '#2a2233',
+        acc: [[2, 2, '#b07238'], [3, 2, '#b07238'], [10, 2, '#b07238'], [11, 2, '#b07238'], [3, 3, '#ffc9d6'], [10, 3, '#ffc9d6'],
+            ...row(4, 4, 9, '#e2aa6c'), ...row(8, 5, 8, '#fff0dc'), ...row(9, 5, 8, '#fff0dc'), [6, 8, '#3a2a33'], [7, 8, '#3a2a33'],
+            ...row(10, 5, 8, '#8fdfbb'), [6, 10, '#ffe27a']],
+    },
 };
 
 export function drawChar(g, x, y, px, sp) {
-    drawSprite(g, x, y + 2 * px, px, sp.body, sp.eye);
+    drawSprite(g, x, y + 2 * px, px, sp.body, sp.eye, sp.shape);
     for (const [ax, ay, c] of sp.acc) {
         g.fillStyle = c;
         g.fillRect(x + ax * px, y + ay * px, px, px);

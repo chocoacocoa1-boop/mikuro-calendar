@@ -1,7 +1,7 @@
 import { ctx } from './ctx.js';
 import { clockText, partOfDay } from './util.js';
-import { CLAWD_SPRITE, paintDrawing } from './textures.js';
-import { ART } from './lines.js';
+import { CLAWD_SPRITE, SPRITES, paintDrawing } from './textures.js';
+import { ART, DOG } from './lines.js';
 
 const STATS = [
     ['onaka', 'おなか', '#f07b7b'],
@@ -13,7 +13,7 @@ const STATS = [
 
 function spriteSVG(sp) {
     const rects = [];
-    CLAWD_SPRITE.forEach((row, j) => {
+    (sp.shape ?? CLAWD_SPRITE).forEach((row, j) => {
         for (let i = 0; i < row.length; i++) {
             const ch = row[i];
             if (ch === '.') continue;
@@ -83,21 +83,54 @@ export function createUI(h) {
     });
     panel.addEventListener('transitionend', h.layout);
 
+    // マロン（いっしょに暮らしている子）
+    const dogRow = document.createElement('div');
+    dogRow.className = 'fam dog';
+    dogRow.style.setProperty('--fc', DOG.color);
+    dogRow.innerHTML = `${spriteSVG(SPRITES.dog)}<div><div class="nm"></div><div class="hz"></div><div class="dl"></div></div><button>おやつ🦴</button>`;
+    dogRow.querySelector('.nm').textContent = DOG.name;
+    dogRow.querySelector('.hz').textContent = `${DOG.emoji} いっしょに暮らしてる`;
+    const dogLabel = dogRow.querySelector('.dl');
+    dogRow.querySelector('button').addEventListener('click', h.treat);
+    $('housemate').appendChild(dogRow);
+
+    // 泊まる人の「またね」は、押しまちがいよけに2回タップで
+    let sureId = null, sureTimer = 0;
     const famRows = ctx.family.rt.map((v) => {
         const row = document.createElement('div');
         row.className = 'fam';
         row.style.setProperty('--fc', v.def.color);
-        row.innerHTML = `${spriteSVG(v.def.sprite)}<div><div class="nm"></div><div class="hz"></div></div><button></button>`;
+        row.innerHTML = `${spriteSVG(v.def.sprite)}<div><div class="nm"></div><div class="hz"></div></div><div class="acts"><button class="stay" hidden>🌙お泊まり</button><button class="main"></button></div>`;
         row.querySelector('.nm').textContent = v.def.name;
         row.querySelector('.hz').textContent = `${v.def.hz} ${v.def.emoji}${v.def.sky ? ' お星様の猫神さま✨' : ''}`;
-        const btn = row.querySelector('button');
+        const btn = row.querySelector('button.main');
+        const stayBtn = row.querySelector('button.stay');
+        const r = { v, row, btn, stayBtn, last: '' };
         btn.addEventListener('click', () => {
-            if (v.state === 'away') h.invite(v.def.id);
-            else if (v.state === 'arriving' || v.state === 'visiting') h.leave(v.def.id);
+            if (v.state === 'away') {
+                h.invite(v.def.id);
+                return;
+            }
+            if (v.state !== 'arriving' && v.state !== 'visiting') return;
+            if (v.stay && sureId !== v.def.id) {
+                sureId = v.def.id;
+                r.last = '';
+                ctx.fx.toast(`もう一度タップで、${v.def.name}に帰ってもらうよ（お泊まりは、またこんど）`, 3.5);
+                clearTimeout(sureTimer);
+                sureTimer = setTimeout(() => {
+                    sureId = null;
+                    r.last = '';
+                }, 3500);
+                return;
+            }
+            sureId = null;
+            h.leave(v.def.id);
         });
+        stayBtn.addEventListener('click', () => h.stay(v.def.id));
         $('family').appendChild(row);
-        return { v, row, btn, last: '' };
+        return r;
     });
+    const stayHint = $('stay-hint');
 
     const talkForm = $('talk');
     const talkInput = $('talk-input');
@@ -236,6 +269,7 @@ export function createUI(h) {
                 ['花', `${s.flowers.filter((f) => f.g >= 3).length}/5`],
                 ['さくらんぼ', s.cherries],
                 ['共鳴', s.resonance],
+                ['お泊まり', s.stays],
             ];
             const key = items.map((i) => i.join()).join('|');
             if (key !== lastCounters) {
@@ -249,16 +283,35 @@ export function createUI(h) {
                     countersEl.appendChild(span);
                 }
             }
+            const fam = ctx.family;
             for (const r of famRows) {
-                const st = r.v.state;
-                if (st === r.last) continue;
-                r.last = st;
+                const v = r.v, st = v.state;
+                const stay = v.stay ? 'on' : fam.canStay(v) ? 'can' : '';
+                const sure = sureId === v.def.id;
+                const key = `${st}|${stay}|${sure}`;
+                if (key === r.last) continue;
+                r.last = key;
                 const [text, cls, disabled] = FAM_BUTTON[st];
-                r.btn.textContent = text;
-                r.btn.className = cls;
+                r.btn.textContent = sure ? 'ほんとに？' : text;
+                r.btn.className = `main ${cls}${sure ? ' sure' : ''}`;
                 r.btn.disabled = disabled;
+                r.stayBtn.hidden = !stay || st === 'leaving';
+                r.stayBtn.classList.toggle('on', stay === 'on');
+                r.stayBtn.disabled = stay === 'on';
+                r.stayBtn.textContent = stay === 'on' ? '🌙お泊まり中' : '🌙お泊まり';
                 r.row.classList.toggle('here', st === 'visiting' || st === 'arriving');
             }
+            // お泊まりは1日ひとりまで
+            const guest = s.stay && fam.rt.find((x) => x.def.id === s.stay.id);
+            const name = guest?.def.name;
+            const hint = guest && s.stay.phase === 'eve' ? `今夜は${name}がお泊まり🌙（お泊まりは1日ひとりまで）`
+                : guest && s.stay.phase === 'night' ? `${name}がお泊まり中…すやすや🌙`
+                    : guest ? `${name}がお泊まりした朝☀️ いっしょに朝ごはんを食べたら帰るよ`
+                        : s.stayNight === fam.nightKey() ? '今夜のお泊まりは、もうおしまい🌙（1日ひとりまで）'
+                            : '来てくれた人の「🌙お泊まり」を押すと、泊まっていってくれるよ（1日ひとりまで）。押さなくても、夜まで遊んでいた人が言い出すこともあるよ🌙';
+            if (stayHint.textContent !== hint) stayHint.textContent = hint;
+            const dl = ctx.dog.D.label || '';
+            if (dogLabel.textContent !== dl) dogLabel.textContent = dl;
             if (dirty) {
                 dirty = false;
                 renderDiary();

@@ -353,6 +353,14 @@
         }
         .fam button.bye { background: #fff; color: var(--plum-2); border: 2px solid var(--edge); }
         .fam button:disabled { opacity: 0.55; }
+        /* お泊まりボタンが出るときは、たてにならべる（スマホのはばでも名前がつぶれないように） */
+        .fam .acts { display: flex; flex-direction: column; gap: 5px; align-items: stretch; }
+        .fam button.stay { min-width: 0; padding: 6px 8px; font-size: 12px; background: #7d6bc4; }
+        .fam button.stay.on { background: #fff; color: #7d6bc4; border: 2px solid #cfc3f0; opacity: 1; }
+        .fam button.sure { background: #ff9d5c; }
+        .fam .dl { font-size: 11.5px; font-weight: 700; color: #b08aa5; margin-top: 1px; }
+        .fam.dog { border-color: color-mix(in srgb, var(--fc) 45%, #fff); background: color-mix(in srgb, var(--fc) 7%, #fff); }
+        .fam.dog button { background: var(--fc); }
 
         .talk { display: flex; gap: 8px; }
         .talk input {
@@ -548,9 +556,14 @@
             </div>
             <p class="hint">子みくろんをタップでなでなで。家具をタップでおねがい。</p>
 
+            <h3>いっしょに暮らしてる</h3>
+            <div class="family" id="housemate"></div>
+            <p class="hint">マロンをタップで、なでなで。ボールを投げると、追いかけるよ🐾</p>
+
             <h3>ソルフェジオファミリー</h3>
             <div class="family" id="family"></div>
             <p class="hint">みんなを呼んで、子みくろんのおうちに遊びに来てもらおう。4人そろうと…？✨</p>
+            <p class="hint" id="stay-hint"></p>
 
             <h3>話しかける</h3>
             <form class="talk" id="talk" autocomplete="off">

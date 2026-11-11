@@ -459,7 +459,32 @@ export function buildHouse(W) {
     mesh(new THREE.CylinderGeometry(0.1, 0.16, 0.16, 16, 1, true), nsShade, ns, 0, 0.76, 0);
     addLamp(1.45, y0 + 0.85, -3.45, nsShade, 3, 5);
     nav.block(1.2, -3.89, 1.7, -3.47);
-    box(root, 0.95, 0.012, 0.6, 0xf3d0f0, 1.6, y0, -2.5);
+    box(root, 1.5, 0.012, 0.55, 0xf3d0f0, 0.7, y0, -1.38);
+
+    // お泊まり用のベッド（来てくれた人が泊まっていくとき）。ひくめで、みくろん姉でも乗れる広さ
+    const gbed = furn('guestbed', 1.75, -2.6);
+    box(gbed, 1.45, 0.14, 1.4, WOOD, 0, 0, 0);
+    box(gbed, 1.39, 0.12, 1.34, 0xfffaf6, 0, 0.14, 0);
+    box(gbed, 1.41, 0.05, 0.62, 0xbfe9db, 0, 0.26, 0.37);
+    box(gbed, 0.62, 0.1, 0.3, WHITE, 0, 0.26, -0.48);
+    box(gbed, 1.45, 0.52, 0.08, 0xcfc3f0, 0, 0, -0.74);
+    mesh(starGeo(0.12, 0.02), mat(0xffe27a), gbed, 0, 0.38, -0.69);
+    const gcover = box(gbed, 1.38, 0.34, 0.9, 0xbfe9db, 0, 0.26, 0.2);
+    gcover.visible = false;
+    W.setGuestCover = (on) => { gcover.visible = on; };
+    nav.block(1.03, -3.3, 2.47, -1.9, 0.15);
+
+    // マロンの寝床：ずっとお外で暮らしていたマロンの、はじめての、おうちの中のふかふかの寝床
+    const dbed = furn('dogbed', 2.05, -1.35);
+    cyl(dbed, 0.3, 0.32, 0.05, WOOD, 0, 0, 0, 18);
+    const rimD = mesh(new THREE.TorusGeometry(0.28, 0.085, 6, 16), mat(0xffe9c9), dbed, 0, 0.09, 0);
+    rimD.rotation.x = Math.PI / 2;
+    cyl(dbed, 0.22, 0.24, 0.07, 0xfffaf2, 0, 0.04, 0, 16);
+    const blk = box(dbed, 0.3, 0.035, 0.24, 0x9fe6c6, -0.06, 0.11, 0.1);
+    blk.rotation.set(0.12, 0.3, 0);
+    mesh(starGeo(0.045, 0.012), mat(0xffe27a), dbed, 0, 0.1, 0.375);
+    cbox(dbed, 0.14, 0.035, 0.035, WHITE, 0.2, 0.19, -0.2).rotation.y = 0.6;
+    nav.blockCircle(2.05, -1.35, 0.3, 0.05);
 
     // ── 書斎 ──
     const desk = furn('desk', -0.05, -0.19);
@@ -527,6 +552,16 @@ export function buildHouse(W) {
     box(fridge, 0.04, 0.3, 0.04, WHITE, -0.28, 1.22, 0.35);
     mesh(heartGeo(0.14), mat(0xff6bae), fridge, 0.14, 1.42, 0.334, false);
     nav.block(5.18, -3.93, 5.92, -3.27);
+
+    // マロンのごはんとお水（冷蔵庫の手前、右の壁ぎわ）
+    const bowls = furn('dogbowl', 5.62, -2.34);
+    box(bowls, 0.42, 0.012, 0.72, 0xffe08a, 0, 0, 0);
+    cyl(bowls, 0.11, 0.09, 0.05, 0xff9cc8, 0, 0.012, -0.16, 14);
+    const kibble = cyl(bowls, 0.085, 0.085, 0.012, 0xb07a4a, 0, 0.055, -0.16, 12);
+    kibble.visible = false;
+    W.setDogFood = (on) => { kibble.visible = on; };
+    cyl(bowls, 0.1, 0.085, 0.045, 0x9fe6c6, 0, 0.012, 0.16, 14);
+    cyl(bowls, 0.08, 0.08, 0.008, 0x9ee6e3, 0, 0.05, 0.16, 12);
 
     const pend = new THREE.Group();
     pend.position.set(4.4, y0, -0.6);
@@ -607,6 +642,13 @@ export function buildHouse(W) {
         rugB: spot(-2.95, -0.45, -2.95, y0, -0.45, -0.5, 'sit'),
         // 絵のモデルさんの席（ホームの視点から見て、子みくろんのとなり）
         rugC: spot(-2.15, -1.0, -2.15, y0, -1.0, -1.0, 'sit'),
+        // お泊まりの人の席（手前寄り：ホームの視点で間仕切りのかげにならないように）
+        guestBed: spot(1.35, -1.5, 1.72, y0 + 0.27, -2.4, 0, 'sleep'),
+        // マロンの寝床と、そのとなり（みかにゃんがくっついて丸くなるところ）
+        dogBed: spot(1.55, -1.15, 2.05, y0 + 0.06, -1.35, 0.5, 'sleep'),
+        dogBedSide: spot(1.42, -1.1, 1.42, y0, -1.1, 0.5, 'sleep'),
+        dogBowl: spot(5.25, -2.5, 5.25, y0, -2.5, Math.PI / 2, 'eat'),
+        dogFeed: spot(4.7, -2.1, 4.7, y0, -2.1, Math.PI / 2, 'cook'),
     });
     W.musicRing = { x: FX, z: FZ, r: 0.95 };
 

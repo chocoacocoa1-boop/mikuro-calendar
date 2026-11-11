@@ -274,3 +274,151 @@ export function makeMikuroNee() {
     r.arms[1].add(cal);
     return r;
 }
+
+// マロン（ヨークシャーテリアミックス）：明るい栗色。ミントの首輪に、小さな星のチャーム。
+// createClawd とおなじ形（root・rig・body・top・animate）で、箱を組み立てて作る。+z が顔
+const DS = 0.85;
+
+export function makeDog() {
+    const CHEST = mat(0xc8854a), CHEST_D = mat(0xb07238), CHEST_L = mat(0xe2aa6c), CREAM = mat(0xfff0dc);
+    const root = new THREE.Group();
+    const rig = new THREE.Group();
+    rig.scale.setScalar(DS);
+    root.add(rig);
+
+    const legs = [];
+    [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(([sx, sz], i) => {
+        const l = cbox(rig, 0.075, 0.13, 0.075, CHEST, sx * 0.09, 0.065, sz * 0.12);
+        l.userData.base = l.position.clone();
+        l.userData.grp = (i + (sz < 0 ? 1 : 0)) % 2;
+        l.userData.back = sz < 0;
+        legs.push(l);
+    });
+
+    const body = new THREE.Group();
+    body.position.y = 0.13;
+    rig.add(body);
+    cbox(body, 0.28, 0.19, 0.38, CHEST, 0, 0.095, -0.01);
+    cbox(body, 0.2, 0.02, 0.3, CHEST_D, 0, 0.195, -0.04);
+    // ヨーキーらしい、たれる長い毛（わき腹とおしり）
+    [-1, 1].forEach((sx) => cbox(body, 0.035, 0.17, 0.34, CHEST_L, sx * 0.152, 0.035, -0.01));
+    cbox(body, 0.24, 0.12, 0.03, CHEST_L, 0, 0.05, -0.205);
+    cbox(body, 0.2, 0.15, 0.05, CREAM, 0, 0.08, 0.195);
+    cbox(body, 0.2, 0.035, 0.2, mat(0x8fdfbb), 0, 0.19, 0.16);
+    mesh(starGeo(0.03, 0.012), mat(0xffe27a, { emissive: 0x6a5200 }), body, 0, 0.165, 0.265, false);
+
+    const tail = new THREE.Group();
+    tail.position.set(0, 0.17, -0.2);
+    body.add(tail);
+    cbox(tail, 0.05, 0.15, 0.05, CHEST_D, 0, 0.075, 0);
+    cbox(tail, 0.065, 0.06, 0.065, CHEST_L, 0, 0.17, 0);
+
+    const head = new THREE.Group();
+    head.position.set(0, 0.2, 0.18);
+    body.add(head);
+    cbox(head, 0.3, 0.24, 0.22, CHEST, 0, 0.1, 0.04);
+    cbox(head, 0.13, 0.09, 0.09, CREAM, 0, 0.035, 0.185);
+    cbox(head, 0.05, 0.035, 0.03, mat(0x3a2a33), 0, 0.07, 0.24);
+    const eyeM = mat(0x2a2233);
+    const eyes = [-1, 1].map((sx) => cbox(head, 0.045, 0.055, 0.02, eyeM, sx * 0.075, 0.125, 0.152));
+    [-1, 1].forEach((sx) => cbox(head, 0.055, 0.19, 0.13, CHEST_L, sx * 0.172, 0.01, 0.07));
+    cbox(head, 0.14, 0.06, 0.06, CHEST_L, 0, -0.015, 0.17);
+    cbox(head, 0.24, 0.07, 0.05, CHEST_L, 0, 0.2, 0.14);
+    const ears = [-1, 1].map((sx) => {
+        const e = new THREE.Group();
+        e.position.set(sx * 0.105, 0.21, 0);
+        e.rotation.z = -sx * 0.22;
+        head.add(e);
+        cbox(e, 0.08, 0.13, 0.045, CHEST_D, 0, 0.065, 0);
+        cbox(e, 0.045, 0.075, 0.01, mat(0xffc9d6), 0, 0.06, 0.025);
+        return e;
+    });
+    const tongue = cbox(head, 0.04, 0.015, 0.05, mat(0xff8aa8), 0, -0.012, 0.2);
+    tongue.visible = false;
+
+    // 小さい画面でもタップしやすい当たり判定
+    const hit = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.9, 1.0), new THREE.MeshBasicMaterial({ visible: false }));
+    hit.position.y = 0.35;
+    rig.add(hit);
+
+    const A = { by: 0.13, rx: 0, hrx: 0, hrz: 0, ear: 0, wag: 0.25, tuck: 0, back: 0, blinkT: rand(1, 4), blink: 0 };
+    const seed = Math.random() * 10;
+    const r = {
+        root, rig, body, head, tail, eyes, legs,
+        scale: DS, H: 0.3,
+        top: 0.62,
+        held: null,
+        extraAnim: null,
+        hold() {},
+        animate(a, dt, t) {
+            let pose = a.pose;
+            // びっくりしたときは、ちょっとのあいだ小さくなる
+            if (a.startleT > 0) {
+                a.startleT -= dt;
+                pose = 'shy';
+            }
+            const walking = a.moving;
+            const p = walking ? 'walk' : pose;
+            let by = 0.13, rx = 0, hrx = 0, hrz = 0, ear = 0, wag = 0.25, tuck = 0, back = 0, hop = 0, open = 1;
+            switch (p) {
+                case 'sit': rx = -0.38; back = 0.5; by = 0.12; break;
+                case 'sleep': tuck = 0.65; by = 0.052; hrx = 0.45; wag = 0; open = 0.12; break;
+                case 'happy': hop = Math.abs(Math.sin(t * 7 + seed)) * 0.1; wag = 1; break;
+                case 'eat':
+                case 'sniff': hrx = 0.5 + Math.sin(t * 8) * 0.08; wag = 0.5; break;
+                case 'bow': rx = 0.3; by = 0.11; wag = 1; break;
+                case 'beg': rx = -0.95; back = 0.55; by = 0.2; wag = 0.8; break;
+                case 'tilt': hrz = 0.35; rx = -0.38; back = 0.5; by = 0.12; break;
+                case 'look': hrx = -0.3; rx = -0.38; back = 0.5; by = 0.12; break;
+                case 'shy': by = 0.11; hrx = 0.25; ear = -0.5; wag = 0.1; tuck = 0.15; break;
+                case 'walk': wag = 0.45; break;
+            }
+            if (a.petT > 0) {
+                hop = Math.max(hop, Math.sin((1 - a.petT) * Math.PI) * 0.16);
+                wag = 1;
+            }
+            if (a.talkT > 0) wag = Math.max(wag, 0.7);
+            A.by = damp(A.by, by, 10, dt);
+            A.rx = damp(A.rx, rx, 10, dt);
+            A.hrx = damp(A.hrx, hrx, 10, dt);
+            A.hrz = damp(A.hrz, hrz, 8, dt);
+            A.ear = damp(A.ear, ear, 10, dt);
+            A.wag = damp(A.wag, wag, 4, dt);
+            A.tuck = damp(A.tuck, tuck, 10, dt);
+            A.back = damp(A.back, back, 10, dt);
+
+            const ph = a.walkPhase * 1.5;
+            for (const l of legs) {
+                const g = l.userData.grp ? Math.PI : 0;
+                const k = 1 - A.tuck - (l.userData.back ? A.back : 0);
+                l.scale.y = Math.max(0.2, k);
+                l.position.y = (0.13 * l.scale.y) / 2 + (walking ? Math.max(0, Math.sin(ph + g)) * 0.04 : 0);
+                l.position.z = l.userData.base.z + (walking ? Math.cos(ph + g) * 0.04 : 0);
+            }
+            let bob = walking ? Math.abs(Math.sin(ph)) * 0.02 : 0;
+            if (p === 'sleep') bob += Math.sin(t * 1.4 + seed) * 0.006;
+            if (a.talkT > 0) bob += Math.abs(Math.sin(t * 12 + seed)) * 0.015 * Math.min(1, a.talkT * 2.5);
+            body.position.y = A.by + bob;
+            body.rotation.x = A.rx;
+            head.rotation.x = A.hrx - A.rx * 0.6;
+            head.rotation.z = A.hrz + (p === 'stand' ? Math.sin(t * 0.7 + seed) * 0.05 : 0);
+            ears.forEach((e) => { e.rotation.x = A.ear; });
+            tail.rotation.x = -0.6 + A.ear * 0.8 - (p === 'sleep' ? 0.6 : 0);
+            tail.rotation.z = Math.sin(t * (6 + 14 * A.wag)) * (0.08 + 0.55 * A.wag);
+            rig.position.y = hop;
+            tongue.visible = p === 'happy' || (walking && A.wag > 0.6);
+
+            A.blinkT -= dt;
+            if (A.blinkT < 0) {
+                A.blink = 0.13;
+                A.blinkT = rand(2, 5);
+            }
+            if (A.blink > 0) {
+                A.blink -= dt;
+                open = Math.min(open, 0.15);
+            }
+            eyes[0].scale.y = eyes[1].scale.y = open;
+        },
+    };
+    return r;
+}

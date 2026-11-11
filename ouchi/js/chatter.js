@@ -3,16 +3,16 @@
 import { ctx } from './ctx.js';
 import { pick, rand, chance, fill, speechSec } from './util.js';
 import { hour } from './state.js';
-import { ART } from './lines.js';
+import { ART, DOG } from './lines.js';
 import {
-    MONO, SLEEP_TALK, QUESTIONS, MEMO_LINES, DUO, PAIRS, GUEST_IDLE, GUEST_SLEEP, REACT, CHIME,
+    MONO, SLEEP_TALK, QUESTIONS, MEMO_LINES, DUO, PAIRS, GUEST_IDLE, GUEST_SLEEP, REACT, CHIME, DOG_MONO, DOG_DUO, DOG_PAIRS,
 } from './convos.js';
 
 const S = () => ctx.state;
 
 let clock = 0;
 let convo = null;
-let tMono = 5, tGuest = 9, tConvo = 7;
+let tMono = 5, tGuest = 9, tConvo = 7, tDog = 8;
 let lastTouch = 0;
 let lastAsk = -120;
 let asking = null;
@@ -52,6 +52,7 @@ export function pickScript(list) {
 function canSpeak(a) {
     if (!a?.active) return false;
     if (a === ctx.km) return !a.sleeping;
+    if (a.isDog) return a.pose !== 'sleep';
     return a.visitor?.state === 'visiting';
 }
 
@@ -73,7 +74,7 @@ const near = (a, b, d) => Math.hypot(a.pos.x - b.pos.x, a.pos.z - b.pos.z) < d;
 function actCtx(k) {
     const id = k.actId;
     if (id === 'eat' && k.onSpot === ctx.world.spots.cook) return 'cook';
-    return { onsen2: 'bath', tea: 'eat', imoni: 'eat' }[id] ?? id;
+    return { onsen2: 'bath', tea: 'eat', imoni: 'eat', breakfast: 'eat', walk: 'stroll', fetch: 'ball' }[id] ?? id;
 }
 
 function sayLine(a, text, o) {
@@ -82,8 +83,9 @@ function sayLine(a, text, o) {
 }
 
 function scriptVars() {
-    return { day: S().day };
+    return { day: S().day, dog: DOG.name };
 }
+const fillDog = (text, vars) => fill(text, { ...scriptVars(), ...vars });
 
 // ── 掛け合い（行動とは別に、吹き出しだけで進む）──
 function startConvo(lines, cast) {
@@ -169,12 +171,33 @@ export function hold(agents) {
     };
 }
 
+// マロンが起きていて、ひとりで過ごしているとき（いっしょに何かしている最中ではない）
+function dogReady() {
+    const d = ctx.dog;
+    if (!d?.agent || !S().dog.met) return null;
+    const a = d.agent;
+    return free(a, 1.5) && a.pose !== 'sleep' && !d.D.busy && !d.D.asleep && !(a.joining && !a.atSpot) ? a : null;
+}
+
 function tryAmbientConvo(guests) {
     const k = ctx.km;
     // いっしょに何かしに行く途中なら、話しはじめない（着いたら途切れてしまうので）
     const kFree = free(k, 1.5) && !k.sleeping && !k.deepSleep && !k.meeting;
     const ready = (a) => free(a, 1.5) && a.pose !== 'sleep' && !(a.joining && !a.atSpot);
     const opts = [];
+    const dog = dogReady();
+    if (dog) {
+        if (kFree && near(k, dog, 4)) {
+            const w = DOG_DUO.watch[actCtx(k)];
+            if (w) opts.push({ w: 2.5, lines: linesOf(pickFresh(w)), cast: { k, dog } });
+            opts.push({ w: 2, lines: pickScript(DOG_DUO.talk), cast: { k, dog } });
+        }
+        for (const v of guests) {
+            const a = v.agent;
+            if (!ready(a) || !near(a, dog, 4) || !DOG_PAIRS[v.def.id]) continue;
+            opts.push({ w: 2, lines: pickScript(DOG_PAIRS[v.def.id]), cast: { dog, [v.def.id]: a, k: kFree && near(k, a, 6) ? k : null } });
+        }
+    }
     for (const v of guests) {
         const a = v.agent;
         if (!ready(a)) continue;
@@ -249,7 +272,7 @@ function monologue(k, guests) {
     if (!free(k, 3)) return;
     if (k.sleeping) {
         if (chance(0.7)) {
-            k.say(pickFresh(SLEEP_TALK), 3);
+            k.say(fillDog(pickFresh(SLEEP_TALK)), 3);
             ctx.fx.emoji(k.headPos(), '💤', { rise: 40 });
         }
         return;
@@ -282,6 +305,11 @@ function monologue(k, guests) {
     add(1.1, memoryLines());
     add(since > 50 ? 2.5 : 0.8, MONO.toMano);
     if (since > 70) add(2, MONO.wantPet);
+    const dog = ctx.dog?.agent;
+    if (dog && S().dog.met) {
+        if (near(k, dog, 5) && dog.pose !== 'sleep') add(1.3, MONO.dog);
+        else if (!indoorsOf(dog) || !near(k, dog, 9)) add(0.6, MONO.dogAway);
+    }
     if (guests.length) {
         add(1.5, guests.map((v) => fill(pick(MONO.guest), { name: v.def.name })));
     } else {
@@ -291,7 +319,7 @@ function monologue(k, guests) {
     }
     let r = Math.random() * pool.reduce((sum, p) => sum + p[0], 0);
     const lines = (pool.find((p) => (r -= p[0]) <= 0) ?? pool[0])[1];
-    k.say(pickFresh(lines));
+    k.say(fillDog(pickFresh(lines)));
 }
 
 // ── 遊びに来た人のひとりごと ──
@@ -300,7 +328,7 @@ function guestLine(v) {
     if (!free(a, 3) || !canSpeak(a)) return;
     const k = ctx.km;
     if (a.pose === 'sleep') {
-        a.say(pickFresh(GUEST_SLEEP[v.def.id] ?? GUEST_SLEEP.default), 3);
+        a.say(fillDog(pickFresh(GUEST_SLEEP[v.def.id] ?? GUEST_SLEEP.default)), 3);
         return;
     }
     const close = near(a, k, 5);
@@ -316,21 +344,53 @@ function guestLine(v) {
     a.say(pickFresh([...v.def.lines.idle, ...GUEST_IDLE[v.def.id]]));
 }
 
+// ── マロンのひとりしぐさ ──
+const indoorsOf = (a) => a.pos.x > -6.1 && a.pos.x < 6.1 && a.pos.z > -4.1 && a.pos.z < 4.1;
+
+function dogLine() {
+    const d = ctx.dog;
+    const a = d?.agent;
+    if (!a?.active || !S().dog.met || !free(a, 3)) return;
+    const k = ctx.km;
+    if (a.pose === 'sleep') {
+        if (chance(0.5)) {
+            a.say(pickFresh(DOG_MONO.sleep), 3);
+            ctx.fx.emoji(a.headPos(), '💤', { rise: 36 });
+        }
+        return;
+    }
+    const pool = [];
+    if (d.D.hungry) pool.push(...DOG_MONO.hungry);
+    else if (near(a, k, 3.5) && !k.sleeping) {
+        const w = DOG_MONO.watch[actCtx(k)];
+        if (w && chance(0.6)) pool.push(...w);
+        else pool.push(...(k.moving ? DOG_MONO.follow : DOG_MONO.idle));
+    } else if (!indoorsOf(a)) pool.push(...(ctx.world.env.night > 0.5 ? DOG_MONO.night : DOG_MONO.garden));
+    else pool.push(...DOG_MONO.idle, ...DOG_MONO.indoor);
+    if (d.D.shy) pool.push(...DOG_MONO.shy);
+    a.say(pickFresh(pool));
+}
+
 // ── まわりの人のひとこと ──
-function soon(sec, fn) {
+export function soon(sec, fn) {
     later.push({ t: clock + sec, fn });
 }
 
 // still: 言う直前にもう一度たしかめる（そのあいだに状況が変わっていたら言わない）
-export function react(ev, vars = {}, gap = 6, still) {
+// skip：言わない人（言いだした本人など）
+export function react(ev, vars = {}, gap = 6, still, skip) {
     if (throttle[ev] !== undefined && clock - throttle[ev] < gap) return;
-    const vs = ctx.family.present().filter((v) => v.greeted && REACT[v.def.id]?.[ev] && canSpeak(v.agent) && free(v.agent, 0) && v.agent.pose !== 'sleep');
-    if (!vs.length) return;
+    const cands = ctx.family.present()
+        .filter((v) => v.greeted && v.agent !== skip && REACT[v.def.id]?.[ev] && canSpeak(v.agent) && free(v.agent, 0) && v.agent.pose !== 'sleep')
+        .map((v) => ({ a: v.agent, lines: REACT[v.def.id][ev] }));
+    const dog = ctx.dog?.agent;
+    if (dog && dog !== skip && REACT.dog[ev] && S().dog.met && !ctx.dog.D.busy && canSpeak(dog) && free(dog, 0)) cands.push({ a: dog, lines: REACT.dog[ev] });
+    if (!cands.length) return;
     throttle[ev] = clock;
-    const v = pick(vs);
+    const c = pick(cands);
     soon(rand(1.0, 1.6), () => {
         if (still && !still()) return;
-        if (canSpeak(v.agent) && !(v.agent.scripted > 0)) v.agent.say(fill(pick(REACT[v.def.id][ev]), vars));
+        if (canSpeak(c.a) && !(c.a.scripted > 0)) c.a.say(fillDog(pick(c.lines), vars));
     });
 }
 
@@ -387,10 +447,12 @@ export function update(dt) {
     tMono -= dt;
     tGuest -= dt;
     tConvo -= dt;
+    tDog -= dt;
     const guests = ctx.family.present().filter((v) => v.greeted);
-    if (guests.length && tConvo <= 0) {
+    if ((guests.length || dogReady()) && tConvo <= 0) {
         if (tryAmbientConvo(guests)) {
-            tConvo = rand(16, 26);
+            // マロンとふたりきりのときは、おしゃべりしすぎないように
+            tConvo = guests.length ? rand(16, 26) : rand(24, 38);
             tMono = Math.max(tMono, rand(5, 9));
             tGuest = Math.max(tGuest, rand(5, 9));
             return;
@@ -404,6 +466,10 @@ export function update(dt) {
     if (guests.length && tGuest <= 0) {
         tGuest = rand(15, 25) / Math.sqrt(guests.length);
         guestLine(pick(guests));
+    }
+    if (tDog <= 0) {
+        tDog = k.deepSleep ? rand(22, 36) : rand(13, 22);
+        dogLine();
     }
 }
 

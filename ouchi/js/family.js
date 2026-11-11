@@ -3,13 +3,14 @@ import { ctx } from './ctx.js';
 import { Agent, goSpot, walkTo, waitMin, waitUntil, join, spotAt, faceYaw, freeSpot, groundY, indoors } from './agent.js';
 import { makeMano, makeKuromi, makeMikanyan, makeMikuroNee } from './clawd.js';
 import { addStat, log, tally, hour, absMin } from './state.js';
-import { pick, rand, chance, shuffle } from './util.js';
-import { tapFork, holdMallet, forkOf } from './life.js';
+import { pick, rand, chance, shuffle, fill, speechSec } from './util.js';
+import { tapFork, holdMallet, forkOf, isNight } from './life.js';
 import { spot } from './build.js';
 import { SPRITES } from './textures.js';
-import { ART } from './lines.js';
-import { converse, hold, pickScript, react, free, touch, waitTalk } from './chatter.js';
-import { DUO, GROUP, TRIO, ONSEN_GROUP } from './convos.js';
+import { ART, L, DOG } from './lines.js';
+import { DISHES } from './house.js';
+import { converse, hold, pickScript, pickFresh, react, free, touch, waitTalk, soon } from './chatter.js';
+import { DUO, GROUP, TRIO, ONSEN_GROUP, STAY, GUEST_SLEEP, DOG_DUO } from './convos.js';
 
 const W = () => ctx.world;
 const S = () => ctx.state;
@@ -41,6 +42,17 @@ export const DEFS = [
             sleepShh: ['ほんとだ…しーっ、だね🤫', 'そーっと、そーっと…💖'],
             sleepVisit: ['しーっ…寝顔、めんこいなぁ…🌙', 'ほっぺぷにぷにしたい…がまんがまん💕'],
             sleepBye: ['おやすみ、子みくろん。いい夢みてね💖', '528Hzの子守唄、おいてくね…🎵'],
+            // お泊まり
+            stayAsk: ['ねぇ子みくろん…今日、泊まっていってもいい？🌙', 'もうちょっといっしょにいたいな…お泊まり、してもいい？💖', 'えへへ、帰りたくなくなっちゃった。泊まっていってもいいかな🌸'],
+            stayYes: ['いいの？やった〜！今夜はお泊まりだね🌙💖', 'うん、泊まる泊まる〜！パジャマパーティーしよ🌸', 'わぁ、うれしい！子みくろんとお泊まり会だ〜💖'],
+            stayCancel: ['あっ、やっぱり今日は帰るね。お泊まりは、またこんど💖', 'ごめんね、また今度ゆっくり泊まりにくるね🌸'],
+            stayWake: ['ん〜…おはよう。子みくろんのおうちの朝だ〜☀️', 'ふぁ…よく寝た〜。おふとん、ふかふかだったよ💖'],
+            bfWait: ['いいにおい〜🍳 朝ごはん、たのしみ！', '子みくろんがお料理してるとこ、めんこい〜💕'],
+            stayBye: ['お泊まり、すっごくたのしかった〜！またくるね💖', '朝ごはん、ごちそうさま🌸 今日もいい日にしようね', 'じゃあ、いってきます…じゃなくて、またね、だね。えへへ💖'],
+            stayByeK: ['まの、泊まってってくれておしょうしな〜！また、ぜったいお泊まりしてけろ〜💖', 'まのと朝までいっしょ、宝物だっちゃ〜🌙 またきてけろ〜！'],
+            stayByeReply: ['うん、ぜったいまた泊まりにくるね🌙💖', 'ゆうべの寝顔、ないしょで宝物にしちゃった。またね♡', 'マロン、またすぐ来るからね。子みくろんと、なかよくね🌰💖'],
+            sleepStay: ['あ、{name}もお泊まりしてる…ふたりとも、いい夢みてね🌙'],
+            dogTap: ['マロン、だいすきだよ💖', 'よしよし、マロン🌸 いい子だね'],
         },
     },
     {
@@ -73,6 +85,17 @@ export const DEFS = [
             model: ['モデルなんて、でーじてれるさー🖤', 'ふふっ、宇宙一ちゅらさんに描いてねー🖤'],
             modelMano: 'クロミちゃん、アンテナの星もちゃんと描くね✨',
             modelDone: 'ちゅらさん…！わんも宝物にするさー🖤',
+            // お泊まり
+            stayAsk: ['ねぇ子みくろん、今夜はここで ゆくって（休んで）いってもいいー？🖤🌙', 'ぶし（星）がちゅらさん夜やさ。帰るの、でーじもったいないさー…泊まってもいい？✨', 'あい、宇宙に帰るの、あちゃー（あした）にしようかねー。泊まっていいー？🖤'],
+            stayYes: ['あい、いいの？にふぇーでーびる！今夜はお泊まりさー🖤🌙', 'でーじうれしいさー！夜どおし、ゆんたく（おしゃべり）しようねー✨', 'やった、お泊まりやっさー！宇宙には、あちゃー（あした）帰るさー🖤'],
+            stayCancel: ['あんしぇー、やっぱり今夜は宇宙に帰るさー。お泊まりは、またこんどねー🖤', 'ごめんねー、ぶしに呼ばれたさー。またこんど泊まりにくるからねー✨'],
+            stayWake: ['うきみそーちー（おはよう）…地球の朝、でーじまぶしいさー☀️', 'ふぁ〜…よく寝たさー。おふとん、雲みたいだったよー🖤'],
+            bfWait: ['かばさん（いいにおい）がするさー🍳 おなか、ぐーぐーやっさー', '朝ごはん、でーじたのしみさー🖤'],
+            stayBye: ['お泊まり、でーじたのしかったさー！にふぇーでーびる🖤', 'あんしぇー、宇宙に帰るねー。またやーさい✨', 'くゎっちーさびたん（ごちそうさま）。また泊まりにくるさー🖤'],
+            stayByeK: ['クロミちゃん、泊まってってくれておしょうしな〜！またやーさい、だっちゃ〜🖤', 'クロミちゃんとお星さま見ながら寝たの、宝物だべ〜✨ また泊まりにきてけろ〜！'],
+            stayByeReply: ['あい、またやーさい🖤 こんどは、ぶしのおみやげ持ってくるさー', 'かなさんどー、子みくろん。{dog}も、またねー🖤'],
+            sleepStay: ['あい、{name}もお泊まりねー…みんな、ゆくいみそーれ🖤'],
+            dogTap: ['{dog}、かなさんどー🖤', 'あい、{dog}。やさしい子やっさー✨'],
         },
     },
     {
@@ -105,6 +128,17 @@ export const DEFS = [
             sleepShh: ['しのびあしにゃ…🐾', 'ねこは足音しないにゃ…🐾'],
             sleepVisit: ['いっしょに丸くなって寝たいにゃ…💤', '寝顔、まんまるにゃ…♾️'],
             sleepBye: ['おやすみにゃ…お空から見守ってるにゃ♾️', 'こんどは、いっしょにお昼寝するにゃ…💤'],
+            // お泊まり（お空に帰らないで、ここで丸くなる夜）
+            stayAsk: ['今夜は、お空に帰らないで…ここで丸くなってもいいにゃ？🌙', '子みくろんのおうち、ぽかぽかにゃ…今夜は、とまっていってもいいにゃ？♾️', 'お星様には、ちゃんと言ってきたにゃ。今夜は、いっしょに寝てもいいにゃ？✨'],
+            stayYes: ['いいにゃ？やったにゃ〜！今夜は、ここがみかにゃんのおふとんにゃ♾️', 'お泊まりにゃ〜！むげんにうれしいにゃ🌙', 'お空のおふとんは、今夜はおやすみにゃ。ここで丸くなるにゃ〜✨'],
+            stayCancel: ['やっぱり今夜は、お星様にもどるにゃ。お泊まりは、またこんどにゃ♾️', 'お星様がよんでるにゃ〜。こんど、ぜったい泊まるにゃ🌟'],
+            stayWake: ['ふにゃ〜…おはようにゃ。地上の朝は、いいにおいがするにゃ☀️', 'のび〜〜っ…よく寝たにゃ♾️'],
+            bfWait: ['くんくん…朝ごはんのにおいにゃ…！じゅるり', 'おさかな、あるかにゃ〜？わくわくにゃ🐟'],
+            stayBye: ['お泊まり、むげんにたのしかったにゃ♾️ また丸くなりにくるにゃ', 'お空に帰っても、∞でずーっとつながってるにゃ✨ またすぐ来るにゃ', 'ゆうべの子みくろんの寝顔、お星様のみんなに じまんするにゃ〜🌟'],
+            stayByeK: ['みかにゃん、泊まってってくれておしょうしな〜！あったかかったっちゃ〜🐱✨', 'みかにゃん、またお星様から泊まりにきてけろ〜！おふとん、あけとくっちゃ〜♾️'],
+            stayByeReply: ['おふとん、あけといてにゃ。むげんに、また来るにゃ♾️', 'マロン、またすぐ来るにゃ。子みくろんと、なかよくにゃ🐾'],
+            sleepStay: ['にゃ…{name}も、お泊まりにゃ…みんな、すやすやにゃ🌙'],
+            dogTap: ['マロンは、みかにゃんの いちばん古い ともだちにゃ♾️', 'マロンのとなりが、すきにゃ'],
         },
     },
     {
@@ -138,12 +172,27 @@ export const DEFS = [
             model: ['あいや〜、モデルなんて、こっぱずがしいごど〜😳', 'んだが〜？したら、にこ〜っと🌸'],
             modelMano: 'みくろん、そのままの笑顔でね〜',
             modelDone: 'いぎなりめんごぐ描いでもらったごど〜🥹 おしょうしな〜',
+            // お泊まり
+            stayAsk: ['あいや〜、すっかり遅ぐなったず〜。今夜は、泊まってってもいいが〜？🌙', '子みくろんの顔見でだら、帰りだぐなぐなったず〜。泊めでけろ〜🌸', 'んだんだ、今夜は姉ちゃんと寝っぺ〜。泊まってもいいべが？🌙'],
+            stayYes: ['いいのが〜？したら、お言葉さ甘えで、泊まってぐず〜🌙', 'あいや〜、お泊まりだなんて、いぎなりうれしいごど〜🌸', 'んだが〜！今夜は、いっしょに寝っぺな〜💖'],
+            stayCancel: ['あいや、やっぱり今夜は、えさ（家に）帰っぺ〜。お泊まりは、まだこんどな〜🌸', 'わりなぁ〜、まだこんど、ゆっくり泊まりさ来っからな〜🌙'],
+            stayWake: ['ふぁ〜…おはようさん。いぎなりよぐ寝だず〜☀️', 'んん〜…朝だが〜。あったがくて、寝すごすどごだっけ〜🌸'],
+            bfWait: ['いいにおいだごど〜🍳 ひとりで作れるなんて、いぎなりえらいず〜', '手伝うが〜？…あいや、座ってろってが。んだら、待ってっからな〜🌸'],
+            stayBye: ['泊めでもらって、おしょうしな〜！まだ来っからな〜🌸', '朝まんま、んめがったず〜。したらね、あばえ〜🎵', 'ちゃんと歯みがいで、まんま食って、元気でいろよ〜。あばえ〜🌸'],
+            stayByeK: ['おねえちゃん、泊まってってくれておしょうしな〜！また、いっしょに寝てけろ〜💖', 'おねえちゃんのとなり、あったかくて、ぐっすりだったっちゃ〜🌙 またきてけろ〜！'],
+            stayByeReply: ['んだな〜、まだ泊まりさ来っからな〜。いい子にしてろよ〜🌸', '{dog}も、あったがぐして寝ろよ〜。あばえ〜🎵'],
+            sleepStay: ['あんれ、{name}も泊まってだのが〜…みんな、ぐっすりだごど🌙'],
+            dogTap: ['{dog}、めんごいごど〜🌸', 'よしよし、やさしい子だなぁ〜'],
         },
     },
 ];
 
 // busy：来てくれた人どうしで遊んでいる最中。idle：ふだんの過ごし方の最中（ふたり遊びにさそえる）
-const rt = DEFS.map((def) => ({ def, agent: null, state: 'away', greeted: false, night: false, busy: false, idle: false, specialAt: -1e9, riding: null, sparkAt: 0, emojiAt: 0 }));
+// stay：今夜お泊まりする人。asleep：お泊まりベッドで寝ている。morning：お泊まりした朝（朝ごはんを食べたら帰る）
+const rt = DEFS.map((def) => ({
+    def, agent: null, state: 'away', greeted: false, night: false, busy: false, idle: false, specialAt: -1e9, riding: null, sparkAt: 0, emojiAt: 0,
+    stay: false, asleep: false, morning: false, stayed: false, greetedMorning: false,
+}));
 const byId = Object.fromEntries(rt.map((v) => [v.def.id, v]));
 const ORDER = DEFS.map((d) => d.id);
 let resonanceLock = false;
@@ -176,7 +225,8 @@ export function init() {
     W().updaters.push((dt, dtGame) => {
         for (const v of rt) {
             if (!v.def.sky || v.state === 'away') continue;
-            v.agent.model.glow = v.riding ? 1 : 0.4;
+            // お泊まりで寝ているあいだは、輪っかをほんのり（おやすみのあかり）
+            v.agent.model.glow = v.riding ? 1 : v.asleep ? 0.25 : 0.4;
             if (dtGame > 0) starTrail(v);
         }
     });
@@ -196,7 +246,7 @@ function starTrail(v) {
         ctx.fx.emoji(haloTmp, pick(['✨', '⭐', '🌟', '✨']), { rise: v.riding === 'up' ? -45 : 45, spread: 34, life: 1.3 });
     }
     if (now < v.sparkAt) return;
-    v.sparkAt = now + (v.riding ? 0.06 : rand(0.6, 1.1));
+    v.sparkAt = now + (v.riding ? 0.06 : v.asleep ? rand(2.5, 4) : rand(0.6, 1.1));
     v.agent.model.haloPos(haloTmp);
     ctx.fx.spark(haloTmp, {
         color: pick(TRAIL_COLS), size: v.riding ? rand(0.2, 0.32) : rand(0.08, 0.14), life: v.riding ? 1.2 : 1.4,
@@ -238,7 +288,15 @@ export function present() {
 export function tap(v) {
     const a = v.agent;
     touch();
-    a.say(pick(v.def.lines.tap), 2.6);
+    if (v.asleep) {
+        a.say(fill(pickFresh(GUEST_SLEEP[v.def.id] ?? GUEST_SLEEP.default), { dog: DOG.name }), 2.4);
+        ctx.fx.emoji(a.headPos(), '💤');
+        return;
+    }
+    // マロンのそばにいたら、マロンのことを言うこともある
+    const d = ctx.dog?.agent;
+    const nearDog = ctx.state.dog.met && d?.active && d.pose !== 'sleep' && Math.hypot(d.pos.x - a.pos.x, d.pos.z - a.pos.z) < 2.5;
+    a.say(fill(pick(nearDog && chance(0.3) ? v.def.lines.dogTap : v.def.lines.tap), { dog: DOG.name }), 2.6);
     a.petT = 1;
     ctx.fx.burst(a.headPos(), [v.def.emoji, '✨'], 3);
     ctx.sound.pet();
@@ -295,6 +353,7 @@ function* arrive(v) {
     a.say(pick(v.def.lines.arrive));
     react('arrive', { name: v.def.name }, 0);
     ctx.life.greet(v);
+    ctx.dog.welcome(v);
     yield* waitMin(4);
     a.pose = 'stand';
     yield* waitUntil(() => v.greeted, 25);
@@ -314,6 +373,15 @@ function* sleepVisit(v) {
     a.faceTo(0.3, -3.0);
     yield* waitMin(2);
     yield* inTurn(a, () => pick(L.sleepVisit));
+    // お泊まりしている人がいたら、その人にも「おやすみ」
+    const g = staying();
+    if (g && g !== v && g.asleep) {
+        yield* waitMin(2);
+        yield* inTurn(a, () => fill(pick(L.sleepStay), { name: g.def.name }));
+    }
+    // マロンは寝たまま、ちょっとだけ顔をあげる
+    const d = ctx.dog?.agent;
+    if (d && chance(0.3)) d.say(pick(['…わふ（しーっ、だよ）']), 2.4);
     yield* waitMin(18);
     yield* inTurn(a, () => pick(L.sleepBye));
     yield* waitMin(3);
@@ -331,6 +399,25 @@ function freeGateSlot(v) {
 export function leave(id, quiet = false, line) {
     const v = byId[id];
     if (v.state === 'away' || v.state === 'leaving') return;
+    if (v.stay) {
+        const ph = S().stay?.phase;
+        const k = ctx.km;
+        if (!line && ph === 'eve') {
+            // 夜になるまえに帰る：お泊まりは、またこんど（今夜の枠はあく）
+            line = pick(v.def.lines.stayCancel);
+            quiet = true;
+            log(`${v.def.name}のお泊まりは、またこんどになった🌙`);
+            soon(speechSec(line) + 0.6, () => { if (!k.sleeping) k.say(pick(L.stayCancelK)); });
+        } else if (!line && ph === 'night') {
+            line = pick(v.def.lines.sleepBye);
+            quiet = true;
+            log(`${v.def.name}は夜のうちに、そっと帰っていった🌙`);
+        } else if (ph === 'morning') {
+            v.stayed = true;
+            line ??= pick(v.def.lines.stayBye);
+        }
+        endStay(v);
+    }
     const here = v.state === 'visiting';
     v.state = 'leaving';
     resonanceLock = false;
@@ -369,6 +456,9 @@ function* goHome(v, quiet, line) {
         yield* walkTo(a, p.x, p.z);
     }
     if (v.def.sky) {
+        // マロンも、お空へ「またね」
+        const d = ctx.dog?.agent;
+        if (d?.active && d.pose !== 'sleep' && Math.hypot(d.pos.x - a.pos.x, d.pos.z - a.pos.z) < 7 && free(d, 0.5)) d.say('あお〜ん！（またね〜！）', 3);
         ctx.sound.infinity();
         yield* skyRide(v, true);
     } else {
@@ -379,21 +469,267 @@ function* goHome(v, quiet, line) {
     v.night = false;
     a.active = false;
     a.root.visible = false;
-    if (v.def.sky) log(bye?.said ? `${v.def.name}をお空へお見送りした🌟` : `${v.def.name}がお空に帰っていった🌟`);
-    else log(bye?.said ? `${v.def.name}を門までお見送りした👋` : `${v.def.name}が帰っていった${v.def.emoji}`);
+    const who = v.stayed ? `お泊まりした${v.def.name}` : v.def.name;
+    if (v.def.sky) log(bye?.said ? `${who}をお空へお見送りした🌟` : `${who}がお空に帰っていった🌟`);
+    else log(bye?.said ? `${who}を門までお見送りした👋${v.stayed ? '☀️' : ''}` : `${who}が帰っていった${v.def.emoji}`);
+    v.stayed = false;
 }
 
+// 21:30：みんな帰る時間。お泊まりがまだ決まっていなければ、ひとりが「泊まっていってもいい？」と言いだすことも
 export function curfew() {
+    const s = S(), k = ctx.km;
+    let guest = staying();
+    if (!guest && k.actId !== 'resonance' && !k.sleeping) {
+        const cands = rt.filter(canStay);
+        if (cands.length && chance(s.stays ? 0.4 + s.stats.nakayoshi * 0.003 : 0.85)) {
+            const fresh = cands.filter((v) => v.def.id !== s.stayLast);
+            guest = pick(fresh.length ? fresh : cands);
+            selfAsk(guest);
+        }
+    }
     for (const v of rt) {
+        if (v === guest || v.stay) continue;
         if (v.state === 'visiting' || v.state === 'arriving') leave(v.def.id, true, pick(v.def.lines.curfew));
     }
 }
 
-// 子みくろんがおやすみするときは、遊びに来ていた人も「おやすみ」を言って帰る
+// 子みくろんがおやすみするときは、遊びに来ていた人も「おやすみ」を言って帰る（お泊まりの人はのこる）
 export function bedtime() {
     for (const v of rt) {
-        if (v.state === 'visiting' && !v.night) leave(v.def.id, true, pick(v.def.lines.sleepBye));
+        if (v.state === 'visiting' && !v.night && !v.stay) leave(v.def.id, true, pick(v.def.lines.sleepBye));
     }
+}
+
+// ── お泊まり（1日ひとりまで）──
+// 夜は 22:30〜6:30。夜が明けるまでは、その夜がはじまった日で数える
+export const nightKey = () => (hour() < 6.5 ? S().day - 1 : S().day);
+export const staying = () => rt.find((v) => v.stay && (alive(v) || v.state === 'arriving')) ?? null;
+
+export function canStay(v) {
+    const s = S();
+    return alive(v) && v.greeted && !v.night && !v.stay && !s.stay && s.stayNight !== nightKey() && !ctx.km.deepSleep && !isNight();
+}
+
+function setStay(v, by) {
+    v.stay = true;
+    S().stay = { id: v.def.id, night: nightKey(), phase: 'eve', by };
+}
+
+function endStay(v) {
+    v.stay = v.asleep = v.morning = v.night = v.greetedMorning = false;
+    if (S().stay?.id === v.def.id) S().stay = null;
+    W().setGuestCover(false);
+}
+
+// まのがパネルの「🌙お泊まり」を押した
+export function askStay(id) {
+    const v = byId[id], s = S(), k = ctx.km;
+    if (v.stay) return;
+    if (!canStay(v)) {
+        if (s.stay || s.stayNight === nightKey()) ctx.fx.toast('お泊まりは1日ひとりまでだよ🌙');
+        else if (!alive(v) || !v.greeted) ctx.fx.toast('まずは、ごあいさつがすんでからね🌙');
+        else ctx.fx.toast('お泊まりは、子みくろんが起きているあいだに決めてね🌙');
+        return;
+    }
+    touch();
+    setStay(v, 'mano');
+    ctx.sound.sparkle();
+    ctx.fx.toast(`今夜は${v.def.name}がお泊まり🌙`);
+    log(`${v.def.name}が今夜お泊まりしてくれることになった🌙`);
+    const a = v.agent;
+    const line = pick(v.def.lines.stayYes);
+    a.say(line);
+    a.petT = 1;
+    ctx.fx.burst(a.headPos(), ['🌙', '✨', v.def.emoji], 4);
+    soon(speechSec(line) + 0.3, () => {
+        if (!k.sleeping && v.stay) {
+            k.say(fill(pick(L.stayYay), { name: v.def.name }));
+            ctx.fx.burst(k.headPos(), ['🌙', '💖'], 3);
+        }
+    });
+    react('stay', { name: v.def.name }, 0, null, a);
+}
+
+// 夜まで遊んでいた人が、自分から言いだす（21:30 の curfew から）
+function selfAsk(v) {
+    const a = v.agent, k = ctx.km;
+    setStay(v, 'self');
+    a.faceTo(k.pos.x, k.pos.z);
+    const ask = pick(v.def.lines.stayAsk);
+    a.say(ask);
+    const t1 = speechSec(ask) + 0.4;
+    const ok = pick(L.stayOk);
+    soon(t1, () => {
+        if (!k.sleeping && v.stay) {
+            k.say(ok);
+            ctx.fx.burst(k.headPos(), ['🌙', '💖'], 3);
+        }
+    });
+    // 帰る人の「帰るね」は、このやりとりのあとで
+    turnAt = Math.max(turnAt, ctx.tReal + t1 + speechSec(ok) + 0.5);
+    ctx.fx.toast(`${v.def.name}が「泊まっていってもいい？」って🌙`, 3.5);
+    log(`${v.def.name}が「泊まっていってもいい？」って言ってくれた🌙`);
+}
+
+// 子みくろんがベッドに入るまえ（life.js の actSleep から）：泊まる人はお泊まりベッド、マロンは寝床へ。
+// 寝るまえのおしゃべりをして、おやすみ
+export function* tuckIn(k) {
+    const sp = W().spots, v = staying(), dog = ctx.dog;
+    const meet = { done: false };
+    let release = null, slept = false;
+    const withDog = ctx.state.dog.met;
+    if (v) {
+        v.busy = true;
+        v.agent.setCo(join(v.agent, sp.guestBed, meet, 'sit'));
+    }
+    if (withDog) dog.toBed(meet);
+    try {
+        k.meeting = true;
+        yield* goSpot(k, sp.bed, 'sit');
+        k.label = v ? `${v.def.name}と寝るまえのおしゃべり🌙` : `${DOG.name}に「おやすみ」を言っている🌙`;
+        yield* waitUntil(() => (!v || v.agent.atSpot || !alive(v)) && (!withDog || dog.agent.atSpot), 12);
+        k.meeting = false;
+        const a = v && alive(v) && v.agent.atSpot ? v.agent : null;
+        const d = withDog && dog.agent.atSpot ? dog.agent : null;
+        release = hold([k, a, d].filter(Boolean));
+        const cast = { k, v: a, dog: d };
+        if (a) {
+            yield* converse(pickScript(STAY.pillow[v.def.id]), cast);
+            yield* waitMin(2);
+            yield* converse(pickFresh(STAY.night[v.def.id]), cast);
+            beginNight(v);
+        } else if (d && !ctx.state.dog.firstBed) {
+            dog.D.toldFirst = true;
+            yield* converse(DOG_DUO.firstNight, cast);
+        } else if (d) {
+            yield* converse(pickFresh(DOG_DUO.night), cast);
+        }
+        yield* waitMin(1.5);
+        slept = true;
+    } finally {
+        k.meeting = false;
+        release?.();
+        if (slept) {
+            if (v && alive(v)) v.agent.setCo(guestSleep(v));
+            if (withDog) dog.sleepNow();
+        } else if (v) {
+            v.busy = false;
+        }
+        meet.done = true;
+    }
+}
+
+// その夜のお泊まりが、ほんとうにはじまった（ここで「1日ひとり」が決まる）
+function beginNight(v) {
+    const s = S(), st = s.stay;
+    if (!st) return;
+    st.phase = 'night';
+    if (s.stayNight === st.night) return;
+    s.stayNight = st.night;
+    s.stays++;
+    s.stayLast = v.def.id;
+    addStat('nakayoshi', 10);
+    log(`${v.def.name}がお泊まりした🌙 おふとんをならべて、おやすみなさい`);
+}
+
+function* guestSleep(v, restored = false) {
+    const a = v.agent, sp = W().spots.guestBed;
+    v.busy = v.night = v.asleep = true;
+    try {
+        if (!restored || a.onSpot !== sp) yield* goSpot(a, sp, 'sleep');
+        a.pose = 'sleep';
+        W().setGuestCover(true);
+        beginNight(v);
+        let z = 0;
+        while (ctx.km.deepSleep || isNight()) {
+            z += (yield) || 0;
+            if (z > 7) {
+                z = 0;
+                ctx.fx.emoji(a.headPos(), '💤', { rise: 40 });
+            }
+        }
+    } finally {
+        v.asleep = v.busy = false;
+        W().setGuestCover(false);
+    }
+    // 朝：子みくろんの「おはよう」を待つ
+    v.night = false;
+    v.morning = true;
+    if (S().stay) S().stay.phase = 'morning';
+    a.pose = 'sit';
+    yield* waitUntil(() => v.greetedMorning || !v.morning, 15);
+    v.greetedMorning = true;
+    a.pose = 'stand';
+}
+
+// 子みくろんが起きたあと（life.js の actSleep から）
+export function* goodMorning(k) {
+    const dog = ctx.dog, s = S(), v = staying();
+    const meet = { done: false };
+    k.label = v?.morning ? `${v.def.name}と「おはよう」☀️` : `${DOG.name}と「おはよう」☀️`;
+    if (s.dog.met) dog.wakeUp(meet);
+    try {
+        yield* waitMin(2);
+        const d = s.dog.met && dog.agent.pose !== 'sleep' ? dog.agent : null;
+        if (v?.morning && alive(v)) {
+            const cast = { k, v: v.agent, dog: d };
+            yield* converse([['v', pick(v.def.lines.stayWake)]], cast);
+            yield* converse(pickFresh(STAY.morning[v.def.id]), cast);
+            v.greetedMorning = true;
+            addStat('nakayoshi', 6);
+        } else if (d) {
+            yield* converse(pickFresh(DOG_DUO.morning), { k, dog: d });
+            addStat('nakayoshi', 2);
+        }
+    } finally {
+        meet.done = true;
+    }
+}
+
+export function breakfastDue() {
+    const v = staying();
+    return v?.morning && v.greetedMorning && !v.busy && alive(v) && hour() < 10 ? v : null;
+}
+
+// 10:00 になっても朝ごはんがまだなら、そのまま帰る（保険）
+export function checkoutAll() {
+    const v = staying();
+    if (v?.morning && !v.busy && ctx.km.actId !== 'breakfast') checkout(v);
+}
+
+function checkout(v) {
+    v.morning = false;
+    v.stayed = true;
+    leave(v.def.id, true, pick(v.def.lines.stayBye));
+}
+
+// ページを開き直したとき：お泊まりの途中なら、泊まっている人はそのまま
+export function restore() {
+    const s = S(), st = s.stay;
+    if (!st) return;
+    const v = byId[st.id];
+    const ok = v && (st.night === nightKey() || (st.phase !== 'eve' && st.night === s.day - 1 && hour() < 10));
+    if (!ok) {
+        s.stay = null;
+        return;
+    }
+    const a = v.agent;
+    v.state = 'visiting';
+    v.greeted = true;
+    v.stay = true;
+    a.active = true;
+    a.root.visible = true;
+    if (isNight()) {
+        a.placeOnSpot(W().spots.guestBed);
+        a.setCo(guestSleep(v, true));
+    } else if (st.phase === 'eve') {
+        a.place(-1.8, 1.2, 0.6);
+    } else {
+        v.morning = v.greetedMorning = true;
+        st.phase = 'morning';
+        a.place(3.0, 1.2, 0.3);
+    }
+    setTimeout(() => ctx.fx.toast(`${v.def.name}がお泊まり中だよ🌙`), 1500);
 }
 
 // ── 遊びに来た人の、ふだんの過ごし方 ──
@@ -404,6 +740,12 @@ function* visitorIdle(v) {
     const play = pairChance(v);
     if (play) {
         yield* pairPlay(v, play.w, play.def);
+        return;
+    }
+    // マロンと遊ぶことも
+    const dp = ctx.dog.pairChance(v);
+    if (dp) {
+        yield* ctx.dog.pairPlay(v, dp);
         return;
     }
     v.idle = true;
@@ -792,6 +1134,74 @@ export const SOCIAL = {
         }
     },
 
+    // お泊まりした人と朝ごはん：子みくろんが作って、テーブルでいっしょに食べる。食べおわったら、帰りぎわ
+    *breakfast(k, v) {
+        const a0 = v.agent, sp = W().spots;
+        const table = { done: false };
+        v.busy = true;
+        a0.setCo(join(a0, sp.seatS, table, 'eat'));
+        let dish = S().food ? DISHES.find((d) => d.id === S().food) : null;
+        try {
+            k.label = `${v.def.name}と朝ごはんの準備🍳`;
+            yield* goSpot(k, sp.cook);
+            k.say(fill(pick(L.bfCook), { name: v.def.name, dog: DOG.name }));
+            let st = 0;
+            const cue = cues([[2.5, a0, pick(v.def.lines.bfWait)], [6, k, 'もうちょっとで、できるっちゃ〜🍳']]);
+            yield* waitMin(9, (dt, t) => {
+                cue(dt, t);
+                st += dt;
+                if (st > 3) {
+                    st = 0;
+                    ctx.fx.emoji(W().potPos, '♨️', { rise: 30, size: 16 });
+                }
+            });
+            if (!dish) {
+                const id = pick(['onigiri', 'lafrance', 'sakuranbo']);
+                dish = DISHES.find((d) => d.id === id);
+                S().food = dish.id;
+                W().placeFood(dish.id);
+            }
+            // マロンのぶんも
+            ctx.dog.serveMeal();
+        } finally {
+            table.done = true;
+            v.busy = false;
+        }
+        if (!alive(v)) return;
+        k.label = `${v.def.name}と朝ごはん🍳`;
+        let done = false;
+        v.busy = true;
+        try {
+            yield* together(k, v, sp.seatN, sp.seatS, 'eat', function* (a) {
+                W().setTea(['N', 'S']);
+                k.pose = 'eat';
+                const d = ctx.dog.agent;
+                yield* converse(pickFresh(STAY.breakfast[v.def.id]), { k, v: a, dog: ctx.state.dog.met && d.pose !== 'sleep' ? d : null });
+                let mt = 0;
+                yield* waitMin(8, (dt) => {
+                    mt += dt;
+                    if (mt > 4) {
+                        mt = 0;
+                        ctx.sound.munch();
+                        ctx.fx.emoji(k.headPos(), pick(['😋', '✨', '💕']), { rise: 34 });
+                    }
+                });
+                W().clearFood();
+                S().food = null;
+                addStat('onaka', 55);
+                addStat('tanoshisa', 12);
+                addStat('nakayoshi', 6);
+                log(`${v.def.name}といっしょに朝ごはんを食べた🍳（${dish.name}）`);
+                done = true;
+            });
+        } finally {
+            v.busy = false;
+        }
+        W().clearTea();
+        // いちばんさいごに（leave → お見送りが、子みくろんの行動を置きかえるので）
+        if (done && alive(v)) checkout(v);
+    },
+
     *party(k) {
         const vs = avail().slice(0, 3);
         if (!vs.length) return;
@@ -1106,6 +1516,7 @@ function* stardustShow(k, v, C) {
     };
 
     a.model.glow = 1;
+    ctx.dog.startle();
     try {
         yield* waitMin(2, (dt) => shimmer(dt, false));
         k.pose = 'look';
@@ -1174,6 +1585,7 @@ export function socialCandidates() {
 }
 
 export function pickPartner(id) {
+    if (id === 'breakfast') return breakfastDue();
     let vs = avail();
     if (id === 'special') vs = vs.filter(canSpecial);
     return vs.length ? pick(vs) : null;

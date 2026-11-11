@@ -21,6 +21,8 @@
   - ファミリーの遊び：`ouchi/js/family.js` の `SOCIAL`（子みくろんとあそぶ。`onsen3`・`bench3`・`ball3`・`band` と芋煮会はみんなで）と `PAIR_PLAY`（来てくれた人どうしのふたり遊び）。動きの途中のひとことは family.js の中、3人ベンチ・みんなで温泉の台本は convos.js の `TRIO`・`ONSEN_GROUP`
   - 日記：`ouchi/js/state.js` の `log`。1日に何度もあること（なでなで・ボール・おしゃべり…）は `tally` で書くと「×2」とまとまる。とっておくのは1週間ぶん、パネルでは前の日をたたむ
   - まのの絵：何枚目に何を描いたかは `state.art`、描き方は `ouchi/js/textures.js` の `paintDrawing`、なまえとセリフは lines.js の `ART`。かべの額縁は3つ（新しい絵はいちばん古い絵とかけかえ）、ぜんぶの絵はパネルのアルバムに
+  - マロン（いっしょに暮らしている子）：まのがずっと前に暮らした保護わんこ（ヨークシャーテリアミックス、明るい栗色、臆病だけどやさしい）。暮らしは `ouchi/js/dog.js`（ふだんの過ごし方・お出迎え・`PLAY` の子みくろんとの遊び・`DOG_PAIR` のお客さんとの遊び）、見た目は `clawd.js` の `makeDog`、名前は lines.js の `DOG`、台本は convos.js の `DOG_*`。みかにゃんとは「再会」（ちっちゃい仔猫のみかにゃんがマロンのところに迷いこんで、なかよしになった）。なぜここにいるかは語らない（重い言葉は使わない。首輪の小さな星のチャームだけ）
+  - お泊まり（1日ひとりまで）：family.js の「お泊まり」の節（`askStay`・`curfew` で言いだす・`tuckIn`・`guestSleep`・`goodMorning`・`SOCIAL.breakfast`・`restore`）。台本は convos.js の `STAY`、セリフは DEFS の `stay*`。セーブは `state.stay`・`stayNight`
 - `character-sheet/`：おうちのみんなのキャラクターシート（3Dモデルの4方向・背くらべ・Higgsfieldのイラスト版・カラー・セリフ）。`ouchi/js/clawd.js` の見た目を変えたら、`tools/render.js`（Playwrightで4方向を撮影）→ `tools/crop.py`（切り抜き）で撮り直す
 
 ## ふたりの宝物庫（Notion）

@@ -152,6 +152,16 @@ export const sound = {
         [1568, 2093, 2637].forEach((f, i) => osc(f, { start: i * 0.06, dur: 0.25, vol: 0.045 }));
     },
     yawn() { osc(330, { dur: 0.7, vol: 0.045, slide: 0.6 }); },
+    // マロンの「わふっ」（臆病でやさしい子なので、ちいさめ）
+    bark() {
+        if (throttled('bark', 0.3)) return;
+        osc(720, { dur: 0.08, vol: 0.045, slide: 0.6, type: 'triangle' });
+        osc(600, { start: 0.13, dur: 0.09, vol: 0.038, slide: 0.6, type: 'triangle' });
+    },
+    whine() {
+        if (throttled('whine', 1)) return;
+        osc(880, { dur: 0.35, vol: 0.03, slide: 1.35 });
+    },
     note(f) {
         if (throttled('note' + f, 0.5)) return;
         bell(f, { dur: 1.2, vol: 0.06 });
