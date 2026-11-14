@@ -58,11 +58,11 @@
         }
 
         /* 絵は画面の幅に合わせる（縦長の画面いっぱいに広げると、顔が大きくなって吹き出しに隠れる）。
-           あごが吹き出しにかかるときだけ、下の fitCharacter() が --char-top で少し上にずらす */
+           頭の上の空のぶんだけ上に寄せて、頭のてっぺんがステータスバーのすぐ下にくるようにする。
+           あごが吹き出しにかかるときは、下の fitCharacter() が --char-top でもう少し上にずらす */
         .character-bg img {
             position: absolute;
-            /* ステータスバーの下からはじめる（頭のてっぺんが隠れないように） */
-            top: calc(env(safe-area-inset-top, 0px) + var(--char-top, 0px));
+            top: calc(env(safe-area-inset-top, 0px) + var(--char-top, min(100vw, 480px) * -0.087));
             left: 0;
             width: 100%;
             height: auto;
@@ -604,6 +604,7 @@
         // みくろんの顔が吹き出しに隠れないように、絵の位置を画面に合わせる
         const charImg = document.querySelector('.character-bg img');
         const FACE_BOTTOM = 0.54;   // 絵の高さのうち、あごの下までの割合
+        const HEAD_UP = 0.065;      // いつも上に寄せるぶん（頭の上の空を詰める）
         const HEAD_ROOM = 0.09;     // 頭の上のあき（ここまでは上にずらしていい）
         function fitCharacter() {
             charImg.style.setProperty('--char-top', '0px');
@@ -611,7 +612,7 @@
             if (!r.height) return;
             const cover = bubbleEl.offsetParent ? bubbleEl : displayEl;   // 小さい画面では吹き出しがない
             const over = Math.max(0, r.top + r.height * FACE_BOTTOM - (cover.getBoundingClientRect().top - 10));
-            charImg.style.setProperty('--char-top', `${-Math.min(r.height * HEAD_ROOM, over)}px`);
+            charImg.style.setProperty('--char-top', `${-Math.min(r.height * HEAD_ROOM, Math.max(r.height * HEAD_UP, over))}px`);
         }
         charImg.addEventListener('load', fitCharacter);
         window.addEventListener('resize', fitCharacter);
