@@ -65,16 +65,30 @@ export function createUI(h) {
     });
     syncSound();
 
-    $('btn-home').addEventListener('click', h.home);
-    $('btn-food').addEventListener('click', h.food);
+    // 右上のまるいボタン：おうち全体を見ているときは子みくろん（押すと追いかける）、それ以外は🏠（押すとおうち全体）
+    const viewBtn = $('btn-home');
+    let lastView = '';
+    const syncView = () => {
+        const v = h.view();
+        if (v === lastView) return;
+        lastView = v;
+        if (v === 'home') viewBtn.innerHTML = spriteSVG(SPRITES.km);
+        else viewBtn.textContent = '🏠';
+        viewBtn.classList.toggle('on', v === 'follow');
+        viewBtn.setAttribute('aria-label', v === 'home' ? '子みくろんを追いかける' : 'おうち全体にもどる');
+    };
+    viewBtn.addEventListener('click', () => {
+        const was = h.viewTap();
+        ctx.sound.pop();
+        if (was === 'home') ctx.fx.toast('子みくろんを追いかけるよ🎀');
+        else if (was === 'follow') ctx.fx.toast('おうち全体にもどるね🏠');
+        syncView();
+    });
+    syncView();
     $('btn-ball').addEventListener('click', h.ball);
     $('btn-light').addEventListener('click', h.lights);
-    const followBtn = $('btn-follow');
-    const syncFollow = (on) => {
-        followBtn.classList.toggle('on', on);
-        followBtn.textContent = on ? '追うのをやめる' : '子みくろんを追う';
-    };
-    followBtn.addEventListener('click', () => syncFollow(h.follow()));
+    $('btn-tea').addEventListener('click', () => h.ask('teaparty'));
+    $('btn-walk').addEventListener('click', () => h.ask('dogwalk'));
 
     const panel = $('panel');
     $('panel-handle').addEventListener('click', () => {
@@ -240,7 +254,6 @@ export function createUI(h) {
 
     return {
         diaryDirty() { dirty = true; },
-        syncFollow,
         // 子みくろんの質問に答えられるように、話しかける欄をひらく
         openTalk() {
             panel.classList.remove('collapsed');
@@ -253,6 +266,7 @@ export function createUI(h) {
         },
         update() {
             const s = S();
+            syncView();
             clockEl.textContent = `${s.speed ? '' : '⏸ '}${s.day}日目 ${clockText(s.min)}（${partOfDay(s.min)}）`;
             clockEl.classList.toggle('paused', !s.speed);
             const label = ctx.km.label || '…';

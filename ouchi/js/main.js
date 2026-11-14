@@ -22,8 +22,8 @@ import { damp, clamp, lerp, pick, wrapAngle } from './util.js';
 
 // ホーム視点：右手前の斜め上から、おうちと庭をまるごと
 // 中身を変えたら上げる（sw.js の CACHE_NAME の番号もいっしょに）
-const APP_VER = 10;
-const APP_VER_NAME = 'マロンとお泊まり版';
+const APP_VER = 11;
+const APP_VER_NAME = 'まあるいお茶会版';
 
 const HOME = { target: new THREE.Vector3(2.0, 0.6, 2.0), polar: 0.88, azim: 0.6 };
 // おうちがいっぱいに見えるように合わせる（庭の端は少し切れてもいい）
@@ -125,6 +125,7 @@ function boot() {
     let follow = false;
     let followZoomT = 0;
     let camAnim = null;
+    let homing = false; // camAnim が「おうち全体」へもどる途中
 
     function visibleRect() {
         const pr = document.getElementById('panel').getBoundingClientRect();
@@ -178,17 +179,41 @@ function boot() {
 
     function home() {
         follow = false;
-        ctx.ui?.syncFollow(false);
+        homing = true;
         const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
         camAnim = { t: 0, fromT: controls.target.clone(), from: sph, to: homeView() };
     }
 
-    function toggleFollow() {
-        follow = !follow;
+    function startFollow() {
+        follow = true;
         camAnim = null;
-        followZoomT = follow ? 1.6 : 0;
-        if (!follow) home();
-        return follow;
+        homing = false;
+        followZoomT = 1.6;
+    }
+
+    // 🏠ボタン：いまどこを見ているか（'home' おうち全体／'follow' 子みくろんを追っている／'free' まのが動かした）。
+    // なでなでのタップでも controls の start が来るので、フラグではなくカメラの位置で決める
+    const camSph = new THREE.Spherical();
+    const camOff = new THREE.Vector3();
+    function nearHome() {
+        const v = homeView();
+        camSph.setFromVector3(camOff.copy(camera.position).sub(controls.target));
+        return controls.target.distanceTo(v.target) < 0.15
+            && Math.abs(camSph.radius - v.dist) < Math.max(0.4, v.dist * 0.03)
+            && Math.abs(camSph.phi - v.polar) < 0.03
+            && Math.abs(wrapAngle(camSph.theta - v.azim)) < 0.03;
+    }
+    function viewState() {
+        if (follow) return 'follow';
+        if (camAnim) return homing ? 'home' : 'free';
+        return nearHome() ? 'home' : 'free';
+    }
+    // おうち全体を見ているときは子みくろんを追いかけて、それ以外はおうち全体にもどる
+    function viewTap() {
+        const was = viewState();
+        if (was === 'home') startFollow();
+        else home();
+        return was;
     }
 
     // 特別なイベントのときだけ、そこへカメラを寄せる（まのが動かしたら戻さない）
@@ -197,7 +222,7 @@ function boot() {
     ctx.cam = {
         focus(x, z, dist = 15) {
             follow = false;
-            ctx.ui?.syncFollow(false);
+            homing = false;
             const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
             camAnim = { t: 0, fromT: controls.target.clone(), from: sph, to: { target: new THREE.Vector3(x, 0.5, z), polar: sph.phi, azim: sph.theta, dist } };
             focused = true;
@@ -282,8 +307,8 @@ function boot() {
     });
 
     ctx.ui = createUI({
-        home, layout, follow: toggleFollow,
-        food: life.placeFood, ball: life.throwBall, lights: life.toggleLights, talk: life.talk, drawing: life.showDrawing,
+        layout, view: viewState, viewTap, ask: life.request,
+        ball: life.throwBall, lights: life.toggleLights, talk: life.talk, drawing: life.showDrawing,
         invite: family.invite, leave: family.leave, stay: family.askStay, treat: dog.treat,
         reset() {
             clearState();

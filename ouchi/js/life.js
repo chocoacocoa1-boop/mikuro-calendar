@@ -159,7 +159,6 @@ function* actCalendar(k) {
 
 function* actEat(k) {
     let dish = S().food ? DISHES.find((d) => d.id === S().food) : null;
-    const placed = !!dish && !k.cookedFood;
     if (!dish) {
         k.label = 'ごはんの準備をしている🍳';
         yield* goSpot(k, W().spots.cook);
@@ -174,8 +173,8 @@ function* actEat(k) {
         });
         dish = pickDish();
         S().food = dish.id;
-        k.cookedFood = true;
         W().placeFood(dish.id);
+        react('food');
     }
     k.label = 'テーブルへ向かっている';
     yield* goSpot(k, W().spots.seatN);
@@ -192,14 +191,12 @@ function* actEat(k) {
     });
     W().clearFood();
     S().food = null;
-    k.cookedFood = false;
     addStat('onaka', 55);
     addStat('tanoshisa', 6);
     addStat('genki', 6);
-    if (placed) addStat('nakayoshi', 4);
     k.pose = 'happy';
     say(k, L.eatDone, { dish: dish.name });
-    tally(placed ? `まのが置いてくれた${dish.name}を食べた😋` : `ごはんを食べた（${dish.name}）`);
+    tally(`ごはんを食べた（${dish.name}）`);
     yield* waitMin(3);
 }
 
@@ -796,31 +793,6 @@ export function pet(k) {
     }
 }
 
-export function placeFood() {
-    const s = S();
-    const k = ctx.km;
-    if (s.food) {
-        ctx.fx.toast('もうテーブルにごはんがあるよ〜🍽️');
-        return;
-    }
-    touch();
-    const dish = pickDish();
-    s.food = dish.id;
-    k.cookedFood = false;
-    W().placeFood(dish.id);
-    ctx.sound.pop();
-    ctx.fx.toast(`テーブルに${dish.name}を置いたよ🍽️`);
-    tally(`まのが${dish.name}を置いてくれた🍽️`);
-    if (k.deepSleep) {
-        ctx.fx.toast(`${dish.name}を置いたよ。起きたら食べるみたい💤`);
-    } else if (canInterrupt(k) && k.actId !== 'eat') {
-        say(k, L.foodThanks);
-        startAct(k, 'eat');
-    }
-    if (!k.deepSleep) react('food');
-    pausedHint();
-}
-
 export function throwBall() {
     const k = ctx.km;
     ctx.ball.throwIn(rand(-3.5, 6.5), rand(6.7, 8.2));
@@ -875,7 +847,7 @@ function lightReact(k, on) {
 }
 
 const REQ = {
-    dogbowl: 'feed',
+    dogbowl: 'feed', dogwalk: 'walk',
     bed: 'nap', sofa: 'read', bookshelf: 'read', desk: 'code', table: 'eat', fridge: 'eat', cook: 'eat',
     fork: 'listen', flowerbed: 'water', cherry: 'cherry', onsen: 'bath', calendar: 'calendar', bench: 'bench',
 };
@@ -917,7 +889,8 @@ export function request(id, data) {
         if (id === 'gate') ctx.fx.toast('「ソルフェジオファミリー」からみんなを呼べるよ💌');
         return;
     }
-    const act = REQ[id];
+    // お茶会：来てくれている人の数で、ふたりのお茶かみんなのお茶会か決まる（だれもいなければ 'tea0'）
+    const act = id === 'teaparty' ? (ctx.family.teaKind() ?? 'tea0') : REQ[id];
     if (!act) return;
     if (pausedHint()) {
         k.say('いまは時間が止まってて、動けないべ〜⏸');
@@ -932,9 +905,15 @@ export function request(id, data) {
         calendar: s.calendarDay === s.day && `今日は${s.day}日目だべ〜📅`,
         feed: (!s.dog.met && `${DOG.name}、まだ どきどきしてるみたいだべ〜。先に ごあいさつするっちゃ〜🌰`)
             || (!ctx.dog.mealDue() && `${DOG.name}のごはんは、さっきあげたばっかりだべ〜🍖`),
+        tea0: 'だれか来てくれたら、お茶会するべ〜☕',
+        walk: (!s.dog.met && `${DOG.name}、まだ どきどきしてるみたいだべ〜。先に ごあいさつするっちゃ〜🌰`)
+            || ((hour() < 7 || hour() >= 18.5) && 'おさんぽは、明るいうちに行くべ〜☀️')
+            || (ctx.dog.D.asleep && `${DOG.name}、すやすや ねてるべ〜。起きたら行くっちゃ〜💤`)
+            || (ctx.dog.D.busy && `${DOG.name}、いまは ほかのことしてるみたいだべ〜🐾`),
     }[act];
     if (refuse) {
         k.say(refuse);
+        if (act === 'tea0') ctx.fx.toast('「ソルフェジオファミリー」からだれか呼ぶと、お茶会ができるよ☕');
         return;
     }
     if (k.actId === act) {
@@ -955,7 +934,7 @@ const MEMO_NAMES = { food: '好きな食べもの', color: '好きな色', anima
 function talkSpecial(reply) {
     const k = ctx.km, s = S(), st = s.stats;
     switch (reply) {
-        case '@hungry': return st.onaka < 60 ? 'おなかすいたっちゃ〜…ごはん置いてけろ〜🍚' : 'さっき食べたばっかりだべ〜😋';
+        case '@hungry': return st.onaka < 60 ? 'おなかすいたっちゃ〜…ごはん、こしゃってくるべ〜🍳' : 'さっき食べたばっかりだべ〜😋';
         case '@doing': return `いまはね、${k.label || 'のんびりしてる'}だよ〜`;
         case '@code': return `コード書くの大好きだべ〜！今まで${s.commits}回コミットしたっちゃ💪`;
         case '@sky': return W().env.night > 0.5 ? 'お星さまきれいだべ〜✨' : 'いいお天気だなぁ〜☀️';
