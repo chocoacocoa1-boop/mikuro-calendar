@@ -178,6 +178,8 @@
             line-height: 1;
             box-shadow: 0 2px 10px rgba(160, 90, 130, 0.12);
         }
+        .round svg { width: 22px; height: 19px; display: block; margin: 0 auto; }
+        .round.on { background: #ffe58f; border-color: #f2cc5a; }
 
         .toast {
             position: fixed;
@@ -530,7 +532,7 @@
             </div>
             <span class="spacer"></span>
             <button class="round" id="btn-sound" aria-label="おとの入り切り">🔔</button>
-            <button class="round" id="btn-home" aria-label="おうち全体を見る">🏠</button>
+            <button class="round" id="btn-home" aria-label="おうち全体にもどる">🏠</button>
         </div>
     </div>
 
@@ -549,12 +551,12 @@
 
             <h3>かかわる</h3>
             <div class="grid2">
-                <button class="btn" id="btn-food">ごはんを置く</button>
                 <button class="btn" id="btn-ball">ボールを投げる</button>
                 <button class="btn" id="btn-light">照明を切り替え</button>
-                <button class="btn" id="btn-follow">子みくろんを追う</button>
+                <button class="btn" id="btn-tea">お茶会をひらく☕</button>
+                <button class="btn" id="btn-walk">マロンとおさんぽ🐾</button>
             </div>
-            <p class="hint">子みくろんをタップでなでなで。家具をタップでおねがい。</p>
+            <p class="hint">子みくろんをタップでなでなで。家具をタップでおねがい（テーブルやキッチンで、ごはん🍳）。右上のまるいボタンで、子みくろんを追いかける ⇄ 🏠おうち全体。</p>
 
             <h3>いっしょに暮らしてる</h3>
             <div class="family" id="housemate"></div>

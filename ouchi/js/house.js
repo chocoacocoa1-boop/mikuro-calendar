@@ -578,20 +578,52 @@ export function buildHouse(W) {
     cyl(table, 0.04, 0.05, 0.12, 0xcbb8f3, 0, 0.74, 0);
     ball(table, 0.055, 0xffd56b, 0, 0.91, 0);
     nav.blockCircle(4.4, -0.6, 0.72, 0.28);
-    const STOOL = { N: [4.4, -1.62, 0x8fdfbb], S: [4.4, 0.42, 0xffe08a], W: [3.38, -0.6, 0xcbb8f3], E: [5.42, -0.6, 0xffb3d4] };
+    // X は5人でお茶会するときだけ出てくる、5つめのいす
+    const STOOL = { N: [4.4, -1.62, 0x8fdfbb], S: [4.4, 0.42, 0xffe08a], W: [3.38, -0.6, 0xcbb8f3], E: [5.42, -0.6, 0xffb3d4], X: [5.0, 0.225, 0x9ee6e3] };
+    const stools = {};
     for (const k in STOOL) {
         const [x, z, c] = STOOL[k];
         const st = furn('table', x, z);
         cyl(st, 0.2, 0.17, 0.06, c, 0, 0.36, 0);
         cyl(st, 0.045, 0.045, 0.36, 0xe8d8e0, 0, 0, 0);
         cyl(st, 0.15, 0.17, 0.03, 0xe8d8e0, 0, 0, 0);
+        stools[k] = st;
     }
+    stools.X.visible = false;
     const ty = y0 + 0.74;
     W.tablePos = {
         N: new THREE.Vector3(4.4, ty, -1.12),
         S: new THREE.Vector3(4.4, ty, -0.08),
         W: new THREE.Vector3(3.88, ty, -0.6),
         E: new THREE.Vector3(4.92, ty, -0.6),
+    };
+    // 5人そろったら、テーブルのまわりにいすを まあるく（N の子みくろんから時計まわりに R1〜R4）
+    const RING = { R1: 'W', R2: 'S', R3: 'X', R4: 'E' };
+    const ringAt = (i, r) => {
+        const a = -i * Math.PI * 2 / 5;
+        return [4.4 + Math.sin(a) * r, -0.6 - Math.cos(a) * r];
+    };
+    const RING_APPROACH = { R1: [2.9, -1.1], R2: [3.6, 0.95], R3: [5.2, 0.95], R4: [5.5, -1.45] };
+    const ringSpots = {};
+    Object.keys(RING).forEach((key, j) => {
+        const [x, z] = ringAt(j + 1, 1.02);
+        const [cx, cz] = ringAt(j + 1, 0.52);
+        W.tablePos[key] = new THREE.Vector3(cx, ty, cz);
+        const [ax, az] = RING_APPROACH[key];
+        ringSpots[`seat${key}`] = spot(ax, az, x, y0 + 0.42, z, Math.atan2(4.4 - x, -0.6 - z), 'eat');
+        const [hx, hz] = STOOL[RING[key]];
+        RING[key] = { st: stools[RING[key]], x, z, hx, hz };
+    });
+    let ringOn = false;
+    W.setRing = (on) => {
+        if (ringOn === on) return;
+        ringOn = on;
+        for (const key in RING) {
+            const r = RING[key];
+            r.st.position.x = on ? r.x : r.hx;
+            r.st.position.z = on ? r.z : r.hz;
+        }
+        stools.X.visible = on;
     };
 
     const foodRoot = new THREE.Group();
@@ -637,6 +669,7 @@ export function buildHouse(W) {
         seatS: spot(4.4, 1.0, 4.4, y0 + 0.42, 0.42, Math.PI, 'eat'),
         seatW: spot(2.95, -0.6, 3.38, y0 + 0.42, -0.6, Math.PI / 2, 'eat'),
         seatE: spot(5.3, 0.35, 5.42, y0 + 0.42, -0.6, -Math.PI / 2, 'eat'),
+        ...ringSpots,
         cookHelp: spot(3.75, -2.75, 3.75, y0, -2.75, Math.PI, 'cook'),
         rugA: spot(-3.95, -0.45, -3.95, y0, -0.45, 0.5, 'sit'),
         rugB: spot(-2.95, -0.45, -2.95, y0, -0.45, -0.5, 'sit'),

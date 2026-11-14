@@ -10,7 +10,7 @@ import { SPRITES } from './textures.js';
 import { ART, L, DOG } from './lines.js';
 import { DISHES } from './house.js';
 import { converse, hold, pickScript, pickFresh, react, free, touch, waitTalk, soon } from './chatter.js';
-import { DUO, GROUP, TRIO, ONSEN_GROUP, STAY, GUEST_SLEEP, DOG_DUO } from './convos.js';
+import { DUO, GROUP, TRIO, ONSEN_GROUP, STAY, GUEST_SLEEP, DOG_DUO, TEA_RING_OPEN } from './convos.js';
 
 const W = () => ctx.world;
 const S = () => ctx.state;
@@ -210,6 +210,12 @@ const alive = (v) => v.state === 'visiting';
 // 子みくろんがさそえる人（ふたり遊びの最中の人はのぞく）
 const avail = () => present().filter((v) => v.greeted && !v.busy);
 const group = (n) => shuffle(avail()).slice(0, n);
+const byOrder = (vs) => [...vs].sort((a, b) => ORDER.indexOf(a.def.id) - ORDER.indexOf(b.def.id));
+// まのが「お茶会をひらく」を押したとき：ひとりならふたりでお茶、ふたり以上ならみんなでお茶会
+export const teaKind = () => {
+    const n = avail().length;
+    return n >= 2 ? 'party' : n === 1 ? 'tea' : null;
+};
 const names = (agents) => agents.map((a) => a.visitor).sort((a, b) => ORDER.indexOf(a.def.id) - ORDER.indexOf(b.def.id)).map((v) => v.def.name).join('と');
 const pairKey = (v, w) => [v.def.id, w.def.id].sort((a, b) => ORDER.indexOf(a) - ORDER.indexOf(b)).join('+');
 
@@ -1119,18 +1125,22 @@ export const SOCIAL = {
 
     *imoni(k, v) {
         // ほかに来ている人は、芋煮ができるまでテーブルで待っていてもらう
-        const guests = avail().filter((o) => o !== v).slice(0, 2);
-        const seats = ['W', 'E'];
+        // 4人そろっていたら、いすを まあるく5つにして、だれも あぶれないように
+        const guests = byOrder(avail().filter((o) => o !== v)).slice(0, 3);
+        const ring = guests.length === 3;
+        const seats = ring ? ['R1', 'R2', 'R3'] : ['W', 'E'];
         const table = { done: false };
+        if (ring) W().setRing(true);
         guests.forEach((o, i) => {
             o.busy = true;
             o.agent.setCo(join(o.agent, W().spots[`seat${seats[i]}`], table, 'eat'));
         });
         try {
-            yield* imoniParty(k, v, guests, seats);
+            yield* imoniParty(k, v, guests, seats, ring ? 'R4' : 'S');
         } finally {
             table.done = true;
             guests.forEach((o) => { o.busy = false; });
+            if (ring) W().setRing(false);
         }
     },
 
@@ -1203,11 +1213,17 @@ export const SOCIAL = {
     },
 
     *party(k) {
-        const vs = avail().slice(0, 3);
-        if (!vs.length) return;
+        // 4人そろったら、いすを5つにして まあるく（おねえちゃんが あぶれないように）
+        const vs = byOrder(avail()).slice(0, 4);
+        if (!vs.length) {
+            yield* waitMin(1);
+            return;
+        }
+        const ring = vs.length === 4;
         k.label = 'みんなでお茶会☕';
-        const seats = ['S', 'W', 'E'];
+        const seats = ring ? ['R1', 'R2', 'R3', 'R4'] : ['S', 'W', 'E'];
         const meet = { done: false };
+        if (ring) W().setRing(true);
         vs.forEach((v, i) => v.agent.setCo(join(v.agent, W().spots[`seat${seats[i]}`], meet, 'eat')));
         let release = null;
         try {
@@ -1217,9 +1233,10 @@ export const SOCIAL = {
             release = hold([k, ...vs.map((v) => v.agent)]);
             k.meeting = false;
             W().setTea(['N', ...seats.slice(0, vs.length)]);
-            k.say('みんなでお茶会だっちゃ〜☕💖');
-            yield* waitMin(3);
             const cast = castOf(k, vs.map((v) => v.agent));
+            if (ring) yield* converse(TEA_RING_OPEN, cast);
+            else k.say('みんなでお茶会だっちゃ〜☕💖');
+            yield* waitMin(ring ? 2 : 3);
             const fit = fits(GROUP, cast);
             for (let i = 0; i < 2 && vs.some(alive); i++) {
                 if (i) yield* waitMin(2);
@@ -1227,12 +1244,14 @@ export const SOCIAL = {
             }
             addStat('tanoshisa', 20);
             addStat('onaka', 10);
-            tally('みんなでお茶会をした☕');
+            if (ring) addStat('nakayoshi', 3);
+            tally(ring ? '5人でまあるくお茶会をした☕' : 'みんなでお茶会をした☕');
         } finally {
             k.meeting = false;
             release?.();
             meet.done = true;
             W().clearTea();
+            if (ring) W().setRing(false);
         }
     },
 
@@ -1418,7 +1437,7 @@ function* sing(a, text, f, ring, rest = 'stand') {
 }
 
 // 芋煮会：子みくろんとみくろん姉で芋煮をこしゃって（作って）、テーブルで待っている人たちといっしょに食べる
-function* imoniParty(k, v, guests, seats) {
+function* imoniParty(k, v, guests, seats, hostSeat = 'S') {
     k.label = 'おねえちゃんと芋煮をつくっている🍲';
     const first = guests[0];
     yield* together(k, v, W().spots.cookHelp, W().spots.cook, 'cook', function* (a) {
@@ -1445,11 +1464,11 @@ function* imoniParty(k, v, guests, seats) {
     const here = guests.filter(alive);
     k.label = here.length ? 'みんなで芋煮会🍲' : 'おねえちゃんと芋煮会🍲';
     yield* gather(k, W().spots.seatN, [
-        { v, spot: W().spots.seatS, pose: 'eat' },
+        { v, spot: W().spots[`seat${hostSeat}`], pose: 'eat' },
         ...here.map((o) => ({ v: o, spot: W().spots[`seat${seats[guests.indexOf(o)]}`], pose: 'eat' })),
     ], function* (a, more) {
         W().placeFood('imoni');
-        W().setTea(['S', ...more.map((g) => seats.find((s) => g.onSpot === W().spots[`seat${s}`])).filter(Boolean)]);
+        W().setTea([hostSeat, ...more.map((g) => seats.find((s) => g.onSpot === W().spots[`seat${s}`])).filter(Boolean)]);
         a.say(more.length ? '山形の芋煮会だず〜！みんな、いただぎます〜！🍲' : 'いただぎます〜！');
         yield* waitMin(14, cues([
             [2.5, k, 'おねえちゃんの芋煮、んめ〜！😋'],
