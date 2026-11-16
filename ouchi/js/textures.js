@@ -626,6 +626,20 @@ export function softDotTexture(inner = 'rgba(255,255,255,1)', outer = 'rgba(255,
     return tex(c);
 }
 
+// 花火の火花：その色の、まあるいつぶ（まんなかだけ白く光って、ふちはふんわり消える）。color は '#rrggbb'
+export function glowDotTexture(color) {
+    const c = makeCanvas(64, 64);
+    const g = c.getContext('2d');
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, '#ffffff');
+    grd.addColorStop(0.16, color);
+    grd.addColorStop(0.5, color);
+    grd.addColorStop(1, `${color}00`);
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 64, 64);
+    return tex(c);
+}
+
 // きらっと光る4つ角の星（まんなかは白、まわりはその色でぼんやり光る）。昼の空でも見えるように
 export function sparkleTexture(color) {
     const c = makeCanvas(64, 64);

@@ -1166,7 +1166,7 @@ export const SOCIAL = {
                 }
             });
             if (!dish) {
-                const id = pick(['onigiri', 'lafrance', 'sakuranbo']);
+                const id = pick(['onigiri', 'lafrance', 'sakuranbo', 'kaki']);
                 dish = DISHES.find((d) => d.id === id);
                 S().food = dish.id;
                 W().placeFood(dish.id);
