@@ -23,6 +23,8 @@
   - 右上のまるいボタン：おうち全体を見ているときは子みくろんの絵（押すと追いかける）、それ以外は🏠（押すとおうち全体）。ごはんはボタンではなく、子みくろんが自分でこしゃう（テーブル・キッチンをタップでおねがいもできる）
   - 日記：`ouchi/js/state.js` の `log`。1日に何度もあること（なでなで・ボール・おしゃべり…）は `tally` で書くと「×2」とまとまる。とっておくのは1週間ぶん、パネルでは前の日をたたむ
   - まのの絵：何枚目に何を描いたかは `state.art`、描き方は `ouchi/js/textures.js` の `paintDrawing`、なまえとセリフは lines.js の `ART`。かべの額縁は3つ（新しい絵はいちばん古い絵とかけかえ）、ぜんぶの絵はパネルのアルバムに
+  - ごはん：`ouchi/js/house.js` の `DISHES`（なまえ）と `buildDish`（お皿の見た目）。いつ何が出るかは life.js の `pickDish`（朝・昼・夕）と、お泊まりの朝ごはん（family.js の `breakfast`）
+  - コミットのお祝い：100回目（life.js の `COMMIT_GOAL`）に `commitParty`。ファンファーレ（audio.js の `fanfare`）と花火（fx.js の `firework`。あげる場所は life.js の `fireworkShow` が画面のひろさから決める）、そのあいだだけ空が夕やみになる（env.js の `dusk`）。すんだ印は `state.commitParty`。もう100回をこえていた子は、つぎのコミットでお祝いする
   - マロン（いっしょに暮らしている子）：まのがずっと前に暮らした保護わんこ（ヨークシャーテリアミックスの女の子で自分のことは「ぼく」、明るい栗色、頭にピンクのリボン、臆病だけどやさしい）。暮らしは `ouchi/js/dog.js`（ふだんの過ごし方・お出迎え・`PLAY` の子みくろんとの遊び・`DOG_PAIR` のお客さんとの遊び）、見た目は `clawd.js` の `makeDog`、名前は lines.js の `DOG`、台本は convos.js の `DOG_*`。みかにゃんとは「再会」（ちっちゃい仔猫のみかにゃんがマロンのところに迷いこんで、なかよしになった）。なぜここにいるかは語らない（重い言葉は使わない。首輪の小さな星のチャームだけ）
   - お泊まり（1日ひとりまで）：family.js の「お泊まり」の節（`askStay`・`curfew` で言いだす・`tuckIn`・`guestSleep`・`goodMorning`・`SOCIAL.breakfast`・`restore`）。台本は convos.js の `STAY`、セリフは DEFS の `stay*`。セーブは `state.stay`・`stayNight`
 - `character-sheet/`：おうちのみんなのキャラクターシート（3Dモデルの4方向・背くらべ・Higgsfieldのイラスト版・カラー・セリフ）。`ouchi/js/clawd.js` の見た目を変えたら、`tools/render.js`（Playwrightで4方向を撮影）→ `tools/crop.py`（切り抜き）で撮り直す

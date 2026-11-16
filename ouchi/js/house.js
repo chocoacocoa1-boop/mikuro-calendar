@@ -23,6 +23,8 @@ export const DISHES = [
     { id: 'lafrance', name: 'ラ・フランス' },
     { id: 'ramen', name: '冷やしラーメン' },
     { id: 'dadacha', name: 'だだちゃ豆' },
+    { id: 'kaki', name: '庄内柿' },
+    { id: 'fu', name: 'お麩' },
 ];
 
 // 左から 396Hz（子みくろん・みくろん姉）、528Hz（まの）、963Hz（クロミちゃん）、♾️Hz（みかにゃん）。
@@ -107,6 +109,31 @@ function buildDish(id) {
             cyl(g, 0.05, 0.05, 0.012, 0xf2b8a8, 0.04, 0.09, 0.03, 14);
             [[-0.05, -0.02], [-0.01, 0.05]].forEach(([x, z]) =>
                 cbox(g, 0.035, 0.035, 0.035, new THREE.MeshLambertMaterial({ color: 0xe8f6ff, transparent: true, opacity: 0.75 }), x, 0.11, z));
+            break;
+        case 'kaki': {
+            // 庄内柿：ひらたい柿をまるごとひとつ（へたつき）と、むいたのを3きれ
+            plate();
+            const whole = ball(g, 0.07, 0xf58a2c, -0.05, 0.068, 0.01);
+            whole.scale.y = 0.68;
+            [0.4, 0.4 + Math.PI / 2].forEach((r) => { cbox(g, 0.075, 0.008, 0.028, 0x6f9a4a, -0.05, 0.116, 0.01).rotation.y = r; });
+            cbox(g, 0.012, 0.016, 0.012, 0x8a6a4a, -0.05, 0.124, 0.01);
+            [[0.06, -0.05, 0.5], [0.085, 0.01, 0], [0.06, 0.07, -0.5]].forEach(([x, z, r]) => {
+                const slice = ball(g, 0.045, 0xffa63d, x, 0.045, z);
+                slice.scale.set(0.5, 0.62, 1);
+                slice.rotation.y = r;
+            });
+            break;
+        }
+        case 'fu':
+            // お麩の煮もの：おつゆに、焼き目のついた まあるいお麩がぷかぷか。青みをちょっと
+            bowl();
+            cyl(g, 0.128, 0.128, 0.01, 0xe8c98c, 0, 0.093, 0, 24);
+            [[-0.045, -0.035], [0.05, -0.02], [-0.005, 0.05]].forEach(([x, z]) => {
+                cyl(g, 0.043, 0.043, 0.02, 0xc98f58, x, 0.095, z, 16);
+                cyl(g, 0.034, 0.034, 0.024, 0xfbeed2, x, 0.095, z, 16);
+                cyl(g, 0.011, 0.011, 0.026, 0xe6c796, x, 0.095, z, 8);
+            });
+            [[0.078, 0.06, 0.6], [-0.085, 0.035, -0.4]].forEach(([x, z, r]) => { cbox(g, 0.034, 0.006, 0.012, 0x7fc46a, x, 0.106, z).rotation.y = r; });
             break;
         case 'dadacha':
         default:

@@ -14,6 +14,7 @@ export function defaultState() {
         speed: 1,
         stats: { onaka: 80, genki: 85, tanoshisa: 70, kirakira: 75, nakayoshi: 50 },
         commits: 0,
+        commitParty: 0,   // お祝いがすんだコミットの節目（100回）
         cherries: 0,
         resonance: 0,
         drawings: 0,

@@ -22,8 +22,8 @@ import { damp, clamp, lerp, pick, wrapAngle } from './util.js';
 
 // ホーム視点：右手前の斜め上から、おうちと庭をまるごと
 // 中身を変えたら上げる（sw.js の CACHE_NAME の番号もいっしょに）
-const APP_VER = 12;
-const APP_VER_NAME = 'おねえちゃんのマッシュルームカット版';
+const APP_VER = 13;
+const APP_VER_NAME = '毛束マッシュと花火のお祝い版';
 
 const HOME = { target: new THREE.Vector3(2.0, 0.6, 2.0), polar: 0.88, azim: 0.6 };
 // おうちがいっぱいに見えるように合わせる（庭の端は少し切れてもいい）
@@ -220,17 +220,26 @@ function boot() {
     let focused = false;
     let touchedSinceFocus = false;
     ctx.cam = {
-        focus(x, z, dist = 15) {
+        focus(x, z, dist = 15, y = 0.5) {
             follow = false;
             homing = false;
             const sph = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
-            camAnim = { t: 0, fromT: controls.target.clone(), from: sph, to: { target: new THREE.Vector3(x, 0.5, z), polar: sph.phi, azim: sph.theta, dist } };
+            camAnim = { t: 0, fromT: controls.target.clone(), from: sph, to: { target: new THREE.Vector3(x, y, z), polar: sph.phi, azim: sph.theta, dist } };
             focused = true;
             touchedSinceFocus = false;
         },
         release() {
             if (focused && !touchedSinceFocus && !follow) home();
             focused = false;
+        },
+        // いま見えているひろさ（見ているところのあたりで、ワールドの長さ）と、画面の右の向き。花火をあげる場所を決めるのに使う
+        view() {
+            const vr = visibleRect();
+            const perPx = (2 * camera.position.distanceTo(controls.target) * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) / window.innerHeight;
+            return {
+                w: vr.w * perPx, h: vr.h * perPx, polar: controls.getPolarAngle(),
+                target: controls.target.clone(), right: new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0),
+            };
         },
     };
 
@@ -348,8 +357,9 @@ function boot() {
     let last = performance.now();
     let uiAcc = 1, saveAcc = 0;
     function updateLamps(dt) {
-        const indoor = ctx.state.lights;
-        const outdoor = W.env.night > 0.45;
+        const dusk = W.env.dusk > 0;
+        const indoor = ctx.state.lights || dusk;
+        const outdoor = W.env.night > 0.45 || dusk;
         for (const l of W.lamps) {
             l.level = damp(l.level, (l.outdoor ? outdoor : indoor) ? 1 : 0, 5, dt);
             l.light.intensity = l.max * l.level;

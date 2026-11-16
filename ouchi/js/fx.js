@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { sparkleTexture } from './textures.js';
+import { sparkleTexture, glowDotTexture } from './textures.js';
 
 const v = new THREE.Vector3();
 const anchor = new THREE.Vector3();
@@ -13,9 +13,11 @@ export function createFx(W) {
     const rings = [];
     const sparks = [];
     const sparkTex = new Map();
-    const sparkTexOf = (c) => {
-        if (!sparkTex.has(c)) sparkTex.set(c, sparkleTexture(`#${new THREE.Color(c).getHexString()}`));
-        return sparkTex.get(c);
+    // glow は花火の火花（まあるく光るつぶ）。ふつうは、きらっと光る星
+    const sparkTexOf = (c, glow) => {
+        const key = glow ? -1 - c : c;
+        if (!sparkTex.has(key)) sparkTex.set(key, (glow ? glowDotTexture : sparkleTexture)(`#${new THREE.Color(c).getHexString()}`));
+        return sparkTex.get(key);
     };
     const ringGeo = new THREE.RingGeometry(0.86, 1.0, 48);
     ringGeo.rotateX(-Math.PI / 2);
@@ -103,27 +105,66 @@ export function createFx(W) {
             rings.push({ r, age: -(o.delay ?? 0), life: o.life ?? 1.6, s0: o.s0 ?? 0.2, s1: o.s1 ?? 1.6 });
         },
 
-        // 3Dの中を飛ぶ、きらきらの星。vel は1秒あたり。trail を入れると尾を引く
+        // 3Dの中を飛ぶ、きらきらの星。vel は1秒あたり。trail を入れると尾を引く。
+        // drag は空気のブレーキ（花火の火花用）、onEnd は消えるときに呼ばれる
         spark(pos, o = {}) {
             const color = o.color ?? 0xffe27a;
-            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTexOf(color), transparent: true, opacity: 0, depthWrite: false }));
+            const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: sparkTexOf(color, o.glow), transparent: true, opacity: 0, depthWrite: false }));
             sp.position.copy(pos);
             sp.visible = false;
             sp.renderOrder = 3;
             W.scene.add(sp);
             sparks.push({
-                sp, color,
+                sp, color, glow: !!o.glow,
                 vel: o.vel ? o.vel.clone() : new THREE.Vector3(),
                 age: -(o.delay ?? 0),
                 life: o.life ?? 1.4,
                 size: o.size ?? 0.35,
                 spin: o.spin ?? 0,
                 grav: o.grav ?? 0,
+                drag: o.drag ?? 0,
                 floor: o.floor ?? -Infinity,
                 onLand: o.onLand,
+                onEnd: o.onEnd,
                 trail: o.trail ?? 0,
                 emit: 0,
                 ph: Math.random() * 6,
+            });
+        },
+
+        // 花火：base から top へ ひゅ〜っとのぼって、ひらく。shape は 'ball'（まあるく）か 'heart'（right の向きに、ハートの形）
+        firework(base, top, o = {}) {
+            const rise = o.rise ?? 0.85, R = o.radius ?? 1.5, life = o.life ?? 1.7;
+            const colors = o.colors ?? [0xffe27a];
+            const DRAG = 2.4, v0 = R * DRAG;
+            const dir = new THREE.Vector3();
+            // 火花：ぱっとひろがって、ふわっと止まって、ゆっくり落ちながら消える。いくつかは尾を引く
+            const petal = (pos, d, speed, i) => fx.spark(pos, {
+                glow: true, color: colors[i % colors.length], vel: d.multiplyScalar(speed), drag: DRAG, grav: 0.8,
+                life: life * (0.8 + 0.4 * Math.random()), size: R * (0.18 + 0.09 * Math.random()), trail: i % 5 ? 0 : 0.35,
+            });
+            fx.spark(base, {
+                glow: true, color: 0xffe9a8, size: R * 0.17, life: rise, delay: o.delay ?? 0, trail: 0.28,
+                vel: top.clone().sub(base).divideScalar(rise),
+                onEnd: (pos) => {
+                    fx.spark(pos, { glow: true, color: 0xfffbe6, size: R * 0.9, life: 0.22 });
+                    if (o.shape === 'heart') {
+                        const n = 34;
+                        for (let i = 0; i < n; i++) {
+                            const t = (i / n) * Math.PI * 2;
+                            const hx = 16 * Math.sin(t) ** 3;
+                            const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+                            petal(pos, dir.copy(o.right).multiplyScalar(hx / 16).setY(hy / 16 + 0.15), v0, i);
+                        }
+                        return;
+                    }
+                    const n = o.count ?? 40;
+                    for (let i = 0; i < n; i++) {
+                        // まあるく、まんべんなく（らせんに並べる）。3つにひとつは内がわの輪に
+                        const y = 1 - (2 * (i + 0.5)) / n, r = Math.sqrt(1 - y * y), th = i * 2.39996;
+                        petal(pos, dir.set(Math.cos(th) * r, y, Math.sin(th) * r), v0 * (i % 3 ? 1 : 0.55), i);
+                    }
+                },
             });
         },
 
@@ -234,6 +275,7 @@ export function createFx(W) {
                 const landed = sp.position.y < s.floor;
                 if (k >= 1 || landed) {
                     if (landed) s.onLand?.(sp.position);
+                    else s.onEnd?.(sp.position);
                     W.scene.remove(sp);
                     sp.material.dispose();
                     sparks.splice(i, 1);
@@ -241,6 +283,7 @@ export function createFx(W) {
                 }
                 sp.visible = true;
                 s.vel.y -= s.grav * dt;
+                if (s.drag) s.vel.multiplyScalar(Math.exp(-s.drag * dt));
                 sp.position.addScaledVector(s.vel, dt);
                 sp.material.opacity = Math.min(1, s.age / 0.12) * (1 - Math.max(0, (k - 0.7) / 0.3));
                 sp.material.rotation += s.spin * dt;
@@ -249,7 +292,7 @@ export function createFx(W) {
                     s.emit -= dt;
                     if (s.emit <= 0) {
                         s.emit = 0.03;
-                        fx.spark(sp.position, { color: s.color, size: s.size * 0.5, life: s.trail });
+                        fx.spark(sp.position, { color: s.color, size: s.size * 0.5, life: s.trail, glow: s.glow });
                     }
                 }
             }

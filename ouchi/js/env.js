@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { clamp, smoothstep } from './util.js';
+import { clamp, smoothstep, damp } from './util.js';
 import { softDotTexture } from './textures.js';
 
 // 一日の空の色（分 → 色）
@@ -124,16 +124,22 @@ export function buildEnv(W) {
     const dayCol = new THREE.Color(0xfff4e8);
     const goldCol = new THREE.Color(0xffc3a0);
     const groundBase = new THREE.Color(0x9dc58c);
+    const duskCol = new THREE.Color(0x2a2f60);
 
     const env = {
         day: 1,
         night: 0,
         sky,
+        // 花火のあいだだけ、昼でも空を夕やみにする（dusk を 1 にすると、ふわっと暗くなる。時間や暮らしは変わらない）
+        dusk: 0,
+        duskNow: 0,
         update(m, dt, t, camera, camDist) {
             const day = dayAmount(m);
             env.day = day;
             env.night = 1 - day;
+            const dusk = env.duskNow = damp(env.duskNow, env.dusk, 2.2, dt);
             sample(SKY, m, sky);
+            sky.lerp(duskCol, 0.85 * dusk);
             scene.background.copy(sky);
             scene.fog.color.copy(sky);
             scene.fog.near = camDist + 8;
@@ -141,7 +147,7 @@ export function buildEnv(W) {
 
             hemi.color.copy(sky).lerp(WHITE, 0.55);
             hemi.groundColor.copy(groundBase).multiplyScalar(0.35 + 0.65 * day);
-            hemi.intensity = 0.6 + 0.85 * day;
+            hemi.intensity = (0.6 + 0.85 * day) * (1 - 0.5 * day * dusk);
 
             const th = clamp((m - 360) / 720, 0, 1) * Math.PI;
             sunDir.set(Math.cos(th) * 0.75, 0.35 + Math.sin(th) * 0.9, 0.55).normalize();
@@ -149,10 +155,10 @@ export function buildEnv(W) {
             sun.position.copy(sun.target.position).addScaledVector(sunDir, 45);
             const golden = Math.max(bump(m, 405, 75), bump(m, 1075, 85));
             sun.color.copy(nightCol).lerp(dayCol, day).lerp(goldCol, golden * 0.75);
-            sun.intensity = 0.35 + 1.75 * day;
+            sun.intensity = (0.35 + 1.75 * day) * (1 - 0.72 * day * dusk);
 
             stars.position.copy(camera.position);
-            starMat.opacity = smoothstep(0.45, 1, env.night) * 0.95;
+            starMat.opacity = Math.max(smoothstep(0.45, 1, env.night), dusk) * 0.95;
 
             ffMat.opacity = smoothstep(0.5, 1, env.night) * (0.75 + 0.25 * Math.sin(t * 2.3));
             if (ffMat.opacity > 0.01) {

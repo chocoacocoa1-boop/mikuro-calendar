@@ -4,7 +4,7 @@ import { L, TALK, TALK_DEFAULT, TALK_ASK, ART, DOG } from './lines.js';
 import { DISHES, FORKS } from './house.js';
 import { goSpot, leaveSpot, walkTo, waitMin, waitUntil, freeSpot, indoors } from './agent.js';
 import { addStat, log, tally, hour, absMin, loggedTonight } from './state.js';
-import { pick, rand, randInt, chance, fill, shuffle, clockText, speechSec } from './util.js';
+import { pick, rand, randInt, chance, fill, shuffle, clamp, clockText, speechSec } from './util.js';
 import { free, react, touch, answer, chime, hush, hold } from './chatter.js';
 
 const W = () => ctx.world;
@@ -32,7 +32,7 @@ function sparkle(k, chars, n = 4) {
 
 function pickDish() {
     const h = hour();
-    const pool = h < 10 ? ['onigiri', 'lafrance', 'sakuranbo'] : h < 16 ? ['ramen', 'tamakon', 'onigiri', 'dadacha'] : ['imoni', 'imoni', 'dadacha', 'tamakon'];
+    const pool = h < 10 ? ['onigiri', 'lafrance', 'sakuranbo', 'kaki'] : h < 16 ? ['ramen', 'tamakon', 'onigiri', 'dadacha', 'fu'] : ['imoni', 'imoni', 'dadacha', 'tamakon', 'fu', 'kaki'];
     const id = pick(pool);
     return DISHES.find((d) => d.id === id);
 }
@@ -200,6 +200,82 @@ function* actEat(k) {
     yield* waitMin(3);
 }
 
+// ── コミット100回のお祝い：ファンファーレと花火 ──
+const COMMIT_GOAL = 100;
+// 花火の色：396Hz・528Hz・963Hz・♾️Hz と、きんいろ。さいごの一発は、ピンクのハート
+const FIREWORK_COLORS = [[0xff5fae, 0xffa3d2], [0x4fd6a0, 0xa8f0d0], [0x9a7df0, 0xcdbdff], [0xff9a3d, 0xffd36b], [0xffd23d, 0xfff1a8]];
+
+// いま見えているところの空に、花火を n 発あげる（場所と大きさは、画面のひろさに合わせる）。さいごのハートがひらくまでの秒数を返す
+function fireworkShow(n = 9) {
+    const v = ctx.cam.view();
+    const R = clamp(Math.min(v.w, v.h) * 0.2, 0.8, 2.6);
+    const lift = 1 / Math.max(0.35, Math.sin(v.polar));
+    const RISE = 0.85;
+    let at = 0;
+    for (let i = 0; i < n; i++) {
+        const last = i === n - 1;
+        // 右へ左へ、高く低く、ばらけるように。さいごのハートは、まんなかに大きく
+        const side = last ? 0 : ((i * 0.618 + 0.3) % 1) * 2 - 1;
+        const high = last ? 0.24 : 0.1 + 0.2 * ((i * 0.37 + 0.5) % 1);
+        const x = side * Math.max(0, v.w / 2 - R * 1.1);
+        const base = new THREE.Vector3(v.target.x + v.right.x * x, 0.2, v.target.z + v.right.z * x);
+        const top = base.clone().setY(v.target.y + high * v.h * lift);
+        ctx.fx.firework(base, top, {
+            delay: at, rise: RISE, right: v.right,
+            radius: last ? R * 1.25 : R * rand(0.8, 1.05),
+            colors: last ? [0xff4f9f, 0xff86c2] : FIREWORK_COLORS[i % FIREWORK_COLORS.length],
+            shape: last ? 'heart' : 'ball',
+        });
+        ctx.sound.firework(at, RISE);
+        if (!last) at += i === n - 2 ? 1.3 : rand(0.6, 1.0);
+    }
+    return at + RISE;
+}
+
+// 早送りでもゆっくり見られるように、ここだけは実時間ですすめて、そのあいだは早送りもやすむ（おわったら元の速さへ）。
+// もう100回をこえていたとき（お祝いができる前から遊んでいた子）は、つぎのコミットでお祝いする
+function* commitParty(k) {
+    const n = S().commits;
+    S().commitParty = COMMIT_GOAL;
+    const speed = S().speed;
+    if (speed > 1) S().speed = 1;
+    const t0 = ctx.tReal;
+    const until = function* (sec) { while (ctx.tReal - t0 < sec) yield; };
+    const release = hold([k]);
+    k.label = `コミット${COMMIT_GOAL}回のお祝い🎆`;
+    k.pose = 'happy';
+    ctx.sound.fanfare();
+    ctx.fx.banner(`コミット${COMMIT_GOAL}回 達成🎉`, 'おめでとう、子みくろん！🎆', 3.4);
+    say(k, n === COMMIT_GOAL ? L.commit100 : L.commit100Late, { n }, 4.5);
+    sparkle(k, ['🎉', '✨', '💖', '🎊'], 8);
+    log(`コミット${COMMIT_GOAL}回を達成！ファンファーレと花火でお祝いした🎆`);
+    for (const key of ['tanoshisa', 'kirakira', 'genki']) addStat(key, 20);
+    ctx.cam?.focus(k.pos.x, k.pos.z, 26, 2);
+    W().env.dusk = 1;
+    try {
+        // カメラが空まで引いて、空が夕やみになるのを待ってから、打ち上げる
+        yield* until(2.8);
+        const heart = 2.8 + fireworkShow();
+        react('commit100', {}, 0);
+        yield* until(5.2);
+        say(k, L.commit100Show, {}, 3.4);
+        yield* until(8.4);
+        react('commit100', {}, 0);
+        // ハートがひらくあいだは、吹き出しでかくさない。見とどけてから、ありがとうを言う
+        yield* until(heart + 1.5);
+        k.pose = 'dance';
+        say(k, L.commit100Thanks, {}, 5);
+        yield* until(heart + 4);
+    } finally {
+        release();
+        // お祝いのあいだに まのが速さを変えていたら、そのまま
+        if (speed > 1 && S().speed === 1) S().speed = speed;
+        W().env.dusk = 0;
+        ctx.cam?.release();
+        if (k.onSpot === W().spots.desk) k.pose = W().spots.desk.pose ?? 'stand';
+    }
+}
+
 function* actCode(k) {
     k.label = '机へ向かっている';
     yield* goSpot(k, W().spots.desk);
@@ -221,11 +297,16 @@ function* actCode(k) {
                 commits++;
                 commitAt = t + rand(25, 45);
                 S().commits++;
+                log(`コミットした（${S().commits}回目）✨`);
+                if (S().commits >= COMMIT_GOAL && S().commitParty < COMMIT_GOAL) {
+                    yield* commitParty(k);
+                    k.label = '机でコードを書いている💻';
+                    continue;
+                }
                 ctx.sound.commit();
                 say(k, L.commit, { n: S().commits });
                 sparkle(k, ['✨', '🎉', '💖'], 5);
                 react('commit');
-                log(`コミットした（${S().commits}回目）✨`);
             }
         }
     } finally {

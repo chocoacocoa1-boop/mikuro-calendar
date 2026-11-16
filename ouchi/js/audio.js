@@ -129,6 +129,24 @@ export const sound = {
     },
     infinity,
     commit() { [784, 988, 1175, 1568].forEach((f, i) => osc(f, { start: i * 0.08, dur: 0.18, vol: 0.07, type: 'triangle' })); },
+    // ファンファーレ（ぱっぱかぱーん、ぱ・ぱーん…じゃーん！）
+    fanfare() {
+        const brass = (f, start, dur, vol = 0.06) => {
+            osc(f, { start, dur, vol, type: 'triangle', attack: 0.012 });
+            osc(f, { start, dur: dur * 0.9, vol: vol * 0.3, type: 'sawtooth', attack: 0.012 });
+        };
+        [[392, 0, 0.16], [523.25, 0.15, 0.16], [659.25, 0.3, 0.16], [783.99, 0.45, 0.45], [659.25, 0.9, 0.16], [783.99, 1.05, 0.35]]
+            .forEach(([f, start, dur]) => brass(f, start, dur));
+        [523.25, 659.25, 783.99, 1046.5].forEach((f) => brass(f, 1.4, 1.7, 0.05));
+        [1568, 2093, 2637, 3136].forEach((f, i) => osc(f, { start: 1.5 + i * 0.07, dur: 0.5, vol: 0.03 }));
+    },
+    // 花火：ひゅ〜…どーん、ぱらぱら（マロンがこわがらないように、どーんはやさしめ）
+    firework(start = 0, rise = 0.85) {
+        osc(650, { start, dur: rise, vol: 0.018, slide: 2.3 });
+        noise({ start: start + rise, dur: 0.55, vol: 0.085, freq: 380 });
+        osc(95, { start: start + rise, dur: 0.4, vol: 0.09, slide: 0.5 });
+        for (let i = 0; i < 6; i++) noise({ start: start + rise + 0.2 + Math.random() * 0.8, dur: 0.05, vol: 0.022, type: 'highpass', freq: 3600 });
+    },
     bounce() {
         if (throttled('bounce', 0.12)) return;
         osc(560, { dur: 0.16, vol: 0.09, slide: 0.5 });

@@ -254,43 +254,77 @@ export function makeMikanyan() {
 }
 
 // マッシュルームカットの髪：角のまるい四角を、すそからてっぺんへ積んだおわん形。
-// すそは前がぱっつん（目のすぐ上）、横は少し長く、毛先はちょっと内巻き。てっぺんの近くに天使の輪っか
-const HAIR_A = 0.585, HAIR_C = 0.445, HAIR_Z = -0.035;
-const HAIR_HEM = 0.5, HAIR_SIDE = 0.36, HAIR_WALL = H - 0.04, HAIR_TOP = H + 0.27;
+// すそは前がぱっつん（目のすぐ上）、横は少し長く、毛先はちょっと内巻き。てっぺんの近くに天使の輪っか。
+// つるんとした一枚だとヘルメットに見えるので、すそに切れこみを入れて毛束に分け、そこからてっぺんへ向かう筋をつけてある
+const HAIR_A = 0.575, HAIR_C = 0.43, HAIR_Z = -0.03;
+const HAIR_HEM = 0.5, HAIR_SIDE = 0.36, HAIR_BACK = 0.39, HAIR_WALL = H - 0.04, HAIR_TOP = H + 0.26;
+// 毛束のさかいめ：[角度, 切れこみのつよさ, そこから始まる毛束の長さのゆらぎ（＋で短く）]
+// 角度は 90 が顔の正面、0 が向かって右、-90 がうしろ。小さい順に、頂点にのるよう偶数で
+const HAIR_CUTS = [
+    [12, 0.8, 0.012], [46, 1, 0.006], [62, 0.8, 0], [78, 1, -0.006], [96, 0.7, -0.012], [114, 1, 0.012], [134, 1, 0.006],
+    [172, 0.8, 0], [-140, 1, -0.006], [-114, 0.8, -0.012], [-92, 1, 0.012], [-70, 0.8, 0.006], [-40, 1, -0.012],
+];
 
-function mushroomHair(color, shine) {
-    const SEG = 64, DOME = 12, P = 2.4;
+function mushroomHair(color, shine, shade) {
+    const SEG = 180, DOME = 14, P = 2.4;
+    const NOTCH = 0.075, CUT_W = 4, GROOVE = 0.02;
     const sstep = (a, b, v) => { const k = Math.min(1, Math.max(0, (v - a) / (b - a))); return k * k * (3 - 2 * k); };
-    const base = new THREE.Color(color), lite = new THREE.Color(shine);
+    const base = new THREE.Color(color), lite = new THREE.Color(shine), dark = new THREE.Color(shade);
+    // たての線（経線）ごとに：筋のこさ g、すその持ち上がり lift、天使の輪っかのずれ zig
+    const cuts = HAIR_CUTS.map(([d, s, len]) => [(d + 360) % 360, s, len]);
+    const g = [], lift = [], zig = [];
+    for (let i = 0; i < SEG; i++) {
+        const deg = (i / SEG) * 360;
+        let gi = 0, notch = 0, lock = cuts.length - 1;
+        cuts.forEach(([c, s], n) => {
+            const d = Math.abs(deg - c);
+            const tri = Math.max(0, 1 - Math.min(d, 360 - d) / CUT_W);
+            gi = Math.max(gi, tri * s);
+            notch = Math.max(notch, tri * (0.6 + 0.4 * s));
+            if (c <= deg) lock = n;
+        });
+        g.push(gi);
+        lift.push(notch * NOTCH + (1 - notch) * cuts[lock][2]);
+        zig.push(((lock + 1) % cuts.length) % 2 ? 0.035 : -0.035);
+    }
     const pos = [], col = [], idx = [];
     const tmp = new THREE.Color();
     const rings = [];
-    const ring = (yOf, k, shineOf, n = 5) => {
+    // k は輪の大きさ、fade は筋のこさ（1 がすそ、てっぺんへ向かって 0 に）
+    const ring = (yOf, k, { n = 5, fade = 1, shineOf } = {}) => {
         const start = pos.length / 3;
         for (let i = 0; i < SEG; i++) {
             const f = (i / SEG) * Math.PI * 2;
             const cx = Math.cos(f), sz = Math.sin(f);
             const q = Math.pow(Math.pow(Math.abs(cx), n) + Math.pow(Math.abs(sz), n), -1 / n);
             const u = cx * q, w = sz * q;
-            pos.push(u * HAIR_A * k, yOf(u, w), w * HAIR_C * k);
-            tmp.copy(base).lerp(lite, shineOf ? shineOf(u, w) : 0);
+            const gg = g[i] * fade;
+            const kk = k * (1 - GROOVE * gg);
+            pos.push(u * HAIR_A * kk, yOf(u, w, i), w * HAIR_C * kk);
+            tmp.copy(base).lerp(lite, shineOf ? shineOf(w, i) : 0).lerp(dark, 0.4 * gg);
             col.push(tmp.r, tmp.g, tmp.b);
         }
         rings.push(start);
         return start;
     };
     // w は前うしろ（+1 が顔がわ）。すその高さは、角をまわったところでなだらかに変わる
-    const hem = (u, w) => HAIR_SIDE + (HAIR_HEM - HAIR_SIDE) * sstep(0.55, 0.9, w) + 0.03 * sstep(-0.55, -0.9, w);
-    ring(hem, 0.955);
-    ring((u, w) => hem(u, w) + 0.045, 1);
+    const hem = (u, w) => HAIR_SIDE + (HAIR_HEM - HAIR_SIDE) * sstep(0.55, 0.9, w) + (HAIR_BACK - HAIR_SIDE) * sstep(-0.55, -0.9, w);
+    // 切れこみが深くても、すその輪が上の輪を追いこさないように
+    const curl = (u, w, i) => Math.min(hem(u, w) + 0.045 + lift[i] * 0.75, HAIR_WALL - 0.008);
+    const tip = (u, w, i) => Math.min(hem(u, w) + lift[i], curl(u, w, i) - 0.014);
+    ring(tip, 0.955);
+    ring(curl, 1);
     ring(() => HAIR_WALL, 1);
     for (let j = 1; j <= DOME; j++) {
-        const th = (j / DOME) * Math.PI / 2;
+        const s = j / DOME, th = s * Math.PI / 2;
         const k = Math.pow(Math.cos(th), 2 / P);
         const y = HAIR_WALL + (HAIR_TOP - HAIR_WALL) * Math.pow(Math.sin(th), 2 / P);
-        // 天使の輪っか：前のほうだけ、帯になって光る
-        const band = sstep(0.28, 0.4, j / DOME) * (1 - sstep(0.5, 0.62, j / DOME));
-        ring(() => y, Math.max(k, 0.001), (u, w) => band * sstep(-0.15, 0.55, w) * 0.85, 5 - 2.6 * (j / DOME));
+        // 天使の輪っか：前のほうだけ、帯になって光る。毛束ごとに少しずれて、ぎざぎざに
+        const shineOf = (w, i) => {
+            const c = 0.44 + zig[i];
+            return sstep(c - 0.17, c - 0.07, s) * (1 - sstep(c + 0.05, c + 0.15, s)) * sstep(-0.15, 0.55, w) * 0.9;
+        };
+        ring(() => y, Math.max(k, 0.001), { n: 5 - 2.6 * s, fade: 1 - sstep(0.25, 0.7, s), shineOf });
     }
     for (let n = 0; n < rings.length - 1; n++) {
         const a = rings[n], b = rings[n + 1];
@@ -300,9 +334,9 @@ function mushroomHair(color, shine) {
         }
     }
     // すその内がわ（下からのぞいたとき用のふた）
-    const under = ring(hem, 0.955);
+    const under = ring(tip, 0.955);
     const mid = pos.length / 3;
-    pos.push(0, HAIR_HEM, 0);
+    pos.push(0, HAIR_HEM + 0.07, 0);
     col.push(base.r, base.g, base.b);
     for (let i = 0; i < SEG; i++) idx.push(mid, under + i, under + (i + 1) % SEG);
 
@@ -314,10 +348,10 @@ function mushroomHair(color, shine) {
     return new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
 }
 
-// みくろん姉（396Hz）：ひとまわり大きくて、まあるいマッシュルームカットとラベンダーのカーディガン、日めくりカレンダー
+// みくろん姉（396Hz）：ひとまわり大きくて、毛束のあるまあるいマッシュルームカットとラベンダーのカーディガン、日めくりカレンダー
 export function makeMikuroNee() {
     const r = createClawd({ color: 0xff9fd0, scale: 1.18, eye: 0x4a2b34, blush: 0xff6fb3, arm: 0xcdb9f4, topExtra: 0.32 });
-    const hair = mushroomHair(0xffc3e3, 0xfff1f8);
+    const hair = mushroomHair(0xffc3e3, 0xfff1f8, 0xe58fc0);
     hair.position.z = HAIR_Z;
     hair.castShadow = hair.receiveShadow = true;
     r.body.add(hair);
